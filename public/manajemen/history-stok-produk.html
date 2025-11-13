@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Sanjaya - Riwayat Penambahan Stok Produk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#10b981',
+                        secondary: '#059669',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                padding: 20px;
+            }
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen lg:flex">
+    <!-- Mobile Overlay -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+    
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative lg:flex-shrink-0">
+        <div class="flex flex-col h-full">
+            <!-- Logo -->
+            <div class="flex items-center justify-between px-6 py-4 border-b">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-green-400 to-green-700 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-bread-slice text-white text-xl"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-gray-900">POS Sanjaya</h1>
+                        <p class="text-xs text-gray-500">Bakery Management</p>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                <a href="index.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-home text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Dashboard Manajemen
+                </a>
+                <a href="jurnal.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-book text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Jurnal Harian
+                </a>
+                <a href="stok-bahan.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-boxes text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Stok Bahan Baku
+                </a>
+                <a href="stok-produk.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-cookie-bite text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Stok Produk
+                </a>
+                <a href="resep.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-utensils text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Resep & Produksi
+                </a>
+                <a href="laporan.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-chart-line text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Laporan
+                </a>
+            </nav>
+
+            <!-- User Profile -->
+            <div class="p-4 border-t">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-green-600"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900">Admin</p>
+                        <p class="text-xs text-gray-500">Manager</p>
+                    </div>
+                </div>
+                <button class="mt-3 w-full px-3 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Keluar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content flex-1 lg:flex-1">
+        <!-- Header -->
+        <header class="no-print bg-white border-b sticky top-0 z-30">
+            <div class="px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button onclick="toggleSidebar()" class="lg:hidden mr-4 text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <div>
+                            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Riwayat Penambahan Stok Produk</h1>
+                            <p class="text-sm text-gray-500 mt-1">Histori penambahan stok produk harian</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="hidden sm:flex items-center px-3 py-2 bg-gray-100 rounded-lg">
+                            <i class="fas fa-calendar-alt text-gray-500 mr-2"></i>
+                            <span id="currentDate" class="text-sm font-medium text-gray-700"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <main class="p-4 sm:p-6 lg:p-8">
+            <div class="space-y-6">
+                <!-- Action Buttons -->
+                <div class="no-print flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <a href="stok-opname-produk.html" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center">
+                            <i class="fas fa-arrow-left mr-2"></i>Kembali
+                        </a>
+                        <a href="stok-opname-produk.html" class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 transition-all flex items-center">
+                            <i class="fas fa-plus mr-2"></i>Input Stok Baru
+                        </a>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="printHistory()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+                            <i class="fas fa-print mr-2"></i>Print
+                        </button>
+                        <button onclick="exportHistory()" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                        <button onclick="clearHistory()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center">
+                            <i class="fas fa-trash mr-2"></i>Hapus Semua
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">Total Entri</span>
+                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-list text-blue-600"></i>
+                            </div>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900" id="totalEntries">0</p>
+                        <p class="text-xs text-gray-500 mt-1">Riwayat Input</p>
+                    </div>
+
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">Hari Ini</span>
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-calendar-day text-green-600"></i>
+                            </div>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900" id="todayEntries">0</p>
+                        <p class="text-xs text-gray-500 mt-1">Input Hari Ini</p>
+                    </div>
+
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">Minggu Ini</span>
+                            <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-calendar-week text-purple-600"></i>
+                            </div>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900" id="weekEntries">0</p>
+                        <p class="text-xs text-gray-500 mt-1">Input Minggu Ini</p>
+                    </div>
+
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">Bulan Ini</span>
+                            <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-calendar-alt text-orange-600"></i>
+                            </div>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900" id="monthEntries">0</p>
+                        <p class="text-xs text-gray-500 mt-1">Input Bulan Ini</p>
+                    </div>
+                </div>
+
+                <!-- Filter -->
+                <div class="no-print bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cari Berdasarkan Tanggal</label>
+                            <input type="date" id="filterDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Filter Periode</label>
+                            <select id="filterPeriod" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400">
+                                <option value="all">Semua Periode</option>
+                                <option value="today">Hari Ini</option>
+                                <option value="week">Minggu Ini</option>
+                                <option value="month">Bulan Ini</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="applyFilter()" class="px-6 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+                                <i class="fas fa-filter mr-2"></i>Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History List -->
+                <div id="historyContainer" class="space-y-4">
+                    <!-- Empty State -->
+                    <div id="emptyState" class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-inbox text-gray-400 text-3xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Belum Ada Riwayat</h3>
+                        <p class="text-gray-500 mb-4">Belum ada data penambahan stok produk</p>
+                        <a href="stok-opname-produk.html" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+                            <i class="fas fa-plus mr-2"></i>Tambah Stok Pertama
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b sticky top-0 bg-white">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900">Detail Penambahan Stok</h3>
+                        <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="detailContent" class="p-6">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allHistory = [];
+        let filteredHistory = [];
+
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Update Date
+        function updateDateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', options);
+        }
+
+        // Load History
+        function loadHistory() {
+            allHistory = JSON.parse(localStorage.getItem('productStockHistory') || '[]');
+            filteredHistory = [...allHistory];
+            displayHistory();
+            updateSummary();
+        }
+
+        // Display History
+        function displayHistory() {
+            const container = document.getElementById('historyContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (filteredHistory.length === 0) {
+                emptyState.classList.remove('hidden');
+                container.innerHTML = '';
+                container.appendChild(emptyState);
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+            
+            filteredHistory.forEach((entry, index) => {
+                const date = new Date(entry.date);
+                const dateStr = date.toLocaleDateString('id-ID', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow';
+                card.innerHTML = `
+                    <div class="p-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-clipboard-list text-green-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-lg font-semibold text-gray-900">Penambahan Stok #${filteredHistory.length - index}</h4>
+                                        <p class="text-sm text-gray-500">
+                                            <i class="fas fa-calendar mr-1"></i>${dateStr}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Total Produk</p>
+                                        <p class="text-lg font-bold text-gray-900">${entry.totalProducts} Item</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Total Quantity</p>
+                                        <p class="text-lg font-bold text-green-600">${entry.totalQuantity} pcs</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Produk Terbanyak</p>
+                                        <p class="text-sm font-medium text-gray-900">${getMostProduct(entry.data)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Status</p>
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                            <i class="fas fa-check-circle mr-1"></i>Tersimpan
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-col gap-2">
+                                <button onclick="viewDetail(${entry.id})" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm">
+                                    <i class="fas fa-eye mr-2"></i>Lihat Detail
+                                </button>
+                                <button onclick="deleteEntry(${entry.id})" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">
+                                    <i class="fas fa-trash mr-2"></i>Hapus
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Preview -->
+                        <div class="mt-4 pt-4 border-t">
+                            <p class="text-xs text-gray-500 mb-2">Preview Produk:</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${entry.data.slice(0, 5).map(item => `
+                                    <span class="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700">
+                                        ${item.product}: +${item.production}
+                                    </span>
+                                `).join('')}
+                                ${entry.data.length > 5 ? `<span class="px-3 py-1 bg-gray-200 rounded-full text-xs text-gray-600">+${entry.data.length - 5} lainnya</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Get Most Product
+        function getMostProduct(data) {
+            if (data.length === 0) return '-';
+            const sorted = [...data].sort((a, b) => b.production - a.production);
+            return sorted[0].product;
+        }
+
+        // View Detail
+        function viewDetail(id) {
+            const entry = allHistory.find(e => e.id === id);
+            if (!entry) return;
+            
+            const date = new Date(entry.date);
+            const dateStr = date.toLocaleDateString('id-ID', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const content = `
+                <div class="space-y-4">
+                    <div class="bg-gradient-to-r from-green-400 to-green-700 rounded-lg p-4 text-white">
+                        <p class="text-sm text-green-100">Tanggal Input</p>
+                        <p class="text-lg font-bold">${dateStr}</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <p class="text-sm text-blue-600">Total Produk</p>
+                            <p class="text-2xl font-bold text-blue-900">${entry.totalProducts} Item</p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <p class="text-sm text-green-600">Total Quantity</p>
+                            <p class="text-2xl font-bold text-green-900">${entry.totalQuantity} pcs</p>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t pt-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">Detail Produk:</h4>
+                        <div class="space-y-3">
+                            ${entry.data.map(item => `
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div>
+                                        <p class="font-medium text-gray-900">${item.product}</p>
+                                        <p class="text-xs text-gray-500">${item.sku}</p>
+                                        ${item.note ? `<p class="text-xs text-gray-600 mt-1"><i class="fas fa-sticky-note mr-1"></i>${item.note}</p>` : ''}
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-gray-500">Stok Sebelumnya</p>
+                                        <p class="text-sm font-medium text-gray-700">${item.previousStock}</p>
+                                        <p class="text-xs text-green-600 mt-1">+${item.production}</p>
+                                        <p class="text-sm font-bold text-green-700">${item.totalStock}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detailContent').innerHTML = content;
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        // Close Detail Modal
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // Delete Entry
+        function deleteEntry(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus riwayat ini?')) return;
+            
+            allHistory = allHistory.filter(e => e.id !== id);
+            localStorage.setItem('productStockHistory', JSON.stringify(allHistory));
+            loadHistory();
+            alert('Riwayat berhasil dihapus!');
+        }
+
+        // Clear History
+        function clearHistory() {
+            if (!confirm('Apakah Anda yakin ingin menghapus SEMUA riwayat penambahan stok? Tindakan ini tidak dapat dibatalkan!')) return;
+            
+            localStorage.removeItem('productStockHistory');
+            allHistory = [];
+            filteredHistory = [];
+            loadHistory();
+            alert('Semua riwayat berhasil dihapus!');
+        }
+
+        // Update Summary
+        function updateSummary() {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            
+            const todayCount = allHistory.filter(e => {
+                const entryDate = new Date(e.date);
+                return entryDate >= today;
+            }).length;
+            
+            const weekCount = allHistory.filter(e => {
+                const entryDate = new Date(e.date);
+                return entryDate >= weekStart;
+            }).length;
+            
+            const monthCount = allHistory.filter(e => {
+                const entryDate = new Date(e.date);
+                return entryDate >= monthStart;
+            }).length;
+            
+            document.getElementById('totalEntries').textContent = allHistory.length;
+            document.getElementById('todayEntries').textContent = todayCount;
+            document.getElementById('weekEntries').textContent = weekCount;
+            document.getElementById('monthEntries').textContent = monthCount;
+        }
+
+        // Apply Filter
+        function applyFilter() {
+            const filterDate = document.getElementById('filterDate').value;
+            const filterPeriod = document.getElementById('filterPeriod').value;
+            
+            filteredHistory = [...allHistory];
+            
+            if (filterDate) {
+                const selectedDate = new Date(filterDate);
+                filteredHistory = filteredHistory.filter(e => {
+                    const entryDate = new Date(e.date);
+                    return entryDate.toDateString() === selectedDate.toDateString();
+                });
+            }
+            
+            if (filterPeriod !== 'all') {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                
+                if (filterPeriod === 'today') {
+                    filteredHistory = filteredHistory.filter(e => {
+                        const entryDate = new Date(e.date);
+                        return entryDate >= today;
+                    });
+                } else if (filterPeriod === 'week') {
+                    const weekStart = new Date(today);
+                    weekStart.setDate(today.getDate() - today.getDay());
+                    filteredHistory = filteredHistory.filter(e => {
+                        const entryDate = new Date(e.date);
+                        return entryDate >= weekStart;
+                    });
+                } else if (filterPeriod === 'month') {
+                    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                    filteredHistory = filteredHistory.filter(e => {
+                        const entryDate = new Date(e.date);
+                        return entryDate >= monthStart;
+                    });
+                }
+            }
+            
+            displayHistory();
+        }
+
+        // Print History
+        function printHistory() {
+            window.print();
+        }
+
+        // Export History
+        function exportHistory() {
+            if (filteredHistory.length === 0) {
+                alert('Tidak ada data untuk diexport!');
+                return;
+            }
+            
+            const csvContent = generateCSV();
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `riwayat_stok_produk_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Generate CSV
+        function generateCSV() {
+            let csv = 'Tanggal,Produk,SKU,Stok Sebelumnya,Produksi,Total Stok,Keterangan\n';
+            
+            filteredHistory.forEach(entry => {
+                const date = new Date(entry.date).toLocaleDateString('id-ID');
+                entry.data.forEach(item => {
+                    csv += `"${date}","${item.product}","${item.sku}","${item.previousStock}","${item.production}","${item.totalStock}","${item.note || ''}"\n`;
+                });
+            });
+            
+            return csv;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+            loadHistory();
+            
+            // Set today as default filter date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filterDate').value = today;
+            
+            // Initialize mobile state
+            if (window.innerWidth < 1024) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('mobileOverlay');
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDetailModal();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Sanjaya - Penambahan Stok Produk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#10b981',
+                        secondary: '#059669',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                padding: 20px;
+            }
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen lg:flex">
+    <!-- Mobile Overlay -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+    
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative lg:flex-shrink-0">
+        <div class="flex flex-col h-full">
+            <!-- Logo -->
+            <div class="flex items-center justify-between px-6 py-4 border-b">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-green-400 to-green-700 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-bread-slice text-white text-xl"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-gray-900">POS Sanjaya</h1>
+                        <p class="text-xs text-gray-500">Bakery Management</p>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                <a href="index.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-home text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Dashboard Manajemen
+                </a>
+                <a href="jurnal.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-book text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Jurnal Harian
+                </a>
+                <a href="stok-bahan.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-boxes text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Stok Bahan Baku
+                </a>
+                <a href="stok-produk.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-cookie-bite text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Stok Produk
+                </a>
+                <a href="konversi-satuan.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-exchange-alt text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Konversi Satuan
+                </a>
+                <a href="resep.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-utensils text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Resep & Produksi
+                </a>
+                <a href="laporan.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-chart-line text-gray-400 group-hover:text-green-600 mr-3"></i>
+                    Laporan
+                </a>
+            </nav>
+
+            <!-- User Profile -->
+            <div class="p-4 border-t">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-green-600"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900">Admin</p>
+                        <p class="text-xs text-gray-500">Manager</p>
+                    </div>
+                </div>
+                <button class="mt-3 w-full px-3 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Keluar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content flex-1 lg:flex-1">
+        <!-- Header -->
+        <header class="no-print bg-white border-b sticky top-0 z-30">
+            <div class="px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button onclick="toggleSidebar()" class="lg:hidden mr-4 text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <div>
+                            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Penambahan Stok Produk Harian</h1>
+                            <p class="text-sm text-gray-500 mt-1">Input stok produk yang siap dijual hari ini</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="hidden sm:flex items-center px-3 py-2 bg-gray-100 rounded-lg">
+                            <i class="fas fa-calendar-alt text-gray-500 mr-2"></i>
+                            <span id="currentDate" class="text-sm font-medium text-gray-700"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <main class="p-4 sm:p-6 lg:p-8">
+            <div class="space-y-6">
+                <!-- Action Buttons -->
+                <div class="no-print flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <a href="stok-produk.html" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center">
+                            <i class="fas fa-arrow-left mr-2"></i>Kembali
+                        </a>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="history-stok-produk.html" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center">
+                            <i class="fas fa-history mr-2"></i>Riwayat
+                        </a>
+                        <button onclick="printForm()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+                            <i class="fas fa-print mr-2"></i>Print
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="bg-gradient-to-r from-green-400 to-green-700 rounded-lg p-6 text-white">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <p class="text-green-100 text-sm">Tanggal Input</p>
+                            <p class="text-xl font-bold mt-1" id="inputDate">-</p>
+                        </div>
+                        <div>
+                            <p class="text-green-100 text-sm">Total Produk Ditambah</p>
+                            <p class="text-xl font-bold mt-1" id="totalProducts">0 Item</p>
+                        </div>
+                        <div>
+                            <p class="text-green-100 text-sm">Total Quantity</p>
+                            <p class="text-xl font-bold mt-1" id="totalQuantity">0 pcs</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Input Stok -->
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div class="p-6 border-b">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Input Stok Produk Hari Ini</h3>
+                                <p class="text-sm text-gray-500 mt-1">Masukkan jumlah stok produk yang siap dijual</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok Sebelumnya</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produksi Hari Ini</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Stok</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200" id="stockTableBody">
+                                <!-- Roti Tawar -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-bread-slice text-yellow-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">Roti Tawar</p>
+                                                <p class="text-xs text-gray-500">SKU: RT001</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-medium text-gray-900" data-previous="25">25 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="number" class="production-input w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="0" min="0" data-row="0">
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="total-stock text-sm font-bold text-green-600">25 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="text" class="note-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="Catatan (opsional)">
+                                    </td>
+                                </tr>
+
+                                <!-- Roti Manis -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-cookie text-orange-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">Roti Manis</p>
+                                                <p class="text-xs text-gray-500">SKU: RM001</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-medium text-gray-900" data-previous="30">30 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="number" class="production-input w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="0" min="0" data-row="1">
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="total-stock text-sm font-bold text-green-600">30 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="text" class="note-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="Catatan (opsional)">
+                                    </td>
+                                </tr>
+
+                                <!-- Croissant -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-croissant text-amber-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">Croissant</p>
+                                                <p class="text-xs text-gray-500">SKU: CR001</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-medium text-gray-900" data-previous="15">15 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="number" class="production-input w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="0" min="0" data-row="2">
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="total-stock text-sm font-bold text-green-600">15 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="text" class="note-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="Catatan (opsional)">
+                                    </td>
+                                </tr>
+
+                                <!-- Donat -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-circle-notch text-pink-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">Donat</p>
+                                                <p class="text-xs text-gray-500">SKU: DN001</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-medium text-gray-900" data-previous="20">20 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="number" class="production-input w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="0" min="0" data-row="3">
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="total-stock text-sm font-bold text-green-600">20 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="text" class="note-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="Catatan (opsional)">
+                                    </td>
+                                </tr>
+
+                                <!-- Kue Kering -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-cookie-bite text-red-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">Kue Kering</p>
+                                                <p class="text-xs text-gray-500">SKU: KK001</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-medium text-gray-900" data-previous="50">50 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="number" class="production-input w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="0" min="0" data-row="4">
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="total-stock text-sm font-bold text-green-600">50 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="text" class="note-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="Catatan (opsional)">
+                                    </td>
+                                </tr>
+
+                                <!-- Brownies -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-brown-100 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-square text-amber-800"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">Brownies</p>
+                                                <p class="text-xs text-gray-500">SKU: BR001</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-medium text-gray-900" data-previous="10">10 box</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="number" class="production-input w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="0" min="0" data-row="5">
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="total-stock text-sm font-bold text-green-600">10 box</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="text" class="note-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="Catatan (opsional)">
+                                    </td>
+                                </tr>
+
+                                <!-- Cake -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-birthday-cake text-purple-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">Cake</p>
+                                                <p class="text-xs text-gray-500">SKU: CK001</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-medium text-gray-900" data-previous="5">5 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="number" class="production-input w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="0" min="0" data-row="6">
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="total-stock text-sm font-bold text-green-600">5 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="text" class="note-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="Catatan (opsional)">
+                                    </td>
+                                </tr>
+
+                                <!-- Pastry -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center mr-3">
+                                                <i class="fas fa-layer-group text-teal-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">Pastry</p>
+                                                <p class="text-xs text-gray-500">SKU: PS001</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-medium text-gray-900" data-previous="12">12 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="number" class="production-input w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="0" min="0" data-row="7">
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="total-stock text-sm font-bold text-green-600">12 pcs</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <input type="text" class="note-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200" 
+                                               placeholder="Catatan (opsional)">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="no-print p-6 border-t bg-gray-50">
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div class="text-sm text-gray-600">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                Input produksi untuk semua produk yang dibuat hari ini
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="resetForm()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                    Reset Form
+                                </button>
+                                <button onclick="saveStock()" class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+                                    <i class="fas fa-save mr-2"></i>Simpan Data Stok
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Update Date
+        function updateDateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('id-ID', options);
+            
+            document.getElementById('currentDate').textContent = dateStr;
+            document.getElementById('inputDate').textContent = dateStr;
+        }
+
+        // Calculate Total Stock
+        document.querySelectorAll('.production-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const row = this.closest('tr');
+                const previousStockElement = row.querySelector('[data-previous]');
+                const previousStock = parseInt(previousStockElement.dataset.previous) || 0;
+                const productionToday = parseInt(this.value) || 0;
+                const totalStock = previousStock + productionToday;
+                
+                const unit = previousStockElement.textContent.includes('box') ? 'box' : 'pcs';
+                row.querySelector('.total-stock').textContent = `${totalStock} ${unit}`;
+                
+                updateSummary();
+            });
+        });
+
+        // Update Summary
+        function updateSummary() {
+            let totalProducts = 0;
+            let totalQuantity = 0;
+            
+            document.querySelectorAll('.production-input').forEach(input => {
+                const value = parseInt(input.value) || 0;
+                if (value > 0) {
+                    totalProducts++;
+                    totalQuantity += value;
+                }
+            });
+            
+            document.getElementById('totalProducts').textContent = `${totalProducts} Item`;
+            document.getElementById('totalQuantity').textContent = `${totalQuantity} pcs`;
+        }
+
+        // Save Stock
+        function saveStock() {
+            const rows = document.querySelectorAll('#stockTableBody tr');
+            const stockData = [];
+            let hasData = false;
+            
+            rows.forEach((row, index) => {
+                const productName = row.querySelector('.text-sm.font-medium').textContent;
+                const sku = row.querySelector('.text-xs.text-gray-500').textContent;
+                const previousStock = parseInt(row.querySelector('[data-previous]').dataset.previous) || 0;
+                const productionInput = row.querySelector('.production-input');
+                const production = parseInt(productionInput.value) || 0;
+                const note = row.querySelector('.note-input').value;
+                const totalStock = row.querySelector('.total-stock').textContent;
+                
+                if (production > 0) {
+                    hasData = true;
+                    stockData.push({
+                        product: productName,
+                        sku: sku,
+                        previousStock: previousStock,
+                        production: production,
+                        totalStock: totalStock,
+                        note: note,
+                        date: new Date().toISOString()
+                    });
+                }
+            });
+            
+            if (!hasData) {
+                alert('Silakan input jumlah produksi minimal 1 produk!');
+                return;
+            }
+            
+            // Save to localStorage (history)
+            const existingHistory = JSON.parse(localStorage.getItem('productStockHistory') || '[]');
+            const newEntry = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                data: stockData,
+                totalProducts: stockData.length,
+                totalQuantity: stockData.reduce((sum, item) => sum + item.production, 0)
+            };
+            existingHistory.unshift(newEntry);
+            localStorage.setItem('productStockHistory', JSON.stringify(existingHistory));
+            
+            // Update current stock in localStorage
+            stockData.forEach(item => {
+                const currentStocks = JSON.parse(localStorage.getItem('currentProductStocks') || '{}');
+                currentStocks[item.sku] = item.totalStock;
+                localStorage.setItem('currentProductStocks', JSON.stringify(currentStocks));
+            });
+            
+            alert('Data stok berhasil disimpan!');
+            
+            // Ask if want to see history
+            if (confirm('Data berhasil disimpan! Lihat riwayat penambahan stok?')) {
+                window.location.href = 'history-stok-produk.html';
+            } else {
+                resetForm();
+            }
+        }
+
+        // Reset Form
+        function resetForm() {
+            if (confirm('Reset form? Semua data yang belum disimpan akan hilang.')) {
+                document.querySelectorAll('.production-input').forEach(input => {
+                    input.value = '';
+                });
+                document.querySelectorAll('.note-input').forEach(input => {
+                    input.value = '';
+                });
+                
+                // Reset total stock display
+                document.querySelectorAll('#stockTableBody tr').forEach(row => {
+                    const previousStockElement = row.querySelector('[data-previous]');
+                    const unit = previousStockElement.textContent.includes('box') ? 'box' : 'pcs';
+                    const previousStock = previousStockElement.dataset.previous;
+                    row.querySelector('.total-stock').textContent = `${previousStock} ${unit}`;
+                });
+                
+                updateSummary();
+            }
+        }
+
+        // Print Form
+        function printForm() {
+            window.print();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+            updateSummary();
+            
+            // Load current stocks from localStorage
+            const currentStocks = JSON.parse(localStorage.getItem('currentProductStocks') || '{}');
+            document.querySelectorAll('#stockTableBody tr').forEach(row => {
+                const sku = row.querySelector('.text-xs.text-gray-500').textContent;
+                if (currentStocks[sku]) {
+                    const previousStockElement = row.querySelector('[data-previous]');
+                    const stockValue = parseInt(currentStocks[sku]);
+                    previousStockElement.dataset.previous = stockValue;
+                    const unit = previousStockElement.textContent.includes('box') ? 'box' : 'pcs';
+                    previousStockElement.textContent = `${stockValue} ${unit}`;
+                    row.querySelector('.total-stock').textContent = `${stockValue} ${unit}`;
+                }
+            });
+            
+            // Initialize mobile state
+            if (window.innerWidth < 1024) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('mobileOverlay');
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
