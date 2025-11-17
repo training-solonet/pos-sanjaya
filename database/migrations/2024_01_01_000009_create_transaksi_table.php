@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('transaksi', function (Blueprint $table) {
             $table->id();
-            $table->string('metode')->default('tunai');
-            $table->decimal('ppn', 10, 2)->default(0);
-            $table->decimal('diskon', 10, 2)->default(0);
-            $table->decimal('bayar', 10, 2)->default(0);
-            $table->decimal('kembalian', 10, 2)->default(0);
+            $table->foreignId('id_user')->constrained('users')->onDelete('cascade');
+            $table->dateTime('tgl');
+            $table->enum('metode', ['tunai', 'kartu', 'transfer','qris'])->default('tunai');
+            $table->integer('ppn')->default(0);
+            $table->integer('diskon')->default(0);
+            $table->integer('bayar')->default(0);
+            $table->integer('kembalian')->default(0);
             $table->timestamps();
         });
     }

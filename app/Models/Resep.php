@@ -16,4 +16,9 @@ class Resep extends Model
         'catatan',
         'status',
     ];
+
+    public function rincianResep()
+    {
+        return $this->hasMany(RincianResep::class, 'id_resep');
+    }
 }

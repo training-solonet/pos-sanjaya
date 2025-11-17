@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('rincian_resep', function (Blueprint $table) {
             $table->id();
-            $table->decimal('qty', 10, 2)->default(0);
-            $table->string('hitungan')->nullable();
-            $table->decimal('harga', 10, 2)->default(0);
+            $table->foreignId('id_resep')->constrained('resep')->onDelete('cascade');
+            $table->integer('qty')->default(0);
+            $table->enum('hitungan', ['pcs', 'gram','kg','ml','liter','sdm'])->nullable();
+            $table->integer('harga')->default(0);
             $table->timestamps();
         });
     }

@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('bahan_baku', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('id_bahan')->constrained('bahan_baku')->onDelete('cascade');
+            $table->dateTime('tglupdate');
             $table->string('nama');
-            $table->decimal('stok', 10, 2)->default(0);
-            $table->string('kategori')->nullable();
-            $table->decimal('min_stok', 10, 2)->default(0);
-            $table->decimal('harga_satuan', 10, 2)->default(0);
+            $table->integer('stok')->default(0);
+            $table->enum('kategori', ['Bahan Utama', 'Bahan Pembantu'])->nullable();
+            $table->integer('min_stok')->default(0);
+            $table->integer('harga_satuan')->default(0);
             $table->timestamps();
         });
     }

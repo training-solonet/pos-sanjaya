@@ -65,4 +65,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function Transaksi()
+    {
+        return $this->hasMany(Transaksi::class, 'id_user');
+    }
 }

@@ -16,4 +16,17 @@ class Transaksi extends Model
         'bayar',
         'kembalian',
     ];
+
+    public function produk()
+    {
+        return $this->belongsTo(Produk::class, 'id_produk');
+    }
+    public function detailTransaksi()
+    {
+        return $this->hasMany(DetailTransaksi::class, 'id_transaksi');
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user');
+    }
 }

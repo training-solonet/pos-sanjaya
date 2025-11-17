@@ -12,4 +12,14 @@ class RincianResep extends Model
         'hitungan',
         'harga',
     ];
+
+    public function resep()
+    {
+        return $this->belongsTo(Resep::class, 'id_resep');
+    }
+
+    public function bahanBaku()
+    {
+        return $this->belongsTo(BahanBaku::class, 'id_bahan');
+    }
 }

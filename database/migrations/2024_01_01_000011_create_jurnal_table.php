@@ -13,11 +13,12 @@ return new class extends Migration
     {
         Schema::create('jurnal', function (Blueprint $table) {
             $table->id();
-            $table->string('jenis');
+            $table->dateTime('tgl');
+            $table->enum('jenis', ['pemasukan', 'pengeluaran']);
             $table->text('keterangan')->nullable();
-            $table->decimal('nomimal', 10, 2)->default(0);
-            $table->string('kategori')->nullable();
-            $table->string('role')->nullable();
+            $table->integer('nomimal')->default(0);
+            $table->enum('kategori', ['Operasioanl', 'Utiilitas', 'Bahan Baku', 'Penjualan', 'Trankspotasi', 'lainnya'])->nullable();
+            $table->enum('role', ['admin', 'manajemen'])->nullable();
             $table->timestamps();
         });
     }

@@ -13,8 +13,12 @@ return new class extends Migration
     {
         Schema::create('konversi', function (Blueprint $table) {
             $table->id();
-            $table->decimal('jumlah', 10, 2)->default(0);
+            $table->foreignId('id_satuan')->constrained('satuan')->onDelete('cascade');
+            $table->integer('jumlah');
             $table->timestamps();
+            $table->integer('satuan_asal');
+            $table->integer('satuan_tujuan');
+            $table->dateTime('tgl');
         });
     }
 

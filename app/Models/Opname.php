@@ -13,4 +13,9 @@ class Opname extends Model
         'catatan',
         'tgl',
     ];
+
+    public function bahanBaku()
+    {
+        return $this->belongsTo(BahanBaku::class, 'id_bahan');
+    }
 }

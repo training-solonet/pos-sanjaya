@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('rekap_produk', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('id_produk')->constrained('produk')->onDelete('cascade');
+            $table->dateTime('tgl');
             $table->string('nama');
             $table->integer('masuk')->default(0);
             $table->integer('keluar')->default(0);

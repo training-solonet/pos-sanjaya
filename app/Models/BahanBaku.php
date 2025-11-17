@@ -16,4 +16,10 @@ class BahanBaku extends Model
         'tglupdate',
         
     ];
+
+
+    public function rincianResep()
+    {
+        return $this->hasMany(RincianResep::class, 'id_bahan');
+    }
 }

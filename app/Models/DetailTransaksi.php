@@ -12,4 +12,9 @@ class DetailTransaksi extends Model
         'qty',
         'harga',
     ];
+
+    public function transaksi()
+    {
+        return $this->belongsTo(Transaksi::class, 'id_transaksi');
+    }
 }

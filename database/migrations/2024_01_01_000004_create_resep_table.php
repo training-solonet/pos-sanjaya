@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('nama');
             $table->integer('porsi')->default(1);
-            $table->string('kategori')->nullable();
+            $table->enum('kategori', ['Makanan', 'Minuman','Snack','Roti dan Pastry','Kue dan Dessert'])->nullable();
             $table->integer('waktu_pembuatan')->nullable()->comment('dalam menit');
             $table->text('langkah')->nullable();
             $table->text('catatan')->nullable();
-            $table->string('status')->default('aktif');
+            $table->enum('status', ['draft','aktif', 'nonaktif'])->default('aktif');
             $table->timestamps();
         });
     }

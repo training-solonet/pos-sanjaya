@@ -12,4 +12,8 @@ class Konversi extends Model
         'jumlah',
         'tgl',  
     ];
+    public function satuan()
+    {
+        return $this->belongsTo(Satuan::class, 'id_satuan');
+    }
 }

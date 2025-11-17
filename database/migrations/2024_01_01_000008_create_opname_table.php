@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('opname', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('id_bahan')->constrained('bahan_baku')->onDelete('cascade');
+            $table->dateTime('tgl');
             $table->decimal('stok', 10, 2)->default(0);
             $table->text('catatan')->nullable();
             $table->timestamps();
