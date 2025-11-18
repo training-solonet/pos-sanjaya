@@ -17,39 +17,42 @@
 
     <!-- Navigation Menu -->
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      @php
+        $isDashboard = request()->routeIs('manajemen_dashboard') || request()->routeIs('manajemen.index') || request()->routeIs('manajemen.dashboard') || request()->is('manajemen');
+      @endphp
       <a href="index.html"
-        class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg">
-        <i class="fas fa-home text-white mr-3"></i>
+        class="{{ $isDashboard ? 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg' : 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100' }}">
+        <i class="{{ $isDashboard ? 'fas fa-home text-white mr-3' : 'fas fa-home text-gray-400 group-hover:text-green-600 mr-3' }}"></i>
         Dashboard Manajemen
       </a>
-      <a href="{{ route("manajemen_jurnal") }}"
-        class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-        <i class="fas fa-book text-gray-400 group-hover:text-green-600 mr-3"></i>
+      <a href="{{ route('manajemen_jurnal') }}"
+        class="{{ request()->routeIs('manajemen_jurnal') ? 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg' : 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100' }}">
+        <i class="{{ request()->routeIs('manajemen_jurnal') ? 'fas fa-book text-white mr-3' : 'fas fa-book text-gray-400 group-hover:text-green-600 mr-3' }}"></i>
         Jurnal Harian
       </a>
-      <a href="{{ route("manajemen_bahanbaku") }}"
-        class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-        <i class="fas fa-boxes text-gray-400 group-hover:text-green-600 mr-3"></i>
+      <a href="{{ route('manajemen_bahanbaku') }}"
+        class="{{ request()->routeIs('manajemen_bahanbaku') ? 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg' : 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100' }}">
+        <i class="{{ request()->routeIs('manajemen_bahanbaku') ? 'fas fa-boxes text-white mr-3' : 'fas fa-boxes text-gray-400 group-hover:text-green-600 mr-3' }}"></i>
         Stok Bahan Baku
       </a>
       <a href='{{ route("manajemen_produk") }}'
-        class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-        <i class="fas fa-cookie-bite text-gray-400 group-hover:text-green-600 mr-3"></i>
+        class="{{ request()->routeIs('manajemen_produk') ? 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg' : 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100' }}">
+        <i class="{{ request()->routeIs('manajemen_produk') ? 'fas fa-cookie-bite text-white mr-3' : 'fas fa-cookie-bite text-gray-400 group-hover:text-green-600 mr-3' }}"></i>
         Stok Produk
       </a>
-      <a href="{{ route("manajemen_konversi") }}"
-        class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-        <i class="fas fa-exchange-alt text-gray-400 group-hover:text-green-600 mr-3"></i>
+      <a href="{{ route('manajemen_konversi') }}"
+        class="{{ request()->routeIs('manajemen_konversi') ? 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg' : 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100' }}">
+        <i class="{{ request()->routeIs('manajemen_konversi') ? 'fas fa-exchange-alt text-white mr-3' : 'fas fa-exchange-alt text-gray-400 group-hover:text-green-600 mr-3' }}"></i>
         Konversi Satuan
       </a>
-      <a href="{{ route("manajemen_resep") }}"
-        class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-        <i class="fas fa-utensils text-gray-400 group-hover:text-green-600 mr-3"></i>
+      <a href="{{ route('manajemen_resep') }}"
+        class="{{ request()->routeIs('manajemen_resep') ? 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg' : 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100' }}">
+        <i class="{{ request()->routeIs('manajemen_resep') ? 'fas fa-utensils text-white mr-3' : 'fas fa-utensils text-gray-400 group-hover:text-green-600 mr-3' }}"></i>
         Resep & Produksi
       </a>
-      <a href="{{ route("manajemen_laporan") }}"
-        class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-        <i class="fas fa-chart-line text-gray-400 group-hover:text-green-600 mr-3"></i>
+      <a href="{{ route('manajemen_laporan') }}"
+        class="{{ request()->routeIs('manajemen_laporan') ? 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg' : 'nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100' }}">
+        <i class="{{ request()->routeIs('manajemen_laporan') ? 'fas fa-chart-line text-white mr-3' : 'fas fa-chart-line text-gray-400 group-hover:text-green-600 mr-3' }}"></i>
         Laporan
       </a>
     </nav>

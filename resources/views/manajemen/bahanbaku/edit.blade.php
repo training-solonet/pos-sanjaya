@@ -1,4 +1,4 @@
-@extends('layouts.manajemen.index')
+@extends('layouts.manajemen.header')
 
 @section('content')
     <main class="p-4 sm:p-6 lg:p-8">

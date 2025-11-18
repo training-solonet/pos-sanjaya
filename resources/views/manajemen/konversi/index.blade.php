@@ -1,4 +1,11 @@
+@extends('layouts.manajemen.header')
 
+@section('title', 'Konversi')
+@section('content')
+
+@endsection
+
+{{-- 
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -1041,4 +1048,4 @@
         }
     </script>
 </body>
-</html>
+</html> --}}
