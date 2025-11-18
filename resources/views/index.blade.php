@@ -504,7 +504,7 @@
 
                 // Redirect to kasir
                 setTimeout(() => {
-                    window.location.href = "kasir/index.html";
+                    window.location.href = "layouts/kasir/index.html";
                 }, 1000);
             }
 
@@ -526,7 +526,7 @@
 
                 // Redirect to manajemen
                 setTimeout(() => {
-                    window.location.href = "manajemen/index.html";
+                    window.location.href = "{{ route("manajemen") }}";
                 }, 1000);
             }
 

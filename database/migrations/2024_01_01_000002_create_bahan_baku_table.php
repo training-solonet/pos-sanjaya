@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('bahan_baku', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_bahan')->constrained('bahan_baku')->onDelete('cascade');
             $table->dateTime('tglupdate');
             $table->string('nama');
             $table->integer('stok')->default(0);
