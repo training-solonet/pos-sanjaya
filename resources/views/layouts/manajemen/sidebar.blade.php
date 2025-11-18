@@ -17,37 +17,37 @@
 
     <!-- Navigation Menu -->
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-      <a href="index.html"
+      <a href="{{ route('manajemen.dashboard') }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg">
         <i class="fas fa-home text-white mr-3"></i>
         Dashboard Manajemen
       </a>
-      <a href="jurnal.html"
+      <a href="{{ route('manajemen.jurnal') }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-book text-gray-400 group-hover:text-green-600 mr-3"></i>
         Jurnal Harian
       </a>
-      <a href="stok-bahan.html"
+      <a href="{{ route('manajemen.bahanbaku') }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-boxes text-gray-400 group-hover:text-green-600 mr-3"></i>
         Stok Bahan Baku
       </a>
-      <a href="stok-produk.html"
+      <a href="{{ route('manajemen.produk') }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-cookie-bite text-gray-400 group-hover:text-green-600 mr-3"></i>
         Stok Produk
       </a>
-      <a href="konversi-satuan.html"
+      <a href="{{ route('manajemen.konversi') }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-exchange-alt text-gray-400 group-hover:text-green-600 mr-3"></i>
         Konversi Satuan
       </a>
-      <a href="resep.html"
+      <a href="{{ route('manajemen.resep') }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-utensils text-gray-400 group-hover:text-green-600 mr-3"></i>
         Resep & Produksi
       </a>
-      <a href="laporan.html"
+      <a href="{{ route('manajemen.laporan') }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-chart-line text-gray-400 group-hover:text-green-600 mr-3"></i>
         Laporan

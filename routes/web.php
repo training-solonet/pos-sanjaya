@@ -45,3 +45,8 @@ Route::middleware([
             Route::resource('laporan', \App\Http\Controllers\Kasir\LaporanController::class);
         });
 });
+
+
+route::get("/reg", function(  ){
+    return view("auth.register");
+});
