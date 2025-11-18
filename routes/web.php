@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use http\controller\App\Http\Controllers\Manajemen;
 use App\Http\Controllers\Manajemen\ProdukController;
+use App\Http\Controllers\Manajemen\BahanbakuController;
 
 Route::get('/', function () {
     return view('index');
