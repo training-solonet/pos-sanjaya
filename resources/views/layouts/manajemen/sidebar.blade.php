@@ -1,4 +1,4 @@
- <div id="sidebar"
+<div id="sidebar"
     class="sidebar fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative lg:flex-shrink-0">
     <div class="flex items-center justify-between h-16 px-6 border-b border-gray-200">
       <div class="flex items-center space-x-3">
@@ -17,37 +17,37 @@
 
     <!-- Navigation Menu -->
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-      <a href="{{ route('manajemen.dashboard') }}"
+      <a href="index.html"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg">
         <i class="fas fa-home text-white mr-3"></i>
         Dashboard Manajemen
       </a>
-      <a href="{{ route('manajemen.jurnal') }}"
+      <a href="{{ route("manajemen_jurnal") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-book text-gray-400 group-hover:text-green-600 mr-3"></i>
         Jurnal Harian
       </a>
-      <a href="{{ route('manajemen.bahanbaku') }}"
+      <a href="{{ route("manajemen_bahanbaku") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-boxes text-gray-400 group-hover:text-green-600 mr-3"></i>
         Stok Bahan Baku
       </a>
-      <a href="{{ route('manajemen.produk') }}"
+      <a href='{{ route("manajemen_produk") }}'
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-cookie-bite text-gray-400 group-hover:text-green-600 mr-3"></i>
         Stok Produk
       </a>
-      <a href="{{ route('manajemen.konversi') }}"
+      <a href="{{ route("manajemen_konversi") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-exchange-alt text-gray-400 group-hover:text-green-600 mr-3"></i>
         Konversi Satuan
       </a>
-      <a href="{{ route('manajemen.resep') }}"
+      <a href="{{ route("manajemen_resep") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-utensils text-gray-400 group-hover:text-green-600 mr-3"></i>
         Resep & Produksi
       </a>
-      <a href="{{ route('manajemen.laporan') }}"
+      <a href="{{ route("manajemen_laporan") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-chart-line text-gray-400 group-hover:text-green-600 mr-3"></i>
         Laporan
