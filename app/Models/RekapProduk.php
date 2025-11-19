@@ -8,6 +8,7 @@ class RekapProduk extends Model
 {
     //
     protected $table = 'rekap_produk';
+
     protected $fillable = [
         'nama',
         'masuk',

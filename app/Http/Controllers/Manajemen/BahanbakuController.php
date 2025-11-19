@@ -13,7 +13,7 @@ class BahanbakuController extends Controller
     public function index()
     {
         //
-        
+
     }
 
     /**
