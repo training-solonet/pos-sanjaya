@@ -320,31 +320,7 @@
                                 <i class="fas fa-arrow-right"></i>
                             </button>
                         </form>
-
-                        <!-- Quick Access Buttons -->
-                        <div class="mt-8 pt-6 border-t border-white/20">
-                            <p class="text-center text-white/70 text-sm mb-4">
-                                Atau akses langsung sebagai:
-                            </p>
-                            <div class="grid grid-cols-2 gap-4">
-                                <!-- Kasir Button -->
-                                <button
-                                    onclick="redirectToKasir()"
-                                    class="bg-blue-500/20 hover:bg-blue-500/30 border border-blue-300/30 text-white py-3 px-4 rounded-xl transition-all duration-300 flex flex-col items-center space-y-2 hover:transform hover:scale-105"
-                                >
-                                    <i class="fas fa-cash-register text-xl"></i>
-                                    <span class="font-medium">Kasir</span>
-                                </button>
-
-                                <!-- Manajemen Button -->
-                                <button
-                                    onclick="redirectToManajemen()"
-                                    class="bg-purple-500/20 hover:bg-purple-500/30 border border-purple-300/30 text-white py-3 px-4 rounded-xl transition-all duration-300 flex flex-col items-center space-y-2 hover:transform hover:scale-105"
-                                >
-                                    <i class="fas fa-cogs text-xl"></i>
-                                    <span class="font-medium">Manajemen</span>
-                                </button>
-                            </div>
+                      
                         </div>
                     </div>
                 </div>

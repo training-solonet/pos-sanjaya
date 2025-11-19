@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class BahanBaku extends Model
 {
     protected $table = 'bahan_baku';
+
     protected $fillable = [
         'nama',
         'stok',
@@ -14,9 +15,8 @@ class BahanBaku extends Model
         'min_stok',
         'harga_satuan',
         'tglupdate',
-        
-    ];
 
+    ];
 
     public function rincianResep()
     {

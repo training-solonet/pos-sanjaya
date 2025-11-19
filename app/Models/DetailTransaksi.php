@@ -8,6 +8,7 @@ class DetailTransaksi extends Model
 {
     //
     protected $table = 'detail_transaksi';
+
     protected $fillable = [
         'qty',
         'harga',

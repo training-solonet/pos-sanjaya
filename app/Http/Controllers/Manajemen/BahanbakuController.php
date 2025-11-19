@@ -14,7 +14,6 @@ class BahanbakuController extends Controller
     {
         //
         return view("manajemen.bahanbaku.index");
-        
     }
 
     /**

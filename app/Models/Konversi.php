@@ -8,10 +8,12 @@ class Konversi extends Model
 {
     //
     protected $table = 'konversi';
+
     protected $fillable = [
         'jumlah',
-        'tgl',  
+        'tgl',
     ];
+
     public function satuan()
     {
         return $this->belongsTo(Satuan::class, 'id_satuan');
