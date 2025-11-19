@@ -1,83 +1,50 @@
 <?php
 
+use App\Http\Controllers\Kasir\DashboardController as KasirDashboardController;
+use App\Http\Controllers\Kasir\JurnalController as KasirJurnalController;
+use App\Http\Controllers\Kasir\LaporanController as KasirLaporanController;
+use App\Http\Controllers\Kasir\TransaksiController;
+use App\Http\Controllers\Manajemen\BahanbakuController;
+use App\Http\Controllers\Manajemen\DashboardController;
+use App\Http\Controllers\Manajemen\JurnalController;
+use App\Http\Controllers\Manajemen\KonversiController;
+use App\Http\Controllers\Manajemen\LaporanController;
 use App\Http\Controllers\Manajemen\ProdukController;
-use http\controller\App\Http\Controllers\Manajemen;
+use App\Http\Controllers\Manajemen\ResepController;
+use App\Http\Controllers\RedirectController;
+use App\Http\Middleware\IsKasir;
+use App\Http\Middleware\IsManagement;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/redirect', [RedirectController::class, 'redirectToRoleBasedDashboard']);
+
 Route::get('/', function () {
-    return redirect('/login');
+    return redirect('/redirect');
 });
 
-Route::middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified',
-])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-
-    // Routes for role 'manajemen' (controllers in App\Http\Controllers\Manajemen)
-    Route::middleware('role:manajemen')
-        ->prefix('manajemen')
-        ->name('manajemen.')
-        ->group(function () {
-            // Dashboard (only index)
-            Route::get('/', [\App\Http\Controllers\Manajemen\DashboardController::class, 'index'])->name('dashboard');
-
-            // Resource routes for management controllers
-            Route::resource('bahanbaku', \App\Http\Controllers\Manajemen\BahanbakuController::class);
-            Route::resource('produk', \App\Http\Controllers\Manajemen\ProdukController::class);
-            Route::resource('resep', \App\Http\Controllers\Manajemen\ResepController::class);
-            Route::resource('konversi', \App\Http\Controllers\Manajemen\KonversiController::class);
-            Route::resource('jurnal', \App\Http\Controllers\Manajemen\JurnalController::class);
-        });
-
-    // Routes for role 'kasir' (controllers in App\Http\Controllers\Kasir)
-    Route::middleware('role:kasir')
-        ->prefix('kasir')
-        ->name('kasir.')
-        ->group(function () {
-            // Dashboard (only index)
-            Route::get('/', [\App\Http\Controllers\Kasir\DashboardController::class, 'index'])->name('dashboard');
-
-            // Resource routes for kasir controllers
-            Route::resource('transaksi', \App\Http\Controllers\Kasir\TransaksiController::class);
-            Route::resource('jurnal', \App\Http\Controllers\Kasir\JurnalController::class);
-            Route::resource('laporan', \App\Http\Controllers\Kasir\LaporanController::class);
-        });
+Route::middleware([IsKasir::class])->group(function () {
+    // Route group kasir
+    Route::group(['prefix' => 'kasir', 'as' => 'kasir.'], function () {
+        Route::resources([
+            'dashboard' => KasirDashboardController::class,
+            'jurnal' => KasirJurnalController::class,
+            'transaksi' => TransaksiController::class,
+            'laporan' => KasirLaporanController::class,
+        ]);
+    });
 });
 
-route::get('/reg', function () {
-    return view('auth.register');
+Route::middleware([IsManagement::class])->group(function () {
+    // Route group management
+    Route::group(['prefix' => 'management', 'as' => 'management.'], function () {
+        Route::resources([
+            'dashboard' => DashboardController::class,
+            'bahanbaku' => BahanbakuController::class,
+            'produk' => ProdukController::class,
+            'resep' => ResepController::class,
+            'konversi' => KonversiController::class,
+            'jurnal' => JurnalController::class,
+            'laporan' => LaporanController::class,
+        ]);
+    });
 });
-
-Route::resource('/manajemen/produk', ProdukController::class);
-
-Route::get('/manajemen-produk', function () {
-    return view('manajemen.produk.index');
-})->name('manajemen_produk');
-
-Route::get('/manajemen-resep', function () {
-    return view('manajemen.resep.index');
-})->name('manajemen_resep');
-
-Route::get('/manajemen-jurnal', function () {
-    return view('manajemen.jurnal.index');
-})->name('manajemen_jurnal');
-
-Route::get('/manajemen-konversi', function () {
-    return view('manajemen.konversi.index');
-})->name('manajemen_konversi');
-
-Route::get('/manajemen-bahanbaku', function () {
-    return view('manajemen.bahanbaku.index');
-})->name('manajemen_bahanbaku');
-
-Route::get('/manajemen-laporan', function () {
-    return view('manajemen.laporan.index');
-})->name('manajemen_laporan');
-
-route::get('/manajemen-admin', function () {
-    return view('layouts.manajemen.index');
-})->name('manajemen');

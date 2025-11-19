@@ -71,6 +71,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Transaksi::class, 'id_user');
     }
+
     public function hasRole($role)
     {
         return $this->role === $role;
