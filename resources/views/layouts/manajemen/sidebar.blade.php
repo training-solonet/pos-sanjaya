@@ -22,32 +22,32 @@
         <i class="fas fa-home text-white mr-3"></i>
         Dashboard Manajemen
       </a>
-      <a href="{{ route("manajemen_jurnal") }}"
+      <a href="{{ route("management.jurnal.index") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-book text-gray-400 group-hover:text-green-600 mr-3"></i>
         Jurnal Harian
       </a>
-      <a href="{{ route("manajemen_bahanbaku") }}"
+      <a href="{{ route("management.bahanbaku.index") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-boxes text-gray-400 group-hover:text-green-600 mr-3"></i>
         Stok Bahan Baku
       </a>
-      <a href='{{ route("manajemen_produk") }}'
+      <a href='{{ route("management.produk.index") }}'
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-cookie-bite text-gray-400 group-hover:text-green-600 mr-3"></i>
         Stok Produk
       </a>
-      <a href="{{ route("manajemen_konversi") }}"
+      <a href="{{ route("management.konversi.index") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-exchange-alt text-gray-400 group-hover:text-green-600 mr-3"></i>
         Konversi Satuan
       </a>
-      <a href="{{ route("manajemen_resep") }}"
+      <a href="{{ route("management.resep.index") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-utensils text-gray-400 group-hover:text-green-600 mr-3"></i>
         Resep & Produksi
       </a>
-      <a href="{{ route("manajemen_laporan") }}"
+      <a href="{{ route("management.laporan.index") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
         <i class="fas fa-chart-line text-gray-400 group-hover:text-green-600 mr-3"></i>
         Laporan

@@ -20,28 +20,28 @@
     <nav class="mt-6 px-3">
         <div class="space-y-1">
             <!-- Dashboard -->
-            <a href="index.html"
+            <a href="{{ route("kasir.dashboard.index") }}"
                 class="nav-item group flex items-center px-3 py-3 text-sm font-medium rounded-lg bg-gradient-to-r from-green-400 to-green-700 text-white">
                 <i class="fas fa-tachometer-alt mr-3 text-lg"></i>
                 Dashboard Kasir
             </a>
 
             <!-- Transaksi -->
-            <a href="transaksi.html"
+            <a href="{{ route("kasir.transaksi.index") }}"
                 class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
                 <i class="fas fa-cash-register mr-3 text-lg"></i>
                 Transaksi Penjualan
             </a>
 
             <!-- Laporan -->
-            <a href="laporan.html"
+            <a href="{{ route("kasir.laporan.index") }}"
                 class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
                 <i class="fas fa-file-alt mr-3 text-lg"></i>
                 Laporan Penjualan
             </a>
 
             <!-- Jurnal Harian -->
-            <a href="jurnal.html"
+            <a href="{{ route("kasir.jurnal.index") }}"
                 class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
                 <i class="fas fa-book mr-3 text-lg"></i>
                 Jurnal Harian
@@ -65,21 +65,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    function updateDateTime() {
-        const now = new Date();
-        const options = {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
-        const dateTimeElement = document.getElementById('currentDateTime');
-        if (dateTimeElement) {
-            dateTimeElement.textContent = now.toLocaleDateString('id-ID', options);
-        }
-    }
-</script>
