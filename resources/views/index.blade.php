@@ -526,7 +526,7 @@
 
                 // Redirect to manajemen
                 setTimeout(() => {
-                    window.location.href = "{{ route("manajemen") }}";
+                    window.location.href = "{{ route("manajemen.dashboard")}}";
                 }, 1000);
             }
 

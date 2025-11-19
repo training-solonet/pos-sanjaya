@@ -1,4 +1,4 @@
-@extends('layouts.manajemen.header')
+@extends('layouts.manajemen.index')
 
 @section('title', 'Stok Bahan Baku')
 @section('content')
