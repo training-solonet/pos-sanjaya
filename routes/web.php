@@ -1,11 +1,11 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use http\controller\App\Http\Controllers\Manajemen;
 use App\Http\Controllers\Manajemen\ProdukController;
+use http\controller\App\Http\Controllers\Manajemen;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('index');
+    return redirect('/login');
 });
 
 Route::middleware([
@@ -48,38 +48,36 @@ Route::middleware([
         });
 });
 
-
-route::get("/reg", function(  ){
-    return view("auth.register");
+route::get('/reg', function () {
+    return view('auth.register');
 });
-
 
 Route::resource('/manajemen/produk', ProdukController::class);
 
-Route::get("/manajemen-produk", function(){
-    return view("manajemen.produk.index");
-})->name("manajemen_produk");
+Route::get('/manajemen-produk', function () {
+    return view('manajemen.produk.index');
+})->name('manajemen_produk');
 
-Route::get("/manajemen-resep", function(){
-    return view("manajemen.resep.index");
-})->name("manajemen_resep");
+Route::get('/manajemen-resep', function () {
+    return view('manajemen.resep.index');
+})->name('manajemen_resep');
 
-Route::get("/manajemen-jurnal", function(){
-    return view("manajemen.jurnal.index");
-})->name("manajemen_jurnal");
+Route::get('/manajemen-jurnal', function () {
+    return view('manajemen.jurnal.index');
+})->name('manajemen_jurnal');
 
-Route::get("/manajemen-konversi", function(){
-    return view("manajemen.konversi.index");
-})->name("manajemen_konversi");
+Route::get('/manajemen-konversi', function () {
+    return view('manajemen.konversi.index');
+})->name('manajemen_konversi');
 
-Route::get("/manajemen-bahanbaku", function(){
-    return view("manajemen.bahanbaku.index");
-})->name("manajemen_bahanbaku");
+Route::get('/manajemen-bahanbaku', function () {
+    return view('manajemen.bahanbaku.index');
+})->name('manajemen_bahanbaku');
 
-Route::get("/manajemen-laporan", function(){
-    return view("manajemen.laporan.index");
-})->name("manajemen_laporan");
+Route::get('/manajemen-laporan', function () {
+    return view('manajemen.laporan.index');
+})->name('manajemen_laporan');
 
-route::get('/manajemen-admin', function(){
-    return view("layouts.manajemen.index");
-})->name("manajemen");
+route::get('/manajemen-admin', function () {
+    return view('layouts.manajemen.index');
+})->name('manajemen');

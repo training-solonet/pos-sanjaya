@@ -8,6 +8,7 @@ class Jurnal extends Model
 {
     //
     protected $table = 'jurnal';
+
     protected $fillable = [
         'jenis',
         'keterangan',

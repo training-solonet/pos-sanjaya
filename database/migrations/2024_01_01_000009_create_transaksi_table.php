@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_user')->constrained('users')->onDelete('cascade');
             $table->dateTime('tgl');
-            $table->enum('metode', ['tunai', 'kartu', 'transfer','qris'])->default('tunai');
+            $table->enum('metode', ['tunai', 'kartu', 'transfer', 'qris'])->default('tunai');
             $table->integer('ppn')->default(0);
             $table->integer('diskon')->default(0);
             $table->integer('bayar')->default(0);
