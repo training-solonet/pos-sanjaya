@@ -3,10 +3,10 @@ name: Laravel CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
@@ -30,7 +30,7 @@ jobs:
             echo "🚀 Starting deployment..."
             
             # Navigate to project directory
-            cd ${{ secrets.PROJECT_PATH }}
+            cd /var/www/pos-sanjaya
             
             echo "📦 Pulling latest changes from Git..."
             git fetch origin
