@@ -17,7 +17,7 @@
 
     <!-- Navigation Menu -->
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-      <a href="index.html"
+      <a href="{{ route("management.dashboard.index") }}"
         class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg">
         <i class="fas fa-home text-white mr-3"></i>
         Dashboard Manajemen
