@@ -13,6 +13,7 @@ class ResepController extends Controller
     public function index()
     {
         //
+        return view('manajemen.resep.index');
     }
 
     /**
