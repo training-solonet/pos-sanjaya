@@ -1,5 +1,6 @@
-<header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-    <div class="px-4 sm:px-6 lg:px-8">
+<!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+      <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <!-- Mobile Menu Button & Page Title -->
             <div class="flex items-center space-x-4">
@@ -22,5 +23,5 @@
                 </button>
             </div>
         </div>
-    </div>
-</header>
+      </div>
+    </header>

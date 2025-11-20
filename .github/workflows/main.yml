@@ -1,0 +1,42 @@
+name: Laravel CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT || 22 }}
+          script_stop: true
+          script: |
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project directory
+            cd /var/www/pos-sanjaya
+            
+            echo "📦 Pulling latest changes from Git..."
+            git fetch origin
+            git reset --hard origin/${{ github.ref_name }}
+            
+            echo "📥 Installing Composer dependencies..."
+            composer install --no-dev --optimize-autoloader --no-interaction
+            
+            echo "✅ Deployment completed successfully!"

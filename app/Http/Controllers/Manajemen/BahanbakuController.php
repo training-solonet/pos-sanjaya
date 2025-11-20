@@ -13,8 +13,7 @@ class BahanbakuController extends Controller
     public function index()
     {
         //
-        return view("manajemen.bahanbaku.index");
-        
+
     }
 
     /**

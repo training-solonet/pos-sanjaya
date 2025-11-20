@@ -8,6 +8,7 @@ class Opname extends Model
 {
     //
     protected $table = 'opname';
+
     protected $fillable = [
         'stok',
         'catatan',
