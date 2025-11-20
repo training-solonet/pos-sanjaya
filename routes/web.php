@@ -22,6 +22,9 @@ Route::get('/', function () {
     return redirect('/redirect');
 });
 
+// Logout route
+Route::post('/logout', [RedirectController::class, 'logout'])->name('logout')->middleware('auth');
+
 Route::middleware([IsKasir::class])->group(function () {
     // Route group kasir
     Route::group(['prefix' => 'kasir', 'as' => 'kasir.'], function () {

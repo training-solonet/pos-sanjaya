@@ -61,13 +61,16 @@
           <i class="fas fa-user text-gray-600"></i>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-900 truncate">Admin</p>
-          <p class="text-xs text-gray-500">Manager</p>
+          <p class="text-sm font-medium text-gray-900 truncate">{{ Auth::user()->name }}</p>
+          <p class="text-xs text-gray-500">{{ ucfirst(Auth::user()->role) }}</p>
         </div>
-        <a href="../index.html"
-          class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-red-100 hover:text-red-600">
-          <i class="fas fa-sign-out-alt text-gray-600 text-sm"></i>
-        </a>
+        <form method="POST" action="{{ route('logout') }}">
+          @csrf
+          <button type="submit"
+            class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors duration-200">
+            <i class="fas fa-sign-out-alt text-gray-600 text-sm hover:text-red-600"></i>
+          </button>
+        </form>
       </div>
     </div>
   </div>
