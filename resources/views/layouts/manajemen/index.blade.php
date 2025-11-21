@@ -61,8 +61,8 @@
 
 <body class="bg-gray-50 min-h-screen lg:flex">
   <!-- Mobile Overlay -->
-  <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()">
-  </div>
+  {{-- <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()">
+  </div> --}}
 
   <!-- Sidebar -->
    @include('layouts.manajemen.sidebar')
@@ -72,7 +72,7 @@
   </div>
 
   <!-- Main Content -->
-  <div class="content flex-1 lg:flex-1">
+  <div class="content flex-1 lg:ml-64">
     <!-- Header -->
      @include('layouts.manajemen.header')
      <!-- Page Content -->
