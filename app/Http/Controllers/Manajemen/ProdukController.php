@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Produk;
 use App\Models\BahanBaku;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProdukController extends Controller
 {
@@ -16,16 +16,8 @@ class ProdukController extends Controller
     public function index()
     {
         $produk = Produk::with('bahan_baku')->get();
-        return view('manajemen.produk.index', compact('produk'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        $bahan_baku = BahanBaku::all();
-        return response()->json($bahan_baku);
+        $bahan_baku = BahanBaku::all(); // Untuk dropdown di modal
+        return view('manajemen.produk.index', compact('produk', 'bahan_baku'));
     }
 
     /**
@@ -33,6 +25,8 @@ class ProdukController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info('Store Product Request:', $request->all());
+
         $request->validate([
             'nama' => 'required|string|max:255',
             'id_bahan_baku' => 'required|exists:bahan_baku,id',
@@ -50,6 +44,7 @@ class ProdukController extends Controller
                 'message' => 'Produk berhasil ditambahkan'
             ]);
         } catch (\Exception $e) {
+            Log::error('Store Product Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menambahkan produk: ' . $e->getMessage()
@@ -66,6 +61,7 @@ class ProdukController extends Controller
             $produk = Produk::with('bahan_baku')->findOrFail($id);
             return response()->json($produk);
         } catch (\Exception $e) {
+            Log::error('Show Product Error: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Produk tidak ditemukan'
             ], 404);
@@ -73,18 +69,12 @@ class ProdukController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
     {
+        Log::info('Update Product Request:', ['id' => $id, 'data' => $request->all()]);
+
         $request->validate([
             'nama' => 'required|string|max:255',
             'id_bahan_baku' => 'required|exists:bahan_baku,id',
@@ -103,6 +93,7 @@ class ProdukController extends Controller
                 'message' => 'Produk berhasil diupdate'
             ]);
         } catch (\Exception $e) {
+            Log::error('Update Product Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengupdate produk: ' . $e->getMessage()
@@ -124,6 +115,7 @@ class ProdukController extends Controller
                 'message' => 'Produk berhasil dihapus'
             ]);
         } catch (\Exception $e) {
+            Log::error('Delete Product Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus produk: ' . $e->getMessage()
@@ -139,4 +131,8 @@ class ProdukController extends Controller
         $bahan_baku = BahanBaku::select('id', 'nama')->get();
         return response()->json($bahan_baku);
     }
+
+    // Method create dan edit (kosong karena menggunakan modal)
+    public function create() {}
+    public function edit(string $id) {}
 }

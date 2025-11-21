@@ -334,9 +334,10 @@
     </div>
   </div>
 
-  <script>
+ <script>
     let sidebarOpen = false;
     let bahanBakuData = [];
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     // Toggle sidebar
     function toggleSidebar() {
@@ -366,8 +367,8 @@
     }
 
     function openEditProductModal(productId) {
-      // Fetch product data and populate form
-      fetch(`/manajemen/produk/${productId}`)
+      // Fetch product data and populate form - GUNAKAN ROUTE YANG BENAR
+      fetch(`/management/produk/${productId}`)
         .then(response => {
           if (!response.ok) {
             throw new Error('Produk tidak ditemukan');
@@ -375,12 +376,19 @@
           return response.json();
         })
         .then(data => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
           document.getElementById('edit_id').value = data.id;
           document.getElementById('edit_nama').value = data.nama;
           document.getElementById('edit_stok').value = data.stok;
           document.getElementById('edit_min_stok').value = data.min_stok;
           document.getElementById('edit_harga').value = data.harga;
-          document.getElementById('edit_kadaluarsa').value = data.kadaluarsa.split('T')[0]; // Format date untuk input type="date"
+          
+          // Format date untuk input type="date"
+          const kadaluarsaDate = new Date(data.kadaluarsa);
+          document.getElementById('edit_kadaluarsa').value = kadaluarsaDate.toISOString().split('T')[0];
           
           // Load bahan baku options dan set yang dipilih
           loadBahanBakuOptions('edit', data.id_bahan_baku);
@@ -388,7 +396,7 @@
         })
         .catch(error => {
           console.error('Error:', error);
-          Swal.fire('Error', 'Gagal memuat data produk', 'error');
+          Swal.fire('Error', error.message || 'Gagal memuat data produk', 'error');
         });
     }
 
@@ -396,13 +404,16 @@
       document.getElementById('editModal').classList.add('hidden');
     }
 
-    // Load bahan baku options for select
+    // Load bahan baku options for select - FIXED VERSION
     function loadBahanBakuOptions(modalType, selectedId = null) {
+      // Gunakan endpoint yang benar
+      const endpoint = '/management/api/bahan-baku';
+
       if (bahanBakuData.length === 0) {
-        fetch('/manajemen/api/bahan-baku')
+        fetch(endpoint)
           .then(response => {
             if (!response.ok) {
-              throw new Error('Gagal mengambil data bahan baku');
+              throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
           })
@@ -411,8 +422,21 @@
             populateBahanBakuSelect(modalType, selectedId);
           })
           .catch(error => {
-            console.error('Error fetching bahan baku:', error);
-            Swal.fire('Error', 'Gagal memuat data bahan baku', 'error');
+            console.error(`Error fetching from ${endpoint}:`, error);
+            // Fallback ke endpoint lain jika perlu
+            fetch('/api/bahan-baku')
+              .then(response => {
+                if (!response.ok) throw new Error('Fallback failed');
+                return response.json();
+              })
+              .then(data => {
+                bahanBakuData = data;
+                populateBahanBakuSelect(modalType, selectedId);
+              })
+              .catch(fallbackError => {
+                console.error('Fallback also failed:', fallbackError);
+                Swal.fire('Error', 'Gagal memuat data bahan baku', 'error');
+              });
           });
       } else {
         populateBahanBakuSelect(modalType, selectedId);
@@ -436,64 +460,98 @@
       });
     }
 
-    // Form submission handlers
+    // Form submission handlers - FIXED VERSION (menggunakan JSON seperti bahan baku)
     document.getElementById('addProductForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      const formData = new FormData(this);
       
-      fetch('/manajemen/produk', {
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Convert numbers
+      data.stok = parseInt(data.stok);
+      data.min_stok = parseInt(data.min_stok);
+      data.harga = parseInt(data.harga);
+      data.id_bahan_baku = parseInt(data.id_bahan_baku);
+      
+      fetch('/management/produk', {
         method: 'POST',
-        body: formData,
         headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.success) {
           Swal.fire('Sukses', data.message || 'Produk berhasil ditambahkan', 'success');
           closeAddModal();
-          location.reload();
+          setTimeout(() => location.reload(), 1500);
         } else {
           Swal.fire('Error', data.message || 'Gagal menambahkan produk', 'error');
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        Swal.fire('Error', 'Terjadi kesalahan', 'error');
+        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
       });
     });
 
     document.getElementById('editProductForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const productId = document.getElementById('edit_id').value;
-      const formData = new FormData(this);
       
-      fetch(`/manajemen/produk/${productId}`, {
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Remove _token and _method from data
+      delete data._token;
+      delete data._method;
+      
+      // Convert numbers
+      data.stok = parseInt(data.stok);
+      data.min_stok = parseInt(data.min_stok);
+      data.harga = parseInt(data.harga);
+      data.id_bahan_baku = parseInt(data.id_bahan_baku);
+      
+      fetch(`/management/produk/${productId}`, {
         method: 'POST',
-        body: formData,
         headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-          'X-HTTP-Method-Override': 'PUT'
-        }
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          'X-HTTP-Method-Override': 'PUT',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.success) {
           Swal.fire('Sukses', data.message || 'Produk berhasil diupdate', 'success');
           closeEditModal();
-          location.reload();
+          setTimeout(() => location.reload(), 1500);
         } else {
           Swal.fire('Error', data.message || 'Gagal mengupdate produk', 'error');
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        Swal.fire('Error', 'Terjadi kesalahan', 'error');
+        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
       });
     });
 
-    // Delete product
+    // Delete product - FIXED VERSION
     function deleteProduct(productId) {
       Swal.fire({
         title: 'Apakah Anda yakin?',
@@ -506,25 +564,31 @@
         cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
-          fetch(`/manajemen/produk/${productId}`, {
+          fetch(`/management/produk/${productId}`, {
             method: 'DELETE',
             headers: {
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': csrfToken,
+              'Accept': 'application/json'
             }
           })
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+            }
+            return response.json();
+          })
           .then(data => {
             if (data.success) {
               Swal.fire('Terhapus!', data.message || 'Produk berhasil dihapus.', 'success');
-              location.reload();
+              setTimeout(() => location.reload(), 1500);
             } else {
               Swal.fire('Error', data.message || 'Gagal menghapus produk', 'error');
             }
           })
           .catch(error => {
             console.error('Error:', error);
-            Swal.fire('Error', 'Terjadi kesalahan', 'error');
+            Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
           });
         }
       });
@@ -615,5 +679,3 @@
       loadBahanBakuOptions('add');
     });
   </script>
-</body>
-</html>

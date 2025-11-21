@@ -8,6 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <script>
     tailwind.config = {
       theme: {
@@ -336,7 +337,7 @@
     </div>
   </div>
 
-  <script>
+ <script>
     let sidebarOpen = false;
 
     // Toggle sidebar
@@ -347,10 +348,10 @@
       sidebarOpen = !sidebarOpen;
       
       if (sidebarOpen) {
-        sidebar.classList.add('show');
+        sidebar.classList.remove('-translate-x-full');
         overlay.classList.remove('hidden');
       } else {
-        sidebar.classList.remove('show');
+        sidebar.classList.add('-translate-x-full');
         overlay.classList.add('hidden');
       }
     }
@@ -366,9 +367,19 @@
     }
 
     function openEditBahanModal(bahanId) {
-      fetch(`/manajemen/bahanbaku/${bahanId}`)
-        .then(response => response.json())
+      // Gunakan route yang benar
+      fetch(`/management/bahanbaku/${bahanId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Bahan baku tidak ditemukan');
+          }
+          return response.json();
+        })
         .then(data => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
           document.getElementById('edit_id').value = data.id;
           document.getElementById('edit_nama').value = data.nama;
           document.getElementById('edit_stok').value = data.stok;
@@ -380,7 +391,7 @@
         })
         .catch(error => {
           console.error('Error:', error);
-          Swal.fire('Error', 'Gagal memuat data bahan baku', 'error');
+          Swal.fire('Error', error.message || 'Gagal memuat data bahan baku', 'error');
         });
     }
 
@@ -389,9 +400,18 @@
     }
 
     function tambahStok(bahanId) {
-      fetch(`/manajemen/bahanbaku/${bahanId}`)
-        .then(response => response.json())
+      fetch(`/management/bahanbaku/${bahanId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Bahan baku tidak ditemukan');
+          }
+          return response.json();
+        })
         .then(data => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
           document.getElementById('tambah_stok_id').value = data.id;
           document.getElementById('tambah_stok_nama').value = data.nama;
           document.getElementById('tambah_stok_jumlah').value = '';
@@ -400,7 +420,7 @@
         })
         .catch(error => {
           console.error('Error:', error);
-          Swal.fire('Error', 'Gagal memuat data bahan baku', 'error');
+          Swal.fire('Error', error.message || 'Gagal memuat data bahan baku', 'error');
         });
     }
 
@@ -421,17 +441,24 @@
         cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
-          fetch(`/manajemen/bahanbaku/${bahanId}`, {
+          // Gunakan route DELETE yang benar
+          fetch(`/management/bahanbaku/${bahanId}`, {
             method: 'DELETE',
             headers: {
-              'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-              'Content-Type': 'application/json'
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
             }
           })
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+            }
+            return response.json();
+          })
           .then(data => {
             if (data.success) {
-              Swal.fire('Terhapus!', 'Bahan baku berhasil dihapus.', 'success');
+              Swal.fire('Terhapus!', data.message || 'Bahan baku berhasil dihapus.', 'success');
               location.reload();
             } else {
               Swal.fire('Error', data.message || 'Gagal menghapus bahan baku', 'error');
@@ -439,28 +466,42 @@
           })
           .catch(error => {
             console.error('Error:', error);
-            Swal.fire('Error', 'Terjadi kesalahan', 'error');
+            Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
           });
         }
       });
     }
 
-    // Form submission handlers
+    // Form submission handlers - FIXED VERSION
     document.getElementById('addBahanForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      const formData = new FormData(this);
       
-      fetch('/manajemen/bahanbaku', {
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Convert numbers
+      data.stok = parseInt(data.stok);
+      data.min_stok = parseInt(data.min_stok);
+      data.harga_satuan = parseInt(data.harga_satuan);
+      
+      fetch('/management/bahanbaku', {
         method: 'POST',
-        body: formData,
         headers: {
-          'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-        }
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.success) {
-          Swal.fire('Sukses', 'Bahan baku berhasil ditambahkan', 'success');
+          Swal.fire('Sukses', data.message || 'Bahan baku berhasil ditambahkan', 'success');
           closeAddModal();
           location.reload();
         } else {
@@ -469,27 +510,45 @@
       })
       .catch(error => {
         console.error('Error:', error);
-        Swal.fire('Error', 'Terjadi kesalahan', 'error');
+        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
       });
     });
 
     document.getElementById('editBahanForm').addEventListener('submit', function(e) {
       e.preventDefault();
+      
       const bahanId = document.getElementById('edit_id').value;
       const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
       
-      fetch(`/manajemen/bahanbaku/${bahanId}`, {
+      // Remove _token and _method from data
+      delete data._token;
+      delete data._method;
+      
+      // Convert numbers
+      data.stok = parseInt(data.stok);
+      data.min_stok = parseInt(data.min_stok);
+      data.harga_satuan = parseInt(data.harga_satuan);
+      
+      fetch(`/management/bahanbaku/${bahanId}`, {
         method: 'POST',
-        body: formData,
         headers: {
-          'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'X-HTTP-Method-Override': 'PUT'
-        }
+        },
+        body: JSON.stringify(data)
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.success) {
-          Swal.fire('Sukses', 'Bahan baku berhasil diupdate', 'success');
+          Swal.fire('Sukses', data.message || 'Bahan baku berhasil diupdate', 'success');
           closeEditModal();
           location.reload();
         } else {
@@ -498,27 +557,36 @@
       })
       .catch(error => {
         console.error('Error:', error);
-        Swal.fire('Error', 'Terjadi kesalahan', 'error');
+        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
       });
     });
 
     document.getElementById('tambahStokForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      const bahanId = document.getElementById('tambah_stok_id').value;
-      const tambahStok = document.getElementById('tambah_stok_jumlah').value;
       
-      fetch(`/manajemen/bahanbaku/${bahanId}/tambah-stok`, {
+      const bahanId = document.getElementById('tambah_stok_id').value;
+      const tambahStok = parseInt(document.getElementById('tambah_stok_jumlah').value);
+      
+      fetch(`/management/bahanbaku/${bahanId}/tambah-stok`, {
         method: 'POST',
-        body: JSON.stringify({ tambah_stok: parseInt(tambahStok) }),
         headers: {
-          'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-          'Content-Type': 'application/json'
-        }
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ 
+          tambah_stok: tambahStok 
+        })
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.success) {
-          Swal.fire('Sukses', 'Stok berhasil ditambahkan', 'success');
+          Swal.fire('Sukses', data.message || 'Stok berhasil ditambahkan', 'success');
           closeTambahStokModal();
           location.reload();
         } else {
@@ -527,11 +595,11 @@
       })
       .catch(error => {
         console.error('Error:', error);
-        Swal.fire('Error', 'Terjadi kesalahan', 'error');
+        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
       });
     });
 
-    // Filter data
+    // Filter data function
     function filterData() {
       const searchTerm = document.getElementById('searchInput').value.toLowerCase();
       const categoryFilter = document.getElementById('categoryFilter').value;
@@ -619,7 +687,7 @@
       if (window.innerWidth >= 1024) {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
-        sidebar.classList.remove('show');
+        sidebar.classList.add('-translate-x-full');
         overlay.classList.add('hidden');
         sidebarOpen = false;
       }
@@ -641,6 +709,4 @@
       updateDateTime();
       setInterval(updateDateTime, 60000);
     });
-  </script>
-</body>
-</html>
+</script>

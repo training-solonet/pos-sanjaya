@@ -49,5 +49,13 @@ Route::middleware([IsManagement::class])->group(function () {
             'jurnal' => JurnalController::class,
             'laporan' => LaporanController::class,
         ]);
+                // Route khusus untuk bahan baku
+        Route::post('bahanbaku/{id}/tambah-stok', [BahanbakuController::class, 'tambahStok'])
+            ->name('bahanbaku.tambah-stok');
     });
 });
+
+Route::get('/api/bahan-baku', [BahanbakuController::class, 'apiBahanBaku']);
+Route::get('/manajemen/api/bahan-baku', [BahanbakuController::class, 'apiBahanBaku']);
+
+
