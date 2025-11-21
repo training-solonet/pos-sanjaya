@@ -13,6 +13,7 @@ class JurnalController extends Controller
     public function index()
     {
         //
+        return view('kasir.jurnal.index');
     }
 
     /**
