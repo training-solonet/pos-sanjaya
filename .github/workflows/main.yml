@@ -9,6 +9,45 @@ on:
       - master
 
 jobs:
+ # Job 1: Code Quality Checks
+  code-quality:
+    name: Code Quality & Formatting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, json, bcmath
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env || echo "No .env.example found"
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Run Laravel Pint (Code Style Check)
+        run: ./vendor/bin/pint --test
+        continue-on-error: false
+
+
+ # Job 2: Deploy to VPS (only on push to main/master)
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
