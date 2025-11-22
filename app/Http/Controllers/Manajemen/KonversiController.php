@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Manajemen;
 
 use App\Http\Controllers\Controller;
+use App\Models\Konversi;
 use Illuminate\Http\Request;
 
 class KonversiController extends Controller
@@ -13,15 +14,18 @@ class KonversiController extends Controller
     public function index()
     {
         //
-        return view('manajemen.konversi.index');
-    }
+        $konversi = Konversi::all();
+        return view('konversi.index', compact('konversi'));
 
+    }
+    
     /**
      * Show the form for creating a new resource.
-     */
+    */
     public function create()
     {
         //
+        return view('manajemen.konversi.index');
     }
 
     /**
