@@ -13,6 +13,7 @@ class LaporanController extends Controller
     public function index()
     {
         //
+        return view('kasir.laporan.index');
     }
 
     /**
