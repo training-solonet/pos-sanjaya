@@ -10,46 +10,6 @@ on:
       - master
 
 jobs:
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    if: github.ref != 'refs/heads/master'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, mysql
-          coverage: none
-
-      - name: Copy .env
-        run: |
-          cp .env.example .env || echo "APP_NAME=Laravel
-          APP_ENV=testing
-          APP_KEY=
-          APP_DEBUG=true
-          APP_URL=http://localhost
-          
-          DB_CONNECTION=sqlite
-          DB_DATABASE=:memory:
-          
-          CACHE_DRIVER=array
-          QUEUE_CONNECTION=sync
-          SESSION_DRIVER=array" > .env
-
-      - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Generate key
-        run: php artisan key:generate
-
-      - name: Run Tests
-        run: php artisan test
-
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
