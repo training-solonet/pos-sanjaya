@@ -37,10 +37,10 @@ jobs:
             git fetch origin
             git reset --hard origin/${{ github.ref_name }}
 
-            echo "⚙️ Setting up environment..."
+            echo "⚙️ Setting up environment FIRST..."
             if [ ! -f .env ]; then
-              echo "Creating .env file..."
-              cp .env.example .env 2>/dev/null || echo "APP_NAME=Laravel
+              echo "Creating .env file before composer install..."
+              echo "APP_NAME=Laravel
             APP_ENV=production
             APP_KEY=
             APP_DEBUG=false
@@ -59,10 +59,7 @@ jobs:
             fi
 
             echo "📥 Installing Composer dependencies..."
-            composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
-            
-            echo "🔧 Running post-install scripts..."
-            composer run-script post-autoload-dump --no-interaction
+            composer install --no-dev --optimize-autoloader --no-interaction
 
             echo "🔑 Generating application key..."
             php artisan key:generate --force
