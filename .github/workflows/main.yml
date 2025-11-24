@@ -59,7 +59,10 @@ jobs:
             fi
 
             echo "📥 Installing Composer dependencies..."
-            composer install --no-dev --optimize-autoloader --no-interaction
+            composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+            
+            echo "🔧 Running post-install scripts..."
+            composer run-script post-autoload-dump --no-interaction
 
             echo "🔑 Generating application key..."
             php artisan key:generate --force
