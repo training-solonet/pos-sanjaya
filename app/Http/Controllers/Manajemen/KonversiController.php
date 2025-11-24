@@ -14,8 +14,9 @@ class KonversiController extends Controller
     public function index()
     {
         //
-        $konversi = Konversi::all();
-        return view('konversi.index', compact('konversi'));
+        // return view('manajemen.konversi.index');
+        $konversi = Konversi::with(['satuanAsal','satuanTujuan'])->get();
+        return view('manajemen.konversi.index', compact('konversi'));
 
     }
     
@@ -25,7 +26,7 @@ class KonversiController extends Controller
     public function create()
     {
         //
-        return view('manajemen.konversi.index');
+        return view('manajemen.konversi.create');
     }
 
     /**

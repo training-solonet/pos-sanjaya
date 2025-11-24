@@ -418,11 +418,32 @@
                                 </button>
                             </div>
                         </div>
-                        <div id="historyList" class="p-6">
-                            <div class="text-center text-gray-500 py-8">
+                        <div id="historyList" class="p-6 space-y-4">
+                            {{-- <div class="text-center text-gray-500 py-8">
                                 <i class="fas fa-history text-3xl mb-3 text-gray-300"></i>
                                 <p class="text-sm">Belum ada riwayat konversi</p>
-                            </div>
+                            </div> --}}
+                            @forelse ($konversi as $item)
+                                <div class="p-4 border rounded-lg bg-gray-50">
+                                    <p class="text-sm text-gray-700">
+                                        <span class="font-semibold">Jumlah:</span> {{ $item->jumlah }}
+                                    </p>
+                                    <p class="text-sm text-gray-700">
+                                        <span class="font-semibold">Satuan Asal:</span> {{ $item->satuan_asal }}
+                                    </p>
+                                    <p class="text-sm text-gray-700">
+                                        <span class="font-semibold">Satuan Tujuan:</span> {{ $item->satuan_tujuan }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-2">
+                                        {{ $item->tgl }}
+                                    </p>
+                                </div>
+                            @empty
+                                <div class="text-center text-gray-500 py-8">
+                                    <i class="fas fa-history text-3xl mb-3 text-gray-300"></i>
+                                    <p class="text-sm">Belum ada riwayat konversi</p>
+                                </div>
+                            @endforelse
                         </div>
                     </div>
 

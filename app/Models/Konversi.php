@@ -10,6 +10,8 @@ class Konversi extends Model
     protected $table = 'konversi';
 
     protected $fillable = [
+        'id_satuan',
+        'satuan_dasar',
         'jumlah',
         'tgl',
     ];
