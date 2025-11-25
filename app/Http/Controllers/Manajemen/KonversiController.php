@@ -13,12 +13,13 @@ class KonversiController extends Controller
     {
         $konversi = Konversi::with('satuan')->get();
         $satuan = Satuan::all();
+
         return view('manajemen.konversi.index', compact('konversi', 'satuan'));
     }
 
     public function create()
     {
-        
+
         return view('manajemen.konversi.create', compact('satuan'));
     }
 
@@ -41,6 +42,7 @@ class KonversiController extends Controller
     {
         $konversi = Konversi::findOrFail($id);
         $satuan = Satuan::all();
+
         return view('manajemen.konversi.edit', compact('konversi', 'satuan'));
     }
 

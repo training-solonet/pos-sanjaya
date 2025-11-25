@@ -66,12 +66,6 @@
 
                                         <!-- Simple Form -->
                                         <div class="px-6 py-6">
-                                            @foreach ($satuan as $item)
-                                                <option value="{{ $s->id}}">
-                                                    @if (isset($editData)&& $editData->id_santuan == $s->id)selected @endif>
-                                                    {{ $s->nama}}
-                                                </option>
-                                            @endforeach
                                             <div class="space-y-5">
                                                 <!-- Nama Satuan -->
                                                 <div>
