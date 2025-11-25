@@ -83,7 +83,7 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2 class="text-2xl font-bold text-gray-900">Stok Bahan Baku</h2>
           <div class="flex gap-2">
-            <a href="/" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+            <a href="{{ route("management.opname.index") }}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
               <i class="fas fa-clipboard-check mr-2"></i>Stok Opname
             </a>
             <button onclick="openAddBahanModal()" class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 transition-all flex items-center">

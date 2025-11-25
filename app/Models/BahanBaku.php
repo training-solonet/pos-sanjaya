@@ -17,6 +17,7 @@ class BahanBaku extends Model
         'kategori',
         'min_stok',
         'harga_satuan',
+        'satuan', // Pastikan ini ada
         'tglupdate',
     ];
 
@@ -32,5 +33,10 @@ class BahanBaku extends Model
     public function produk()
     {
         return $this->hasMany(Produk::class, 'id_bahan_baku');
+    }
+
+    public function opnames()
+    {
+        return $this->hasMany(Opname::class, 'id_bahan');
     }
 }

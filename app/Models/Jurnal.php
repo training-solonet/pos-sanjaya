@@ -6,15 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Jurnal extends Model
 {
-    //
     protected $table = 'jurnal';
 
     protected $fillable = [
+        'tgl',
         'jenis',
-        'keterangan',
-        'nomimal',
+        'keterangan', 
+        'nominal', // Diperbaiki dari 'nomimal'
         'kategori',
         'role',
-        'tgl',
+    ];
+
+    protected $casts = [
+        'tgl' => 'datetime',
+        'nominal' => 'integer',
     ];
 }
