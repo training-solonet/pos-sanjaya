@@ -15,10 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_satuan')->constrained('satuan')->onDelete('cascade');
             $table->integer('jumlah');
-            $table->timestamps();
-            $table->integer('satuan_asal');
-            $table->integer('satuan_tujuan');
+            $table->integer('satuan_dasar');
             $table->dateTime('tgl');
+            $table->timestamps();
         });
     }
 
