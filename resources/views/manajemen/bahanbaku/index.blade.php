@@ -337,8 +337,9 @@
     </div>
   </div>
 
- <script>
+<script>
     let sidebarOpen = false;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     // Toggle sidebar
     function toggleSidebar() {
@@ -367,7 +368,7 @@
     }
 
     function openEditBahanModal(bahanId) {
-      // Gunakan route yang benar
+      // Gunakan route resource show
       fetch(`/management/bahanbaku/${bahanId}`)
         .then(response => {
           if (!response.ok) {
@@ -400,6 +401,7 @@
     }
 
     function tambahStok(bahanId) {
+      // Gunakan route resource show untuk mendapatkan data bahan baku
       fetch(`/management/bahanbaku/${bahanId}`)
         .then(response => {
           if (!response.ok) {
@@ -428,7 +430,7 @@
       document.getElementById('tambahStokModal').classList.add('hidden');
     }
 
-    // Delete bahan baku
+    // Delete bahan baku - OPTIMIZED VERSION
     function deleteBahan(bahanId) {
       Swal.fire({
         title: 'Apakah Anda yakin?',
@@ -441,11 +443,11 @@
         cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
-          // Gunakan route DELETE yang benar
+          // Gunakan route resource destroy
           fetch(`/management/bahanbaku/${bahanId}`, {
             method: 'DELETE',
             headers: {
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+              'X-CSRF-TOKEN': csrfToken,
               'Content-Type': 'application/json',
               'Accept': 'application/json'
             }
@@ -472,7 +474,7 @@
       });
     }
 
-    // Form submission handlers - FIXED VERSION
+    // Form submission handlers - OPTIMIZED VERSION
     document.getElementById('addBahanForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
@@ -484,10 +486,11 @@
       data.min_stok = parseInt(data.min_stok);
       data.harga_satuan = parseInt(data.harga_satuan);
       
+      // Gunakan route resource store
       fetch('/management/bahanbaku', {
         method: 'POST',
         headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'X-CSRF-TOKEN': csrfToken,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
@@ -530,10 +533,11 @@
       data.min_stok = parseInt(data.min_stok);
       data.harga_satuan = parseInt(data.harga_satuan);
       
+      // Gunakan route resource update
       fetch(`/management/bahanbaku/${bahanId}`, {
         method: 'POST',
         headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'X-CSRF-TOKEN': csrfToken,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'X-HTTP-Method-Override': 'PUT'
@@ -561,18 +565,21 @@
       });
     });
 
+    // Form tambah stok - OPTIMIZED VERSION (menggunakan route update)
     document.getElementById('tambahStokForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
       const bahanId = document.getElementById('tambah_stok_id').value;
       const tambahStok = parseInt(document.getElementById('tambah_stok_jumlah').value);
       
-      fetch(`/management/bahanbaku/${bahanId}/tambah-stok`, {
+      // Gunakan route resource update dengan field tambah_stok
+      fetch(`/management/bahanbaku/${bahanId}`, {
         method: 'POST',
         headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'X-CSRF-TOKEN': csrfToken,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'X-HTTP-Method-Override': 'PUT'
         },
         body: JSON.stringify({ 
           tambah_stok: tambahStok 
@@ -710,3 +717,5 @@
       setInterval(updateDateTime, 60000);
     });
 </script>
+</body>
+</html>

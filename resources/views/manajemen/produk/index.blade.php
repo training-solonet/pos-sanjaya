@@ -242,10 +242,12 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Bahan Baku</label>
-            <select name="id_bahan_baku" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" id="add_id_bahan_baku">
-              <option value="">Pilih Bahan Baku</option>
-              <!-- Options akan diisi via JavaScript -->
-            </select>
+<select name="id_bahan_baku" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" id="add_id_bahan_baku">
+    <option value="">Pilih Bahan Baku</option>
+    @foreach($bahan_baku as $bahan)
+        <option value="{{ $bahan->id }}">{{ $bahan->nama }}</option>
+    @endforeach
+</select>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -298,10 +300,12 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Bahan Baku</label>
-            <select name="id_bahan_baku" id="edit_id_bahan_baku" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-              <option value="">Pilih Bahan Baku</option>
-              <!-- Options akan diisi via JavaScript -->
-            </select>
+<select name="id_bahan_baku" id="edit_id_bahan_baku" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+    <option value="">Pilih Bahan Baku</option>
+    @foreach($bahan_baku as $bahan)
+        <option value="{{ $bahan->id }}">{{ $bahan->nama }}</option>
+    @endforeach
+</select>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -336,8 +340,10 @@
 
  <script>
     let sidebarOpen = false;
-    let bahanBakuData = [];
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Data bahan baku dari controller (dikirim melalui view)
+    const bahanBakuData = @json($bahan_baku);
 
     // Toggle sidebar
     function toggleSidebar() {
@@ -367,7 +373,7 @@
     }
 
     function openEditProductModal(productId) {
-      // Fetch product data and populate form - GUNAKAN ROUTE YANG BENAR
+      // Gunakan route resource yang sudah ada
       fetch(`/management/produk/${productId}`)
         .then(response => {
           if (!response.ok) {
@@ -404,46 +410,8 @@
       document.getElementById('editModal').classList.add('hidden');
     }
 
-    // Load bahan baku options for select - FIXED VERSION
+    // Load bahan baku options for select - OPTIMIZED VERSION
     function loadBahanBakuOptions(modalType, selectedId = null) {
-      // Gunakan endpoint yang benar
-      const endpoint = '/management/api/bahan-baku';
-
-      if (bahanBakuData.length === 0) {
-        fetch(endpoint)
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then(data => {
-            bahanBakuData = data;
-            populateBahanBakuSelect(modalType, selectedId);
-          })
-          .catch(error => {
-            console.error(`Error fetching from ${endpoint}:`, error);
-            // Fallback ke endpoint lain jika perlu
-            fetch('/api/bahan-baku')
-              .then(response => {
-                if (!response.ok) throw new Error('Fallback failed');
-                return response.json();
-              })
-              .then(data => {
-                bahanBakuData = data;
-                populateBahanBakuSelect(modalType, selectedId);
-              })
-              .catch(fallbackError => {
-                console.error('Fallback also failed:', fallbackError);
-                Swal.fire('Error', 'Gagal memuat data bahan baku', 'error');
-              });
-          });
-      } else {
-        populateBahanBakuSelect(modalType, selectedId);
-      }
-    }
-
-    function populateBahanBakuSelect(modalType, selectedId) {
       const selectElement = document.getElementById(`${modalType}_id_bahan_baku`);
       if (!selectElement) return;
       
@@ -460,7 +428,7 @@
       });
     }
 
-    // Form submission handlers - FIXED VERSION (menggunakan JSON seperti bahan baku)
+    // Form submission handlers - OPTIMIZED VERSION
     document.getElementById('addProductForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
@@ -473,6 +441,7 @@
       data.harga = parseInt(data.harga);
       data.id_bahan_baku = parseInt(data.id_bahan_baku);
       
+      // Gunakan route resource store
       fetch('/management/produk', {
         method: 'POST',
         headers: {
@@ -520,6 +489,7 @@
       data.harga = parseInt(data.harga);
       data.id_bahan_baku = parseInt(data.id_bahan_baku);
       
+      // Gunakan route resource update dengan method PUT
       fetch(`/management/produk/${productId}`, {
         method: 'POST',
         headers: {
@@ -551,7 +521,7 @@
       });
     });
 
-    // Delete product - FIXED VERSION
+    // Delete product - OPTIMIZED VERSION
     function deleteProduct(productId) {
       Swal.fire({
         title: 'Apakah Anda yakin?',
@@ -564,6 +534,7 @@
         cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
+          // Gunakan route resource destroy
           fetch(`/management/produk/${productId}`, {
             method: 'DELETE',
             headers: {
@@ -675,7 +646,9 @@
       updateDateTime();
       setInterval(updateDateTime, 60000);
       
-      // Load bahan baku data awal
+      // Load bahan baku data langsung dari PHP
       loadBahanBakuOptions('add');
     });
-  </script>
+</script>
+</body>
+</html>

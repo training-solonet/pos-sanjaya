@@ -3,22 +3,32 @@
 namespace App\Http\Controllers\Manajemen;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Jurnal;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class JurnalController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Ambil data jurnal untuk hari ini
+        // Jika request meminta data JSON (untuk AJAX)
+        if ($request->ajax() || $request->has('data')) {
+            return $this->getData($request);
+        }
+
+        // Jika request meminta summary
+        if ($request->has('summary')) {
+            return $this->getSummary($request);
+        }
+
+        // Ambil data jurnal untuk hari ini (default view)
         $today = now()->format('Y-m-d');
         $jurnals = Jurnal::whereDate('tgl', $today)
-                        ->where('role', 'manajemen')
-                        ->orderBy('tgl', 'desc')
-                        ->get();
+            ->where('role', 'manajemen')
+            ->orderBy('tgl', 'desc')
+            ->get();
 
-        return view("manajemen.jurnal.index", compact('jurnals'));
+        return view('manajemen.jurnal.index', compact('jurnals'));
     }
 
     public function store(Request $request)
@@ -28,7 +38,7 @@ class JurnalController extends Controller
             'jenis' => 'required|in:pemasukan,pengeluaran',
             'keterangan' => 'required|string|max:500',
             'nominal' => 'required|integer|min:1',
-            'kategori' => 'required|in:Operasional,Utilitas,Bahan Baku,Penjualan,Transportasi,lainnya'
+            'kategori' => 'required|in:Operasional,Utilitas,Bahan Baku,Penjualan,Transportasi,lainnya',
         ]);
 
         try {
@@ -38,19 +48,34 @@ class JurnalController extends Controller
                 'keterangan' => $validated['keterangan'],
                 'nominal' => $validated['nominal'],
                 'kategori' => $validated['kategori'],
-                'role' => 'manajemen'
+                'role' => 'manajemen',
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transaksi berhasil ditambahkan!'
+                'message' => 'Transaksi berhasil ditambahkan!',
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menambah transaksi: ' . $e->getMessage()
+                'message' => 'Gagal menambah transaksi: '.$e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $jurnal = Jurnal::where('id', $id)
+                ->where('role', 'manajemen')
+                ->firstOrFail();
+
+            return response()->json($jurnal);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Transaksi tidak ditemukan',
+            ], 404);
         }
     }
 
@@ -61,25 +86,25 @@ class JurnalController extends Controller
             'jenis' => 'required|in:pemasukan,pengeluaran',
             'keterangan' => 'required|string|max:500',
             'nominal' => 'required|integer|min:1',
-            'kategori' => 'required|in:Operasional,Utilitas,Bahan Baku,Penjualan,Transportasi,lainnya'
+            'kategori' => 'required|in:Operasional,Utilitas,Bahan Baku,Penjualan,Transportasi,lainnya',
         ]);
 
         try {
             $jurnal = Jurnal::where('id', $id)
-                          ->where('role', 'manajemen')
-                          ->firstOrFail();
+                ->where('role', 'manajemen')
+                ->firstOrFail();
 
             $jurnal->update($validated);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transaksi berhasil diupdate!'
+                'message' => 'Transaksi berhasil diupdate!',
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengupdate transaksi: ' . $e->getMessage()
+                'message' => 'Gagal mengupdate transaksi: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -88,26 +113,26 @@ class JurnalController extends Controller
     {
         try {
             $jurnal = Jurnal::where('id', $id)
-                          ->where('role', 'manajemen')
-                          ->firstOrFail();
+                ->where('role', 'manajemen')
+                ->firstOrFail();
 
             $jurnal->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transaksi berhasil dihapus!'
+                'message' => 'Transaksi berhasil dihapus!',
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus transaksi: ' . $e->getMessage()
+                'message' => 'Gagal menghapus transaksi: '.$e->getMessage(),
             ], 500);
         }
     }
 
-    // API untuk mendapatkan data jurnal berdasarkan filter
-    public function getData(Request $request)
+    // Method untuk mendapatkan data jurnal berdasarkan filter - sekarang bagian dari index
+    private function getData(Request $request)
     {
         $query = Jurnal::where('role', 'manajemen');
 
@@ -128,7 +153,7 @@ class JurnalController extends Controller
 
         // Search
         if ($request->has('search') && $request->search) {
-            $query->where('keterangan', 'like', '%' . $request->search . '%');
+            $query->where('keterangan', 'like', '%'.$request->search.'%');
         }
 
         $jurnals = $query->orderBy('tgl', 'desc')->get();
@@ -136,8 +161,8 @@ class JurnalController extends Controller
         return response()->json($jurnals);
     }
 
-    // API untuk mendapatkan summary
-    public function getSummary(Request $request)
+    // Method untuk mendapatkan summary - sekarang bagian dari index
+    private function getSummary(Request $request)
     {
         $query = Jurnal::where('role', 'manajemen');
 
@@ -158,7 +183,12 @@ class JurnalController extends Controller
             'total_expense' => $data->total_pengeluaran ?? 0,
             'net_balance' => ($data->total_pemasukan ?? 0) - ($data->total_pengeluaran ?? 0),
             'revenue_count' => $data->jumlah_pemasukan ?? 0,
-            'expense_count' => $data->jumlah_pengeluaran ?? 0
+            'expense_count' => $data->jumlah_pengeluaran ?? 0,
         ]);
     }
+
+    // Method create dan edit (kosong karena menggunakan modal)
+    public function create() {}
+
+    public function edit($id) {}
 }

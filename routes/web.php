@@ -1,21 +1,21 @@
 <?php
 
+use App\Http\Controllers\Kasir\DashboardController as KasirDashboardController;
+use App\Http\Controllers\Kasir\JurnalController as KasirJurnalController;
+use App\Http\Controllers\Kasir\LaporanController as KasirLaporanController;
+use App\Http\Controllers\Kasir\TransaksiController;
+use App\Http\Controllers\Manajemen\BahanbakuController;
+use App\Http\Controllers\Manajemen\DashboardController;
+use App\Http\Controllers\Manajemen\JurnalController;
+use App\Http\Controllers\Manajemen\KonversiController;
+use App\Http\Controllers\Manajemen\LaporanController;
+use App\Http\Controllers\Manajemen\OpnameController;
+use App\Http\Controllers\Manajemen\ProdukController;
+use App\Http\Controllers\Manajemen\ResepController;
+use App\Http\Controllers\RedirectController;
 use App\Http\Middleware\IsKasir;
 use App\Http\Middleware\IsManagement;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\RedirectController;
-use App\Http\Controllers\Kasir\TransaksiController;
-use App\Http\Controllers\Manajemen\ResepController;
-use App\Http\Controllers\Manajemen\JurnalController;
-use App\Http\Controllers\Manajemen\OpnameController;
-use App\Http\Controllers\Manajemen\ProdukController;
-use App\Http\Controllers\Manajemen\LaporanController;
-use App\Http\Controllers\Manajemen\KonversiController;
-use App\Http\Controllers\Manajemen\BahanbakuController;
-use App\Http\Controllers\Manajemen\DashboardController;
-use App\Http\Controllers\Kasir\JurnalController as KasirJurnalController;
-use App\Http\Controllers\Kasir\LaporanController as KasirLaporanController;
-use App\Http\Controllers\Kasir\DashboardController as KasirDashboardController;
 
 Route::get('/redirect', [RedirectController::class, 'redirectToRoleBasedDashboard']);
 
@@ -49,17 +49,10 @@ Route::middleware([IsManagement::class])->group(function () {
             'konversi' => KonversiController::class,
             'jurnal' => JurnalController::class,
             'laporan' => LaporanController::class,
-            'opname' => OpnameController::class
+            'opname' => OpnameController::class,
         ]);
-                // Route khusus untuk bahan baku
-        Route::post('bahanbaku/{id}/tambah-stok', [BahanbakuController::class, 'tambahStok'])->name('bahanbaku.tambah-stok');
 
-        Route::get('jurnal/data/list', [JurnalController::class, 'getData'])->name('jurnal.data');
-        Route::get('jurnal/data/summary', [JurnalController::class, 'getSummary'])->name('jurnal.summary');
+        // Route::get('jurnal/data/list', [JurnalController::class, 'getData'])->name('jurnal.data');
+        // Route::get('jurnal/data/summary', [JurnalController::class, 'getSummary'])->name('jurnal.summary');
     });
 });
-
-Route::get('/api/bahan-baku', [BahanbakuController::class, 'apiBahanBaku']);
-Route::get('/manajemen/api/bahan-baku', [BahanbakuController::class, 'apiBahanBaku']);
-
-

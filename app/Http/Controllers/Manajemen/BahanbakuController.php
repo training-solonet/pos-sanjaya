@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Manajemen;
 use App\Http\Controllers\Controller;
 use App\Models\BahanBaku;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class BahanbakuController extends Controller
 {
@@ -14,7 +15,8 @@ class BahanbakuController extends Controller
     public function index()
     {
         $bahan_baku = BahanBaku::all();
-        return view("manajemen.bahanbaku.index", compact('bahan_baku'));
+
+        return view('manajemen.bahanbaku.index', compact('bahan_baku'));
     }
 
     /**
@@ -52,13 +54,15 @@ class BahanbakuController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Bahan baku berhasil ditambahkan'
+                'message' => 'Bahan baku berhasil ditambahkan',
             ], 201);
 
         } catch (\Exception $e) {
+            Log::error('Store Bahan Baku Error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menambahkan bahan baku: ' . $e->getMessage()
+                'message' => 'Gagal menambahkan bahan baku: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -70,10 +74,13 @@ class BahanbakuController extends Controller
     {
         try {
             $bahan_baku = BahanBaku::findOrFail($id);
+
             return response()->json($bahan_baku);
         } catch (\Exception $e) {
+            Log::error('Show Bahan Baku Error: '.$e->getMessage());
+
             return response()->json([
-                'error' => 'Bahan baku tidak ditemukan'
+                'error' => 'Bahan baku tidak ditemukan',
             ], 404);
         }
     }
@@ -91,9 +98,14 @@ class BahanbakuController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Validasi
+        // Cek jika ini operasi tambah stok
+        if ($request->has('tambah_stok') && $request->tambah_stok > 0) {
+            return $this->tambahStok($request, $id);
+        }
+
+        // Validasi untuk update biasa
         $validated = $request->validate([
-            'nama' => 'required|string|max:255|unique:bahan_baku,nama,' . $id,
+            'nama' => 'required|string|max:255|unique:bahan_baku,nama,'.$id,
             'stok' => 'required|integer|min:0',
             'min_stok' => 'required|integer|min:0',
             'kategori' => 'required|in:Bahan Utama,Bahan Pembantu',
@@ -102,7 +114,7 @@ class BahanbakuController extends Controller
 
         try {
             $bahan_baku = BahanBaku::findOrFail($id);
-            
+
             $bahan_baku->update([
                 'nama' => $validated['nama'],
                 'stok' => $validated['stok'],
@@ -114,13 +126,15 @@ class BahanbakuController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Bahan baku berhasil diupdate'
+                'message' => 'Bahan baku berhasil diupdate',
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Update Bahan Baku Error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengupdate bahan baku: ' . $e->getMessage()
+                'message' => 'Gagal mengupdate bahan baku: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -132,26 +146,28 @@ class BahanbakuController extends Controller
     {
         try {
             $bahan_baku = BahanBaku::findOrFail($id);
-            
+
             // Cek apakah bahan baku digunakan di produk
             if ($bahan_baku->produk()->exists()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tidak dapat menghapus bahan baku karena masih digunakan dalam produk'
+                    'message' => 'Tidak dapat menghapus bahan baku karena masih digunakan dalam produk',
                 ], 400);
             }
-            
+
             $bahan_baku->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Bahan baku berhasil dihapus'
+                'message' => 'Bahan baku berhasil dihapus',
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Delete Bahan Baku Error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus bahan baku: ' . $e->getMessage()
+                'message' => 'Gagal menghapus bahan baku: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -163,18 +179,21 @@ class BahanbakuController extends Controller
     {
         try {
             $bahan_baku = BahanBaku::select('id', 'nama')->get();
+
             return response()->json($bahan_baku);
         } catch (\Exception $e) {
+            Log::error('API Bahan Baku Error: '.$e->getMessage());
+
             return response()->json([
-                'error' => 'Gagal mengambil data bahan baku'
+                'error' => 'Gagal mengambil data bahan baku',
             ], 500);
         }
     }
 
     /**
-     * Tambah stok bahan baku
+     * Tambah stok bahan baku - sekarang bagian dari update
      */
-    public function tambahStok(Request $request, $id)
+    private function tambahStok(Request $request, $id)
     {
         $validated = $request->validate([
             'tambah_stok' => 'required|integer|min:1',
@@ -182,7 +201,7 @@ class BahanbakuController extends Controller
 
         try {
             $bahan_baku = BahanBaku::findOrFail($id);
-            
+
             $bahan_baku->update([
                 'stok' => $bahan_baku->stok + $validated['tambah_stok'],
                 'tglupdate' => now(),
@@ -190,13 +209,15 @@ class BahanbakuController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Stok berhasil ditambahkan'
+                'message' => 'Stok berhasil ditambahkan',
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Tambah Stok Error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menambah stok: ' . $e->getMessage()
+                'message' => 'Gagal menambah stok: '.$e->getMessage(),
             ], 500);
         }
     }

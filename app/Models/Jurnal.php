@@ -11,7 +11,7 @@ class Jurnal extends Model
     protected $fillable = [
         'tgl',
         'jenis',
-        'keterangan', 
+        'keterangan',
         'nominal', // Diperbaiki dari 'nomimal'
         'kategori',
         'role',

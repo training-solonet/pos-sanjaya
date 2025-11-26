@@ -312,7 +312,7 @@
     </div>
   </div>
 
-  <script>
+<script>
     // Categories configuration
     const categories = {
       pemasukan: [
@@ -331,6 +331,7 @@
     let currentEditId = null;
     let sidebarOpen = false;
     let allTransactions = [];
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
@@ -444,11 +445,33 @@
       }
     });
 
-    // Load transactions from server
+    // Load transactions from server - OPTIMIZED VERSION
     async function loadTransactions() {
       try {
         const filterDate = document.getElementById('filterDate').value;
-        const response = await fetch(`/management/jurnal/data/list?date=${filterDate}`);
+        const filterType = document.getElementById('filterType').value;
+        const filterCategory = document.getElementById('filterCategory').value;
+        const searchInput = document.getElementById('searchInput').value;
+
+        // Build query parameters
+        const params = new URLSearchParams({
+          data: '1',
+          date: filterDate
+        });
+
+        if (filterType && filterType !== 'semua') {
+          params.append('jenis', filterType);
+        }
+
+        if (filterCategory && filterCategory !== 'semua') {
+          params.append('kategori', filterCategory);
+        }
+
+        if (searchInput) {
+          params.append('search', searchInput);
+        }
+
+        const response = await fetch(`/management/jurnal?${params}`);
         
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -521,11 +544,12 @@
       });
     }
 
-    // Update summary from server
+    // Update summary from server - OPTIMIZED VERSION
     async function updateSummary() {
       try {
         const filterDate = document.getElementById('filterDate').value;
-        const response = await fetch(`/management/jurnal/data/summary?date=${filterDate}`);
+        
+        const response = await fetch(`/management/jurnal?summary=1&date=${filterDate}`);
         
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -615,13 +639,20 @@
       document.body.style.overflow = 'hidden';
     }
 
-    // Edit transaction
+    // Edit transaction - OPTIMIZED VERSION
     async function editTransaction(id) {
       try {
-        const transaction = allTransactions.find(t => t.id === id);
+        // Gunakan route resource show
+        const response = await fetch(`/management/jurnal/${id}`);
         
-        if (!transaction) {
+        if (!response.ok) {
           throw new Error('Transaksi tidak ditemukan');
+        }
+        
+        const transaction = await response.json();
+        
+        if (transaction.error) {
+          throw new Error(transaction.error);
         }
 
         currentEditId = id;
@@ -657,7 +688,7 @@
       }
     }
 
-    // Delete transaction
+    // Delete transaction - OPTIMIZED VERSION
     async function deleteTransaction(id) {
       if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
         return;
@@ -668,7 +699,8 @@
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
           }
         });
 
@@ -686,7 +718,7 @@
       }
     }
 
-    // Handle form submission
+    // Handle form submission - OPTIMIZED VERSION
     document.getElementById('transactionForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
@@ -718,10 +750,12 @@
 
       try {
         const response = await fetch(url, {
-          method: method,
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+            ...(transactionId && { 'X-HTTP-Method-Override': 'PUT' })
           },
           body: JSON.stringify(formData)
         });
@@ -743,30 +777,7 @@
 
     // Filter transactions
     function filterTransactions() {
-      const filterType = document.getElementById('filterType').value;
-      const filterCategory = document.getElementById('filterCategory').value;
-      const searchInput = document.getElementById('searchInput').value.toLowerCase();
-      
-      let filteredTransactions = allTransactions;
-
-      // Filter by type
-      if (filterType !== 'semua') {
-        filteredTransactions = filteredTransactions.filter(t => t.jenis === filterType);
-      }
-      
-      // Filter by category
-      if (filterCategory !== 'semua') {
-        filteredTransactions = filteredTransactions.filter(t => t.kategori === filterCategory);
-      }
-      
-      // Filter by search
-      if (searchInput) {
-        filteredTransactions = filteredTransactions.filter(t => 
-          t.keterangan.toLowerCase().includes(searchInput)
-        );
-      }
-
-      renderTransactions(filteredTransactions);
+      loadTransactions(); // Sekarang semua filter dilakukan di server
     }
 
     // Helper functions
@@ -841,7 +852,8 @@
     // Export function
     function exportData() {
       const filterDate = document.getElementById('filterDate').value;
-      window.open(`/management/jurnal?export=1&date=${filterDate}`, '_blank');
+      // Anda bisa menambahkan fungsi export di controller jika diperlukan
+      alert('Fitur export akan segera tersedia');
     }
 
     // Close modal when clicking outside
