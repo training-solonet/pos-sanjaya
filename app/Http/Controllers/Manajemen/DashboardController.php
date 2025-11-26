@@ -13,7 +13,7 @@ class DashboardController extends Controller
     public function index()
     {
         // return view for manajemen dashboard
-        return view('manajemen.dashboard');
+        return view('layouts.manajemen.index');
     }
 
     /**

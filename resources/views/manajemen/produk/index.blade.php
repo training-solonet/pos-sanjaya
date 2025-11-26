@@ -1,658 +1,654 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Sanjaya - Stok Produk</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3B82F6',
-                        secondary: '#1E40AF',
-                        accent: '#F59E0B',
-                        success: '#10B981',
-                        danger: '#EF4444',
-                        dark: '#1F2937',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        @media (max-width: 1024px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.show { transform: translateX(0); }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POS Sanjaya - Manajemen Produk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#3B82F6",
+            secondary: "#1E40AF",
+            accent: "#F59E0B",
+            success: "#10B981",
+            danger: "#EF4444",
+            dark: "#1F2937",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+    body {
+      font-family: "Inter", sans-serif;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    @media (max-width: 1023px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar:not(.-translate-x-full) {
+        transform: translateX(0);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .sidebar {
+        transform: translateX(0) !important;
+      }
+    }
+  </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen lg:flex">
-    <!-- Mobile Overlay -->
-    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+  <!-- Mobile Overlay -->
+  <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()">
+  </div>
+
+  <!-- Sidebar -->
+  @include('layouts.manajemen.sidebar')
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()">
+  </div>
+
+  <!-- Main Content -->
+  <div class="content flex-1 lg:flex-1">
+    <!-- Header -->
+    @include('layouts.manajemen.header')
     
-    <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative lg:flex-shrink-0">
-        <div class="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-gradient-to-r from-green-400 to-green-700 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-cash-register text-white text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold text-gray-900">Sanjaya Bakery</h1>
-                </div>
-            </div>
-            <button onclick="toggleSidebar()" class="lg:hidden w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                <i class="fas fa-times text-gray-600"></i>
-            </button>
-        </div>
-
-         <!-- Navigation -->
-        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            <a href="{{ route("manajemen") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-home text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Dashboard Manajemen
-            </a>
-            <a href="{{ route("manajemen_jurnal") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-book text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Jurnal Harian
-            </a>
-            <a href="{{ route("manajemen_bahanbaku") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-boxes text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Stok Bahan Baku
-            </a>
-            <a href="{{ route("manajemen_produk") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg">
-                <i class="fas fa-cookie-bite text-white mr-3"></i>
-                Stok Produk
-            </a>
-            <a href="{{ route("manajemen_konversi") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-exchange-alt text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Konversi Satuan
-            </a>
-            <a href="{{ route("manajemen_resep") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-utensils text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Resep & Produksi
-            </a>
-            <a href="{{ route("manajemen_laporan") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-chart-line text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Laporan
-            </a>
-        </nav>
-
-        <!-- User Profile -->
-        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                    <i class="fas fa-user text-gray-600"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate">Admin</p>
-                    <p class="text-xs text-gray-500">Kasir</p>
-                </div>
-                <button class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200">
-                    <i class="fas fa-sign-out-alt text-gray-600 text-sm"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sidebar Overlay for Mobile -->
-        <!-- Main Content Wrapper -->
-    <div class="flex-1 flex flex-col min-h-screen lg:ml-0">
-        <!-- Top Navigation -->
-        <header class="bg-white shadow-sm border-b border-gray-200 lg:hidden">
-            <div class="flex items-center justify-between h-16 px-4">
-                <div class="flex items-center space-x-3">
-                    <!-- Mobile Menu Button & Page Title -->
-                    <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-                        <i class="fas fa-bars text-gray-600"></i>
-                    </button>
-                    <div>
-                        <h1 class="text-lg font-bold text-gray-900">Stok Produk</h1>
-                        <p class="text-sm text-gray-500">Kelola inventori produk</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <button class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-                        <i class="fas fa-search text-gray-600"></i>
-                    </button>
-                    <button class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-                        <i class="fas fa-bell text-gray-600"></i>
-                    </button>
-                </div>
-            </div>
-        </header>
-
-    <!-- Main Content -->
-    <div class="content flex-1 lg:flex-1">
+    <!-- Page Content -->
+    <main class="p-4 sm:p-6 lg:p-8">
+      <div class="space-y-6">
         <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-            <div class="px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <!-- Mobile Menu Button & Page Title -->
-                    <div class="flex items-center space-x-4">
-                        <button onclick="toggleSidebar()" class="lg:hidden w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <i class="fas fa-bars text-gray-600"></i>
-                        </button>
-                    </div>
-
-                    <!-- Header Actions -->
-                    <div class="flex items-center space-x-4">
-                        <div class="hidden md:block text-right">
-                            <p class="text-sm font-medium text-gray-900">Kasir: Admin</p>
-                            <p class="text-xs text-gray-500" id="currentDateTime"></p>
-                        </div>
-                        <button class="relative w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200">
-                            <i class="fas fa-bell text-gray-600"></i>
-                            <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Page Content -->
-        <main class="p-4 sm:p-6 lg:p-8">
-            <div class="space-y-6">
-                <!-- Header -->
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h2 class="text-2xl font-bold text-gray-900">Stok Produk Jadi</h2>
-                    <div class="flex gap-2">
-                        <a href="history-stok-produk.html" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
-                            <i class="fas fa-clipboard-check mr-2"></i>Stok Produk
-                        </a>
-                        <button onclick="openAddProductModal()" class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 transition-all flex items-center">
-                            <i class="fas fa-plus mr-2"></i> Produk Baru
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Search & Filter -->
-                <div class="bg-white rounded-lg border border-gray-200 p-4">
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <div class="flex-1">
-                            <input type="text" placeholder="Cari produk..." 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
-                        <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                            <option>Semua Kategori</option>
-                            <option>Roti Tawar</option>
-                            <option>Roti Manis</option>
-                            <option>Donat</option>
-                            <option>Pastry</option>
-                        </select>
-                        <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                            <option>Semua Status</option>
-                            <option>Tersedia</option>
-                            <option>Stok Rendah</option>
-                            <option>Habis</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Product Table -->
-                <div class="bg-white rounded-lg border border-gray-200">
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Stok</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expired Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                <!-- Roti Tawar -->
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-bread-slice text-amber-600"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Roti Tawar</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">45</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">20</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 12.000</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <span class="text-gray-900">25 Oct 2025</span>
-                                            <div class="text-xs text-gray-500">3 hari lagi</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex space-x-2">
-                                            <button class="text-green-600 hover:text-green-700">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-danger hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Roti Cokelat -->
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-cookie-bite text-orange-600"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Roti Cokelat</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">38</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">15</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 8.000</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <span class="text-gray-900">26 Oct 2025</span>
-                                            <div class="text-xs text-gray-500">4 hari lagi</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex space-x-2">
-                                            <button class="text-green-600 hover:text-green-700">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-danger hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Roti Keju (Stok Rendah) -->
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-cheese text-yellow-600"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Roti Keju</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-danger font-medium">8</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">15</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 10.000</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <span class="text-orange-600 font-medium">24 Oct 2025</span>
-                                            <div class="text-xs text-orange-600">2 hari lagi</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex space-x-2">
-                                            <button class="text-green-600 hover:text-green-700">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-danger hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Roti Strawberry -->
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-ice-cream text-pink-600"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Roti Strawberry</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">32</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">15</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 9.000</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <span class="text-gray-900">27 Oct 2025</span>
-                                            <div class="text-xs text-gray-500">5 hari lagi</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex space-x-2">
-                                            <button class="text-green-600 hover:text-green-700">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-danger hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Roti Kismis -->
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-candy-cane text-purple-600"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Roti Kismis</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">28</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">10</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 11.000</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <span class="text-gray-900">28 Oct 2025</span>
-                                            <div class="text-xs text-gray-500">6 hari lagi</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex space-x-2">
-                                            <button class="text-green-600 hover:text-green-700">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-danger hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Roti Pisang -->
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-drumstick-bite text-yellow-600"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Roti Pisang</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">25</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">12</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 7.000</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <span class="text-gray-900">29 Oct 2025</span>
-                                            <div class="text-xs text-gray-500">7 hari lagi</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex space-x-2">
-                                            <button class="text-green-600 hover:text-green-700">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-danger hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Roti Donat Cokelat -->
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-brown-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-circle text-amber-700"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Roti Donat Cokelat</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">42</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">20</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 6.000</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <span class="text-gray-900">30 Oct 2025</span>
-                                            <div class="text-xs text-gray-500">8 hari lagi</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex space-x-2">
-                                            <button class="text-green-600 hover:text-green-700">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-danger hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Roti Abon -->
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-hotdog text-red-600"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Roti Abon</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">35</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">15</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 9.500</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <span class="text-gray-900">26 Oct 2025</span>
-                                            <div class="text-xs text-gray-500">4 hari lagi</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex space-x-2">
-                                            <button class="text-green-600 hover:text-green-700">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-danger hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Roti Sobek -->
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-bread-slice text-amber-600"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Roti Sobek</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">22</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">10</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 15.000</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <span class="text-gray-900">31 Oct 2025</span>
-                                            <div class="text-xs text-gray-500">9 hari lagi</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex space-x-2">
-                                            <button class="text-green-600 hover:text-green-700">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-danger hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- Croissant -->
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-moon text-orange-600"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Croissant</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-danger font-medium">5</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">15</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 13.000</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <span class="text-red-600 font-medium">23 Oct 2025</span>
-                                            <div class="text-xs text-red-600">Besok</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex space-x-2">
-                                            <button class="text-green-600 hover:text-green-700">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="text-danger hover:text-red-600">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Add Product Modal -->
-    <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg w-full max-w-md">
-                <div class="flex items-center justify-between p-6 border-b">
-                    <h3 class="text-lg font-semibold">Tambah Produk Baru</h3>
-                    <button onclick="closeAddModal()" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <form class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Nama Produk</label>
-                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
-                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                            <option>Pilih Kategori</option>
-                            <option>Roti Tawar</option>
-                            <option>Roti Manis</option>
-                            <option>Donat</option>
-                            <option>Pastry</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Stok Awal</label>
-                            <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Min. Stok</label>
-                            <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Harga Jual</label>
-                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Kedaluwarsa</label>
-                        <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                    </div>
-                    <div class="flex space-x-3 pt-4">
-                        <button type="button" onclick="closeAddModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                            Batal
-                        </button>
-                        <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
-                            Simpan
-                        </button>
-                    </div>
-                </form>
-            </div>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 class="text-2xl font-bold text-gray-900">Stok Produk Jadi</h2>
+          <div class="flex gap-2">
+            <a href="{{ route("management.produk.index") }}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+              <i class="fas fa-clipboard-check mr-2"></i>Stok Produk
+            </a>
+            <button onclick="openAddProductModal()" class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 transition-all flex items-center">
+              <i class="fas fa-plus mr-2"></i> Produk Baru
+            </button>
+          </div>
         </div>
+
+        <!-- Search & Filter -->
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+          <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+              <input type="text" id="searchInput" placeholder="Cari produk..." 
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+            <select id="kategoriFilter" class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option value="">Semua Kategori</option>
+              <option value="Roti Tawar">Roti Tawar</option>
+              <option value="Roti Manis">Roti Manis</option>
+              <option value="Donat">Donat</option>
+              <option value="Pastry">Pastry</option>
+            </select>
+            <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option value="">Semua Status</option>
+              <option value="tersedia">Tersedia</option>
+              <option value="rendah">Stok Rendah</option>
+              <option value="habis">Habis</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Product Table -->
+        <div class="bg-white rounded-lg border border-gray-200">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Stok</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expired Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200" id="productTableBody">
+                @foreach($produk as $item)
+                <tr class="product-row" 
+                    data-status="{{ $item->stok == 0 ? 'habis' : ($item->stok <= $item->min_stok ? 'rendah' : 'tersedia') }}"
+                    data-kategori="{{ $item->bahan_baku->nama ?? 'Umum' }}">
+                  <td class="px-6 py-4">
+                    <div class="flex items-center space-x-3">
+                      @php
+                        $iconColor = 'amber';
+                        $iconClass = 'fas fa-bread-slice';
+                        
+                        // Determine icon based on product name or category
+                        if (str_contains(strtolower($item->nama), 'cokelat') || str_contains(strtolower($item->nama), 'chocolate')) {
+                          $iconColor = 'orange';
+                          $iconClass = 'fas fa-cookie-bite';
+                        } elseif (str_contains(strtolower($item->nama), 'keju') || str_contains(strtolower($item->nama), 'cheese')) {
+                          $iconColor = 'yellow';
+                          $iconClass = 'fas fa-cheese';
+                        } elseif (str_contains(strtolower($item->nama), 'strawberry')) {
+                          $iconColor = 'pink';
+                          $iconClass = 'fas fa-ice-cream';
+                        } elseif (str_contains(strtolower($item->nama), 'kismis') || str_contains(strtolower($item->nama), 'raisin')) {
+                          $iconColor = 'purple';
+                          $iconClass = 'fas fa-candy-cane';
+                        } elseif (str_contains(strtolower($item->nama), 'pisang') || str_contains(strtolower($item->nama), 'banana')) {
+                          $iconColor = 'yellow';
+                          $iconClass = 'fas fa-drumstick-bite';
+                        } elseif (str_contains(strtolower($item->nama), 'donat') || str_contains(strtolower($item->nama), 'donut')) {
+                          $iconColor = 'brown';
+                          $iconClass = 'fas fa-circle';
+                        } elseif (str_contains(strtolower($item->nama), 'abon')) {
+                          $iconColor = 'red';
+                          $iconClass = 'fas fa-hotdog';
+                        } elseif (str_contains(strtolower($item->nama), 'sobek')) {
+                          $iconColor = 'amber';
+                          $iconClass = 'fas fa-bread-slice';
+                        } elseif (str_contains(strtolower($item->nama), 'croissant')) {
+                          $iconColor = 'orange';
+                          $iconClass = 'fas fa-moon';
+                        }
+                      @endphp
+                      <div class="w-10 h-10 bg-{{ $iconColor }}-100 rounded-lg flex items-center justify-center">
+                        <i class="{{ $iconClass }} text-{{ $iconColor }}-600"></i>
+                      </div>
+                      <div>
+                        <span class="font-medium text-gray-900 block">{{ $item->nama }}</span>
+                        <span class="text-xs text-gray-500">{{ $item->bahan_baku->nama ?? 'Umum' }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 text-sm {{ $item->stok == 0 ? 'text-danger font-medium' : ($item->stok <= $item->min_stok ? 'text-orange-600 font-medium' : 'text-gray-900') }}">
+                    {{ $item->stok }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-500">{{ $item->min_stok }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-900">Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                  <td class="px-6 py-4">
+                    @php
+                      $expiredDate = \Carbon\Carbon::parse($item->kadaluarsa);
+                      $daysUntilExpired = $expiredDate->diffInDays(now());
+                      $isExpiredSoon = $daysUntilExpired <= 3;
+                      $isExpired = $expiredDate->isPast();
+                    @endphp
+                    <div class="text-sm">
+                      <span class="{{ $isExpired ? 'text-red-600 font-medium' : ($isExpiredSoon ? 'text-orange-600 font-medium' : 'text-gray-900') }}">
+                        {{ $expiredDate->format('d M Y') }}
+                      </span>
+                      <div class="text-xs {{ $isExpired ? 'text-red-600' : ($isExpiredSoon ? 'text-orange-600' : 'text-gray-500') }}">
+                        @if($isExpired)
+                          Sudah kadaluarsa
+                        @else
+                          {{ $daysUntilExpired }} hari lagi
+                        @endif
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex space-x-2">
+                      <button onclick="openEditProductModal({{ $item->id }})" class="text-green-600 hover:text-green-700">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button onclick="deleteProduct({{ $item->id }})" class="text-danger hover:text-red-600">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg w-full max-w-md">
+        <div class="flex items-center justify-between p-6 border-b">
+          <h3 class="text-lg font-semibold">Tambah Produk Baru</h3>
+          <button onclick="closeAddModal()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form id="addProductForm" class="p-6 space-y-4">
+          @csrf
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Nama Produk</label>
+            <input type="text" name="nama" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Bahan Baku</label>
+<select name="id_bahan_baku" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" id="add_id_bahan_baku">
+    <option value="">Pilih Bahan Baku</option>
+    @foreach($bahan_baku as $bahan)
+        <option value="{{ $bahan->id }}">{{ $bahan->nama }}</option>
+    @endforeach
+</select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Stok Awal</label>
+              <input type="number" name="stok" value="0" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Min. Stok</label>
+              <input type="number" name="min_stok" value="0" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Harga Jual</label>
+            <input type="number" name="harga" value="0" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Kedaluwarsa</label>
+            <input type="date" name="kadaluarsa" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div class="flex space-x-3 pt-4">
+            <button type="button" onclick="closeAddModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+              Batal
+            </button>
+            <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+              Simpan
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 
-    <script>
-        let sidebarOpen = false;
+  <!-- Edit Product Modal -->
+  <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg w-full max-w-md">
+        <div class="flex items-center justify-between p-6 border-b">
+          <h3 class="text-lg font-semibold">Edit Produk</h3>
+          <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form id="editProductForm" class="p-6 space-y-4">
+          @csrf
+          @method('PUT')
+          <input type="hidden" name="id" id="edit_id">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Nama Produk</label>
+            <input type="text" name="nama" id="edit_nama" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Bahan Baku</label>
+<select name="id_bahan_baku" id="edit_id_bahan_baku" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+    <option value="">Pilih Bahan Baku</option>
+    @foreach($bahan_baku as $bahan)
+        <option value="{{ $bahan->id }}">{{ $bahan->nama }}</option>
+    @endforeach
+</select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Stok</label>
+              <input type="number" name="stok" id="edit_stok" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Min. Stok</label>
+              <input type="number" name="min_stok" id="edit_min_stok" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Harga Jual</label>
+            <input type="number" name="harga" id="edit_harga" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Kedaluwarsa</label>
+            <input type="date" name="kadaluarsa" id="edit_kadaluarsa" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div class="flex space-x-3 pt-4">
+            <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+              Batal
+            </button>
+            <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+              Update
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
-        // Toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            sidebarOpen = !sidebarOpen;
-            
-            if (sidebarOpen) {
-                sidebar.classList.add('show');
-                overlay.classList.remove('hidden');
+ <script>
+    let sidebarOpen = false;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Data bahan baku dari controller (dikirim melalui view)
+    const bahanBakuData = @json($bahan_baku);
+
+    // Toggle sidebar
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      
+      sidebarOpen = !sidebarOpen;
+      
+      if (sidebarOpen) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
+    }
+
+    // Modal functions
+    function openAddProductModal() {
+      loadBahanBakuOptions('add');
+      document.getElementById('addModal').classList.remove('hidden');
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.add('hidden');
+      document.getElementById('addProductForm').reset();
+    }
+
+    function openEditProductModal(productId) {
+      // Gunakan route resource yang sudah ada
+      fetch(`/management/produk/${productId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Produk tidak ditemukan');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
+          document.getElementById('edit_id').value = data.id;
+          document.getElementById('edit_nama').value = data.nama;
+          document.getElementById('edit_stok').value = data.stok;
+          document.getElementById('edit_min_stok').value = data.min_stok;
+          document.getElementById('edit_harga').value = data.harga;
+          
+          // Format date untuk input type="date"
+          const kadaluarsaDate = new Date(data.kadaluarsa);
+          document.getElementById('edit_kadaluarsa').value = kadaluarsaDate.toISOString().split('T')[0];
+          
+          // Load bahan baku options dan set yang dipilih
+          loadBahanBakuOptions('edit', data.id_bahan_baku);
+          document.getElementById('editModal').classList.remove('hidden');
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          Swal.fire('Error', error.message || 'Gagal memuat data produk', 'error');
+        });
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.add('hidden');
+    }
+
+    // Load bahan baku options for select - OPTIMIZED VERSION
+    function loadBahanBakuOptions(modalType, selectedId = null) {
+      const selectElement = document.getElementById(`${modalType}_id_bahan_baku`);
+      if (!selectElement) return;
+      
+      selectElement.innerHTML = '<option value="">Pilih Bahan Baku</option>';
+      
+      bahanBakuData.forEach(bahan => {
+        const option = document.createElement('option');
+        option.value = bahan.id;
+        option.textContent = bahan.nama;
+        if (selectedId && bahan.id == selectedId) {
+          option.selected = true;
+        }
+        selectElement.appendChild(option);
+      });
+    }
+
+    // Form submission handlers - OPTIMIZED VERSION
+    document.getElementById('addProductForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Convert numbers
+      data.stok = parseInt(data.stok);
+      data.min_stok = parseInt(data.min_stok);
+      data.harga = parseInt(data.harga);
+      data.id_bahan_baku = parseInt(data.id_bahan_baku);
+      
+      // Gunakan route resource store
+      fetch('/management/produk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          Swal.fire('Sukses', data.message || 'Produk berhasil ditambahkan', 'success');
+          closeAddModal();
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          Swal.fire('Error', data.message || 'Gagal menambahkan produk', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+      });
+    });
+
+    document.getElementById('editProductForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const productId = document.getElementById('edit_id').value;
+      
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Remove _token and _method from data
+      delete data._token;
+      delete data._method;
+      
+      // Convert numbers
+      data.stok = parseInt(data.stok);
+      data.min_stok = parseInt(data.min_stok);
+      data.harga = parseInt(data.harga);
+      data.id_bahan_baku = parseInt(data.id_bahan_baku);
+      
+      // Gunakan route resource update dengan method PUT
+      fetch(`/management/produk/${productId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          'X-HTTP-Method-Override': 'PUT',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          Swal.fire('Sukses', data.message || 'Produk berhasil diupdate', 'success');
+          closeEditModal();
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          Swal.fire('Error', data.message || 'Gagal mengupdate produk', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+      });
+    });
+
+    // Delete product - OPTIMIZED VERSION
+    function deleteProduct(productId) {
+      Swal.fire({
+        title: 'Apakah Anda yakin?',
+        text: "Produk yang dihapus tidak dapat dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#EF4444',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Gunakan route resource destroy
+          fetch(`/management/produk/${productId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': csrfToken,
+              'Accept': 'application/json'
+            }
+          })
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              Swal.fire('Terhapus!', data.message || 'Produk berhasil dihapus.', 'success');
+              setTimeout(() => location.reload(), 1500);
             } else {
-                sidebar.classList.remove('show');
-                overlay.classList.add('hidden');
+              Swal.fire('Error', data.message || 'Gagal menghapus produk', 'error');
             }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+          });
         }
+      });
+    }
 
-        // Modal functions
-        function openAddModal() {
-            document.getElementById('addModal').classList.remove('hidden');
+    // Search and filter functionality
+    document.getElementById('searchInput').addEventListener('input', function() {
+      filterProducts();
+    });
+
+    document.getElementById('kategoriFilter').addEventListener('change', function() {
+      filterProducts();
+    });
+
+    document.getElementById('statusFilter').addEventListener('change', function() {
+      filterProducts();
+    });
+
+    function filterProducts() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const kategoriFilter = document.getElementById('kategoriFilter').value;
+      const statusFilter = document.getElementById('statusFilter').value;
+      const rows = document.querySelectorAll('.product-row');
+      
+      rows.forEach(row => {
+        const productName = row.querySelector('td:first-child .font-medium').textContent.toLowerCase();
+        const productKategori = row.getAttribute('data-kategori');
+        const productStatus = row.getAttribute('data-status');
+        
+        const matchesSearch = productName.includes(searchTerm);
+        const matchesKategori = !kategoriFilter || productKategori === kategoriFilter;
+        const matchesStatus = !statusFilter || productStatus === statusFilter;
+        
+        if (matchesSearch && matchesKategori && matchesStatus) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
         }
+      });
+    }
 
-        function closeAddModal() {
-            document.getElementById('addModal').classList.add('hidden');
-        }
+    // Update current date and time
+    function updateDateTime() {
+      const now = new Date();
+      const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      const dateTimeElement = document.getElementById('currentDateTime');
+      if (dateTimeElement) {
+        dateTimeElement.textContent = now.toLocaleDateString('id-ID', options);
+      }
+    }
 
-        // Update current date and time
-        function updateDateTime() {
-            const now = new Date();
-            const options = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            const dateTimeElement = document.getElementById('currentDateTime');
-            if (dateTimeElement) {
-                dateTimeElement.textContent = now.toLocaleDateString('id-ID', options);
-            }
-        }
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      if (window.innerWidth >= 1024) {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+        sidebarOpen = false;
+      }
+    });
 
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 1024) {
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                sidebar.classList.remove('show');
-                overlay.classList.add('hidden');
-                sidebarOpen = false;
-            }
-        });
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+      const addModal = document.getElementById('addModal');
+      const editModal = document.getElementById('editModal');
+      if (e.target === addModal) {
+        closeAddModal();
+      }
+      if (e.target === editModal) {
+        closeEditModal();
+      }
+    });
 
-        // Close modal when clicking outside
-        window.addEventListener('click', function(e) {
-            const addModal = document.getElementById('addModal');
-            if (e.target === addModal) {
-                closeAddModal();
-            }
-        });
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            updateDateTime();
-            setInterval(updateDateTime, 60000);
-        });
-    </script>
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      updateDateTime();
+      setInterval(updateDateTime, 60000);
+      
+      // Load bahan baku data langsung dari PHP
+      loadBahanBakuOptions('add');
+    });
+</script>
 </body>
 </html>
