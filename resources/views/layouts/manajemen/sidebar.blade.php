@@ -19,7 +19,7 @@
 
     <!-- NAV MENU -->
     <nav class="flex-1 px-3 py-4 space-y-1">
-        <a href="index.html"
+        <a href="{{route('management.dashboard.index')}}"
             class="nav-item group flex items-center px-3 py-3 text-sm font-medium
             {{ request()->routeIs('management.dashboard*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg">
             <i class="fas fa-home {{ request()->routeIs('management.dashboard*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3"></i>
