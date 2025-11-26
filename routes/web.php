@@ -51,8 +51,5 @@ Route::middleware([IsManagement::class])->group(function () {
             'laporan' => LaporanController::class,
             'opname' => OpnameController::class,
         ]);
-
-        // Route::get('jurnal/data/list', [JurnalController::class, 'getData'])->name('jurnal.data');
-        // Route::get('jurnal/data/summary', [JurnalController::class, 'getSummary'])->name('jurnal.summary');
     });
 });
