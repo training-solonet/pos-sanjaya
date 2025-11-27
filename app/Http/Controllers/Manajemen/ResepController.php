@@ -12,7 +12,39 @@ class ResepController extends Controller
      */
     public function index()
     {
-        //
+        // Load resep with rincian bahan to pass to the view
+        $resep = \App\Models\Resep::with('rincianResep.bahanBaku')->get();
+
+        $recipes = $resep->map(function ($r) {
+            $ingredients = $r->rincianResep->map(function ($ir) {
+                return [
+                    'name' => optional($ir->bahanBaku)->nama ?? '',
+                    'quantity' => $ir->qty ?? 0,
+                    'unit' => $ir->hitungan ?? '',
+                    'price' => $ir->harga ?? 0,
+                    'subtotal' => $ir->harga ?? 0,
+                ];
+            })->toArray();
+
+            $foodCost = array_sum(array_column($ingredients, 'subtotal'));
+
+            return [
+                'id' => $r->id,
+                'name' => $r->nama,
+                'category' => $r->kategori ?? '',
+                'yield' => $r->porsi ?? 1,
+                'duration' => $r->waktu_pembuatan ?? '',
+                'foodCost' => $foodCost,
+                'sellingPrice' => $r->harga_jual ?? null,
+                'margin' => 0,
+                'status' => $r->status ?? 'Draft',
+                'ingredients' => $ingredients,
+                'instructions' => $r->langkah ?? '',
+                'notes' => $r->catatan ?? '',
+            ];
+        })->toArray();
+
+        return view('manajemen.resep.index', compact('resep', 'recipes'));
     }
 
     /**

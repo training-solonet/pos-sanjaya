@@ -3,63 +3,70 @@
 namespace App\Http\Controllers\Manajemen;
 
 use App\Http\Controllers\Controller;
+use App\Models\Konversi;
+use App\Models\Satuan;
 use Illuminate\Http\Request;
 
 class KonversiController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $konversi = Konversi::with('satuan')->get();
+        $satuan = Satuan::all();
+
+        return view('manajemen.konversi.index', compact('konversi', 'satuan'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+
+        return view('manajemen.konversi.create', compact('satuan'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'id_satuan' => 'required|exists:satuan,id',
+            'jumlah' => 'required|integer|min:1',
+            'satuan_dasar' => 'required|integer|min:1',
+            'tgl' => 'required|date',
+        ]);
+
+        Konversi::create($request->all());
+
+        return redirect()->route('management.konversi.index')
+            ->with('success', 'Data konversi berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function edit($id)
     {
-        //
+        $konversi = Konversi::findOrFail($id);
+        $satuan = Satuan::all();
+
+        return view('manajemen.konversi.edit', compact('konversi', 'satuan'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $request->validate([
+            'id_satuan' => 'required|exists:satuan,id',
+            'jumlah' => 'required|integer|min:1',
+            'satuan_dasar' => 'required|integer|min:1',
+            'tgl' => 'required|date',
+        ]);
+
+        $konversi = Konversi::findOrFail($id);
+        $konversi->update($request->all());
+
+        return redirect()->route('management.konversi.index')
+            ->with('success', 'Data konversi berhasil diperbarui.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function destroy($id)
     {
-        //
-    }
+        Konversi::destroy($id);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return redirect()->route('management.konversi.index')
+            ->with('success', 'Data konversi berhasil dihapus.');
     }
 }
