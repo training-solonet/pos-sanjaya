@@ -266,6 +266,7 @@
     </div>
   </div>
 @endsection
+
 @section('js')
 <script>
     let sidebarOpen = false;

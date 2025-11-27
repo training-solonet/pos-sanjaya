@@ -1,244 +1,252 @@
 @extends('layouts.manajemen.index')
 
 @section('content')
-  <!-- Main Content -->
-  <div class="content flex-1 lg:flex-1">
-    
     <!-- Page Content -->
     <main class="p-4 sm:p-6 lg:p-8">
-      <div class="space-y-6">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h2 class="text-2xl font-bold text-gray-900">Jurnal Harian</h2>
-          <div class="flex space-x-2">
-            <input type="date" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg" value="{{ date('Y-m-d') }}">
-            <button onclick="exportData()" class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
-              <i class="fas fa-download mr-2"></i>Export
-            </button>
-          </div>
-        </div>
-
-        <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- Card Total Pemasukan -->
-          <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-arrow-up text-green-600 text-xl"></i>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900">Total Pemasukan</h3>
-              </div>
-            </div>
-            <div class="space-y-1">
-              <p id="summaryTotalRevenue" class="text-3xl font-bold text-green-600">Rp 0</p>
-              <p id="revenueCount" class="text-sm text-gray-500 flex items-center">
-                <i class="fas fa-receipt mr-2"></i>
-                <span id="revenueCountText">0 transaksi hari ini</span>
-              </p>
-            </div>
-          </div>
-
-          <!-- Card Total Pengeluaran -->
-          <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-arrow-down text-red-600 text-xl"></i>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900">Total Pengeluaran</h3>
-              </div>
-            </div>
-            <div class="space-y-1">
-              <p id="summaryTotalExpense" class="text-3xl font-bold text-red-600">Rp 0</p>
-              <p id="expenseCount" class="text-sm text-gray-500 flex items-center">
-                <i class="fas fa-calendar-day mr-2"></i>
-                <span id="expenseCountText">0 transaksi hari ini</span>
-              </p>
-            </div>
-          </div>
-
-          <!-- Card Saldo Bersih -->
-          <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-wallet text-blue-600 text-xl"></i>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900">Saldo Bersih</h3>
-              </div>
-            </div>
-            <div class="space-y-1">
-              <p id="summaryNetBalance" class="text-3xl font-bold text-blue-600">Rp 0</p>
-              <p class="text-sm text-gray-500 flex items-center">
-                <i class="fas fa-chart-line mr-2"></i>
-                Pemasukan - Pengeluaran
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Jurnal Transaksi Section -->
-        <div class="bg-white rounded-lg border border-gray-200">
-          <div class="p-6 border-b">
+        <div class="space-y-6">
+            <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900">Jurnal Transaksi</h3>
-                <p class="text-sm text-gray-500 mt-1">Catatan pemasukan dan pengeluaran</p>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <button onclick="openTransactionModal('pemasukan')" 
-                  class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-                  <i class="fas fa-plus"></i>
-                  Tambah Pemasukan
-                </button>
-                <button onclick="openTransactionModal('pengeluaran')" 
-                  class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
-                  <i class="fas fa-minus"></i>
-                  Tambah Pengeluaran
-                </button>
-              </div>
+                <h2 class="text-2xl font-bold text-gray-900">Jurnal Harian</h2>
+                <div class="flex space-x-2">
+                    <input type="date" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg"
+                        value="{{ date('Y-m-d') }}">
+                    <button onclick="exportData()"
+                        class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                </div>
             </div>
-          </div>
 
-          <!-- Filter Section -->
-          <div class="p-6 border-b bg-gray-50">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Filter Jenis</label>
-                <select id="filterType" onchange="filterTransactions()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
-                  <option value="semua">Semua Transaksi</option>
-                  <option value="pemasukan">Pemasukan</option>
-                  <option value="pengeluaran">Pengeluaran</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Filter Kategori</label>
-                <select id="filterCategory" onchange="filterTransactions()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
-                  <option value="semua">Semua Kategori</option>
-                  <option value="Penjualan">Penjualan</option>
-                  <option value="Bahan Baku">Bahan Baku</option>
-                  <option value="Operasional">Operasional</option>
-                  <option value="Utilitas">Utilitas</option>
-                  <option value="Transportasi">Transportasi</option>
-                  <option value="lainnya">Lainnya</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Cari</label>
-                <input type="text" id="searchInput" onkeyup="filterTransactions()" 
-                  placeholder="Cari keterangan..." 
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
-              </div>
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card Total Pemasukan -->
+                <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-arrow-up text-green-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900">Total Pemasukan</h3>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <p id="summaryTotalRevenue" class="text-3xl font-bold text-green-600">Rp 0</p>
+                        <p id="revenueCount" class="text-sm text-gray-500 flex items-center">
+                            <i class="fas fa-receipt mr-2"></i>
+                            <span id="revenueCountText">0 transaksi hari ini</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card Total Pengeluaran -->
+                <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-arrow-down text-red-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900">Total Pengeluaran</h3>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <p id="summaryTotalExpense" class="text-3xl font-bold text-red-600">Rp 0</p>
+                        <p id="expenseCount" class="text-sm text-gray-500 flex items-center">
+                            <i class="fas fa-calendar-day mr-2"></i>
+                            <span id="expenseCountText">0 transaksi hari ini</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card Saldo Bersih -->
+                <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-wallet text-blue-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900">Saldo Bersih</h3>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <p id="summaryNetBalance" class="text-3xl font-bold text-blue-600">Rp 0</p>
+                        <p class="text-sm text-gray-500 flex items-center">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            Pemasukan - Pengeluaran
+                        </p>
+                    </div>
+                </div>
             </div>
-          </div>
 
-          <div class="overflow-x-auto">
-            <table id="transactionTable" class="w-full">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenis</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nominal</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-200" id="transactionTableBody">
-                <!-- Data akan di-load via JavaScript -->
-              </tbody>
-            </table>
-          </div>
+            <!-- Jurnal Transaksi Section -->
+            <div class="bg-white rounded-lg border border-gray-200">
+                <div class="p-6 border-b">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Jurnal Transaksi</h3>
+                            <p class="text-sm text-gray-500 mt-1">Catatan pemasukan dan pengeluaran</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="openTransactionModal('pemasukan')"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                <i class="fas fa-plus"></i>
+                                Tambah Pemasukan
+                            </button>
+                            <button onclick="openTransactionModal('pengeluaran')"
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+                                <i class="fas fa-minus"></i>
+                                Tambah Pengeluaran
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-          <!-- Table Footer Summary -->
-          <div class="p-6 border-t bg-gray-50">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700">Total Pemasukan:</span>
-                <span id="footerTotalRevenue" class="text-lg font-bold text-green-600">Rp 0</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700">Total Pengeluaran:</span>
-                <span id="footerTotalExpense" class="text-lg font-bold text-red-600">Rp 0</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700">Saldo Bersih:</span>
-                <span id="footerNetBalance" class="text-lg font-bold text-blue-600">Rp 0</span>
-              </div>
+                <!-- Filter Section -->
+                <div class="p-6 border-b bg-gray-50">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Filter Jenis</label>
+                            <select id="filterType" onchange="filterTransactions()"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
+                                <option value="semua">Semua Transaksi</option>
+                                <option value="pemasukan">Pemasukan</option>
+                                <option value="pengeluaran">Pengeluaran</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Filter Kategori</label>
+                            <select id="filterCategory" onchange="filterTransactions()"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
+                                <option value="semua">Semua Kategori</option>
+                                <option value="Penjualan">Penjualan</option>
+                                <option value="Bahan Baku">Bahan Baku</option>
+                                <option value="Operasional">Operasional</option>
+                                <option value="Utilitas">Utilitas</option>
+                                <option value="Transportasi">Transportasi</option>
+                                <option value="lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cari</label>
+                            <input type="text" id="searchInput" onkeyup="filterTransactions()"
+                                placeholder="Cari keterangan..."
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table id="transactionTable" class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenis</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nominal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200" id="transactionTableBody">
+                            <!-- Data akan di-load via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Table Footer Summary -->
+                <div class="p-6 border-t bg-gray-50">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-700">Total Pemasukan:</span>
+                            <span id="footerTotalRevenue" class="text-lg font-bold text-green-600">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-700">Total Pengeluaran:</span>
+                            <span id="footerTotalExpense" class="text-lg font-bold text-red-600">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-700">Saldo Bersih:</span>
+                            <span id="footerNetBalance" class="text-lg font-bold text-blue-600">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </main>
+
   </div>
 
-  <!-- Modal Tambah/Edit Transaksi -->
-  <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-    <div class="flex items-center justify-center min-h-screen p-4">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div class="p-6 border-b">
-          <div class="flex justify-between items-center">
-            <h3 id="modalTitle" class="text-lg font-semibold text-gray-900">Tambah Transaksi</h3>
-            <button onclick="closeTransactionModal()" class="text-gray-400 hover:text-gray-600">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
+    <!-- Modal Tambah/Edit Transaksi -->
+    <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center">
+                        <h3 id="modalTitle" class="text-lg font-semibold text-gray-900">Tambah Transaksi</h3>
+                        <button onclick="closeTransactionModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <form id="transactionForm" class="p-6 space-y-4">
+                    <input type="hidden" id="transactionId" value="">
+                    <input type="hidden" id="transactionType" value="">
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
+                        <input type="date" id="transactionDate"
+                            class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Transaksi</label>
+                        <select name='jenis' id="transactionTypeSelect"
+                            class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400"
+                            required>
+                            <option value="pemasukan">Pemasukan</option>
+                            <option value="pengeluaran">Pengeluaran</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+                        <select id="transactionCategory"
+                            class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400"
+                            required>
+                            <!-- Options will be dynamically populated -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan</label>
+                        <textarea id="transactionDescription" rows="3" placeholder="Contoh: Penjualan roti coklat dan donat"
+                            class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400"
+                            required></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nominal (Rp)</label>
+                        <input type="number" id="transactionAmount" placeholder="0" min="1"
+                            class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400"
+                            required>
+                    </div>
+
+                    <div class="flex space-x-3 pt-4">
+                        <button type="button" onclick="closeTransactionModal()"
+                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                            Batal
+                        </button>
+                        <button type="submit" id="submitButton"
+                            class="flex-1 px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+                            Simpan
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-        <form id="transactionForm" class="p-6 space-y-4">
-          <input type="hidden" id="transactionId" value="">
-          <input type="hidden" id="transactionType" value="">
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
-            <input type="date" id="transactionDate" 
-                   class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400" required>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Transaksi</label>
-            <select id="transactionTypeSelect" 
-                    class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400" required>
-              <option value="pemasukan">Pemasukan</option>
-              <option value="pengeluaran">Pengeluaran</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
-            <select id="transactionCategory"
-                    class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400" required>
-              <!-- Options will be dynamically populated -->
-            </select>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan</label>
-            <textarea id="transactionDescription" rows="3" placeholder="Contoh: Penjualan roti coklat dan donat" 
-                   class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400" required></textarea>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Nominal (Rp)</label>
-            <input type="number" id="transactionAmount" placeholder="0" min="1"
-                   class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400" required>
-          </div>
-          
-          <div class="flex space-x-3 pt-4">
-            <button type="button" onclick="closeTransactionModal()" 
-                    class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-              Batal
-            </button>
-            <button type="submit" id="submitButton"
-                    class="flex-1 px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
-              Simpan
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
-  </div>
 @endsection
+
 @section('js')
 <script>
     // Categories configuration
@@ -791,4 +799,6 @@
       }
     });
   </script>
+
 @endsection
+
