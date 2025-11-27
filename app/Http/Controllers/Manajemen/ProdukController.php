@@ -31,8 +31,7 @@ class ProdukController extends Controller
 
         $request->validate([
             'nama' => 'required|string|max:255',
-            'bahan_baku_ids' => 'required|array',
-            'bahan_baku_ids.*' => 'exists:bahan_baku,id',
+            'id_bahan_baku' => 'required|exists:bahan_baku,id',
             'stok' => 'required|integer|min:0',
             'min_stok' => 'required|integer|min:0',
             'harga' => 'required|integer|min:0',
@@ -42,16 +41,14 @@ class ProdukController extends Controller
         try {
             DB::transaction(function () use ($request) {
                 // Create product
-                $produk = Produk::create([
+                Produk::create([
                     'nama' => $request->nama,
+                    'id_bahan_baku' => $request->id_bahan_baku,
                     'stok' => $request->stok,
                     'min_stok' => $request->min_stok,
                     'harga' => $request->harga,
                     'kadaluarsa' => $request->kadaluarsa,
                 ]);
-
-                // Attach multiple bahan baku
-                $produk->bahan_baku()->attach($request->bahan_baku_ids);
             });
 
             return response()->json([
@@ -79,11 +76,11 @@ class ProdukController extends Controller
             return response()->json([
                 'id' => $produk->id,
                 'nama' => $produk->nama,
+                'id_bahan_baku' => $produk->id_bahan_baku,
                 'stok' => $produk->stok,
                 'min_stok' => $produk->min_stok,
                 'harga' => $produk->harga,
                 'kadaluarsa' => $produk->kadaluarsa,
-                'bahan_baku_ids' => $produk->bahan_baku->pluck('id')->toArray(),
             ]);
         } catch (\Exception $e) {
             Log::error('Show Product Error: '.$e->getMessage());
@@ -103,8 +100,7 @@ class ProdukController extends Controller
 
         $request->validate([
             'nama' => 'required|string|max:255',
-            'bahan_baku_ids' => 'required|array',
-            'bahan_baku_ids.*' => 'exists:bahan_baku,id',
+            'id_bahan_baku' => 'required|exists:bahan_baku,id',
             'stok' => 'required|integer|min:0',
             'min_stok' => 'required|integer|min:0',
             'harga' => 'required|integer|min:0',
@@ -118,14 +114,12 @@ class ProdukController extends Controller
                 // Update product
                 $produk->update([
                     'nama' => $request->nama,
+                    'id_bahan_baku' => $request->id_bahan_baku,
                     'stok' => $request->stok,
                     'min_stok' => $request->min_stok,
                     'harga' => $request->harga,
                     'kadaluarsa' => $request->kadaluarsa,
                 ]);
-
-                // Sync multiple bahan baku
-                $produk->bahan_baku()->sync($request->bahan_baku_ids);
             });
 
             return response()->json([

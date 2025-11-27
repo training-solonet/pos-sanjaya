@@ -1,80 +1,9 @@
-<!DOCTYPE html>
-<html lang="id">
+@extends('layouts.manajemen.index')
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>POS Sanjaya - Bahan Baku</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "#3B82F6",
-            secondary: "#1E40AF",
-            accent: "#F59E0B",
-            success: "#10B981",
-            danger: "#EF4444",
-            dark: "#1F2937",
-          },
-        },
-      },
-    };
-  </script>
-  <style>
-    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
-
-    body {
-      font-family: "Inter", sans-serif;
-    }
-
-    .scrollbar-hide {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    .scrollbar-hide::-webkit-scrollbar {
-      display: none;
-    }
-
-    @media (max-width: 1023px) {
-      .sidebar {
-        transform: translateX(-100%);
-      }
-
-      .sidebar:not(.-translate-x-full) {
-        transform: translateX(0);
-      }
-    }
-
-    @media (min-width: 1024px) {
-      .sidebar {
-        transform: translateX(0) !important;
-      }
-    }
-  </style>
-</head>
-
-<body class="bg-gray-50 min-h-screen lg:flex">
-  <!-- Mobile Overlay -->
-  <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()">
-  </div>
-
-  <!-- Sidebar -->
-  @include('layouts.manajemen.sidebar')
-
-  <!-- Sidebar Overlay for Mobile -->
-  <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()">
-  </div>
-
+@section('content')
   <!-- Main Content -->
   <div class="content flex-1 lg:flex-1">
     <!-- Header -->
-    @include('layouts.manajemen.header')
     
     <!-- Page Content -->
     <main class="p-4 sm:p-6 lg:p-8">
@@ -336,7 +265,8 @@
       </div>
     </div>
   </div>
-
+@endsection
+@section('js')
 <script>
     let sidebarOpen = false;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -717,5 +647,4 @@
       setInterval(updateDateTime, 60000);
     });
 </script>
-</body>
-</html>
+@endsection
