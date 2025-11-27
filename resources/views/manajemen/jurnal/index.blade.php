@@ -86,15 +86,11 @@
                             <p class="text-sm text-gray-500 mt-1">Catatan pemasukan dan pengeluaran</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button onclick="openTransactionModal('pemasukan')"
-                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                            <!-- TOMBOL TAMBAH TRANSAKSI YANG DISATUKAN -->
+                            <button onclick="openTransactionModal()"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
                                 <i class="fas fa-plus"></i>
-                                Tambah Pemasukan
-                            </button>
-                            <button onclick="openTransactionModal('pengeluaran')"
-                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
-                                <i class="fas fa-minus"></i>
-                                Tambah Pengeluaran
+                                Tambah Transaksi
                             </button>
                         </div>
                     </div>
@@ -173,8 +169,6 @@
         </div>
     </main>
 
-  </div>
-
     <!-- Modal Tambah/Edit Transaksi -->
     <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
         <div class="flex items-center justify-center min-h-screen p-4">
@@ -237,7 +231,7 @@
                             Batal
                         </button>
                         <button type="submit" id="submitButton"
-                            class="flex-1 px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+                            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                             Simpan
                         </button>
                     </div>
@@ -281,6 +275,11 @@
       // Load initial data
       loadTransactions();
       updateSummary();
+
+      // Add event listener for transaction type change
+      document.getElementById('transactionTypeSelect').addEventListener('change', function() {
+        populateCategories(this.value);
+      });
 
       // Initialize mobile state
       if (window.innerWidth < 1024) {
@@ -537,34 +536,26 @@
       }
     }
 
-    // Open transaction modal
-    function openTransactionModal(type) {
+    // Open transaction modal - DIUBAH: tanpa parameter type
+    function openTransactionModal() {
       currentEditId = null;
       const modal = document.getElementById('transactionModal');
       const modalTitle = document.getElementById('modalTitle');
       const typeSelect = document.getElementById('transactionTypeSelect');
-      const typeInput = document.getElementById('transactionType');
       const submitButton = document.getElementById('submitButton');
       
-      if (!modal || !modalTitle || !typeSelect || !typeInput || !submitButton) return;
+      if (!modal || !modalTitle || !typeSelect || !submitButton) return;
       
-      // Set type
-      typeInput.value = type;
-      typeSelect.value = type;
+      // Set default type to pemasukan
+      typeSelect.value = 'pemasukan';
       
       // Update modal title and button
-      if (type === 'pemasukan') {
-        modalTitle.textContent = 'Tambah Pemasukan';
-        submitButton.className = 'flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700';
-        submitButton.textContent = 'Simpan Pemasukan';
-      } else {
-        modalTitle.textContent = 'Tambah Pengeluaran';
-        submitButton.className = 'flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700';
-        submitButton.textContent = 'Simpan Pengeluaran';
-      }
+      modalTitle.textContent = 'Tambah Transaksi';
+      submitButton.className = 'flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700';
+      submitButton.textContent = 'Simpan Transaksi';
       
-      // Populate categories
-      populateCategories(type);
+      // Populate categories based on default type
+      populateCategories('pemasukan');
       
       // Reset form and set today's date
       document.getElementById('transactionForm').reset();
@@ -799,6 +790,4 @@
       }
     });
   </script>
-
 @endsection
-
