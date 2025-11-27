@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Jurnal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class JurnalController extends Controller
 {
@@ -33,6 +34,7 @@ class JurnalController extends Controller
 
     public function store(Request $request)
     {
+
         $validated = $request->validate([
             'tgl' => 'required|date',
             'jenis' => 'required|in:pemasukan,pengeluaran',
