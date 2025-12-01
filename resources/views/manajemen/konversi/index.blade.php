@@ -361,21 +361,25 @@
         updateUnitLabels();
 
         if (isNaN(fromValue) || fromValue === '') {
-            document.getElementById('toValue').value = '';
-            document.getElementById('resultSummary').classList.add('hidden');
+            const toValEl = document.getElementById('toValue');
+            if (toValEl) toValEl.value = '';
+            const resSummaryEl = document.getElementById('resultSummary');
+            if (resSummaryEl && resSummaryEl.classList) resSummaryEl.classList.add('hidden');
             return;
         }
 
         // Only custom units conversion
         const result = convertCustomUnits(fromValue, fromUnit, toUnit);
 
-        document.getElementById('toValue').value = result.toLocaleString('id-ID');
+        const toValEl2 = document.getElementById('toValue');
+        if (toValEl2) toValEl2.value = result.toLocaleString('id-ID');
 
         // Show result summary
-        const summary =
-            `${fromValue.toLocaleString('id-ID')} ${fromUnit} = ${result.toLocaleString('id-ID')} ${toUnit}`;
-        document.getElementById('summaryText').textContent = summary;
-        document.getElementById('resultSummary').classList.remove('hidden');
+        const summary = `${fromValue.toLocaleString('id-ID')} ${fromUnit} = ${result.toLocaleString('id-ID')} ${toUnit}`;
+        const summaryTextEl = document.getElementById('summaryText');
+        if (summaryTextEl) summaryTextEl.textContent = summary;
+        const resSummaryEl2 = document.getElementById('resultSummary');
+        if (resSummaryEl2 && resSummaryEl2.classList) resSummaryEl2.classList.remove('hidden');
 
         // Add to history
         addToHistory(fromValue, fromUnit, result, toUnit);
@@ -446,9 +450,9 @@
     }
 
     function clearAll() {
-        document.getElementById('fromValue').value = '';
-        document.getElementById('toValue').value = '';
-        document.getElementById('resultSummary').classList.add('hidden');
+        const fv = document.getElementById('fromValue'); if (fv) fv.value = '';
+        const tv = document.getElementById('toValue'); if (tv) tv.value = '';
+        const resEl = document.getElementById('resultSummary'); if (resEl && resEl.classList) resEl.classList.add('hidden');
     }
 
     function addToHistory(fromValue, fromUnit, toValue, toUnit) {
@@ -578,17 +582,17 @@
     }
 
     function showAddUnitForm() {
-        document.getElementById('addUnitForm').classList.remove('hidden');
+        const f = document.getElementById('addUnitForm'); if (f && f.classList) f.classList.remove('hidden');
         // Focus on first input
         setTimeout(() => {
-            document.getElementById('newUnitName').focus();
+            const n = document.getElementById('newUnitName'); if (n) n.focus();
         }, 100);
         // Reset form
         resetForm();
     }
 
     function hideAddUnitForm() {
-        document.getElementById('addUnitForm').classList.add('hidden');
+        const f = document.getElementById('addUnitForm'); if (f && f.classList) f.classList.add('hidden');
         resetForm();
     }
 

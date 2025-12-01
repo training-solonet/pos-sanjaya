@@ -19,6 +19,8 @@ return new class extends Migration
             $table->integer('waktu_pembuatan')->nullable()->comment('dalam menit');
             $table->text('langkah')->nullable();
             $table->text('catatan')->nullable();
+            $table->integer('harga_jual')->default(0);
+            $table->integer('margin')->default(0);
             $table->enum('status', ['draft', 'aktif', 'nonaktif'])->default('aktif');
             $table->timestamps();
         });

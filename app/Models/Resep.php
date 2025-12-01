@@ -14,6 +14,7 @@ class Resep extends Model
         'kategori',
         'waktu_pembuatan',
         'langkah',
+        'harga_jual',
         'catatan',
         'status',
     ];
