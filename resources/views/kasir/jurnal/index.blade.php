@@ -1,0 +1,725 @@
+@extends('layouts.kasir.index')
+
+@section('content')
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Sanjaya - Jurnal Harian</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#1E40AF',
+                        accent: '#F59E0B',
+                        success: '#10B981',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        /* Responsive sidebar styles */
+        @media (max-width: 1023px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar:not(.-translate-x-full) {
+                transform: translateX(0);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .sidebar {
+                transform: translateX(0) !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen lg:flex">
+    <!-- Mobile Overlay -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Main Content -->
+    <div class="content flex-1 lg:flex-1">
+
+                    <!-- Header Actions -->
+                    <div class="flex items-center space-x-4">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <main class="p-4 sm:p-6 lg:p-8">
+            <div class="space-y-6">
+                <!-- Header -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <h2 class="text-2xl font-bold text-gray-900">Jurnal Harian</h2>
+                    <div class="flex space-x-2">
+                        <input type="date" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg" value="2025-10-03">
+                        <button class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Card Total Pemasukan -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-arrow-up text-green-600 text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900">Total Pemasukan</h3>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <p id="summaryTotalRevenue" class="text-3xl font-bold text-green-600">Rp 2.450.000</p>
+                            <p id="revenueCount" class="text-sm text-gray-500 flex items-center">
+                                <i class="fas fa-receipt mr-2"></i>
+                                3 transaksi hari ini
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Card Total Pengeluaran -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-arrow-down text-red-600 text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900">Total Pengeluaran</h3>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <p id="summaryTotalExpense" class="text-3xl font-bold text-red-600">Rp 450.000</p>
+                            <p id="expenseCount" class="text-sm text-gray-500 flex items-center">
+                                <i class="fas fa-calendar-day mr-2"></i>
+                                1 transaksi hari ini
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Card Saldo Bersih -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-wallet text-blue-600 text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900">Saldo Bersih</h3>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <p id="summaryNetBalance" class="text-3xl font-bold text-green-600">Rp 650.000</p>
+                            <p class="text-sm text-gray-500 flex items-center">
+                                <i class="fas fa-chart-line mr-2"></i>
+                                Pemasukan - Pengeluaran
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jurnal Transaksi Section -->
+                <div class="bg-white rounded-lg border border-gray-200">
+                    <div class="p-6 border-b">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Jurnal Transaksi</h3>
+                                <p class="text-sm text-gray-500 mt-1">Catatan pemasukan dan pengeluaran</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="openTransactionModal('pemasukan')" 
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                    <i class="fas fa-plus"></i>
+                                    Tambah Pemasukan
+                                </button>
+                                <button onclick="openTransactionModal('pengeluaran')" 
+                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+                                    <i class="fas fa-minus"></i>
+                                    Tambah Pengeluaran
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Section -->
+                    <div class="p-6 border-b bg-gray-50">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Filter Jenis</label>
+                                <select id="filterType" onchange="filterTransactions()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
+                                    <option value="semua">Semua Transaksi</option>
+                                    <option value="pemasukan">Pemasukan</option>
+                                    <option value="pengeluaran">Pengeluaran</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Filter Kategori</label>
+                                <select id="filterCategory" onchange="filterTransactions()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
+                                    <option value="semua">Semua Kategori</option>
+                                    <option value="penjualan">Penjualan</option>
+                                    <option value="lainnya">Lainnya</option>
+                                    <option value="operasional">Operasional</option>
+                                    <option value="utilitas">Utilitas</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Cari</label>
+                                <input type="text" id="searchInput" onkeyup="filterTransactions()" 
+                                    placeholder="Cari keterangan..." 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table id="transactionTable" class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenis</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nominal</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <!-- Pemasukan -->
+                                <tr data-type="pemasukan" data-category="penjualan">
+                                    <td class="px-6 py-4 text-sm text-gray-500">03/10/2025</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-arrow-up mr-1"></i>
+                                            Pemasukan
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan roti coklat dan donat</td>
+                                    <td class="px-6 py-4 text-sm font-medium text-green-600">+ Rp 350.000</td>
+                                    <td class="px-6 py-4">
+                                        <button onclick="editTransaction(this)" class="text-green-600 hover:text-green-800 mr-2">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="deleteTransaction(this)" class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-type="pemasukan" data-category="penjualan">
+                                    <td class="px-6 py-4 text-sm text-gray-500">03/10/2025</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-arrow-up mr-1"></i>
+                                            Pemasukan
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan kue ulang tahun custom</td>
+                                    <td class="px-6 py-4 text-sm font-medium text-green-600">+ Rp 500.000</td>
+                                    <td class="px-6 py-4">
+                                        <button onclick="editTransaction(this)" class="text-green-600 hover:text-green-800 mr-2">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="deleteTransaction(this)" class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-type="pemasukan" data-category="penjualan">
+                                    <td class="px-6 py-4 text-sm text-gray-500">03/10/2025</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-arrow-up mr-1"></i>
+                                            Pemasukan
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan pastry dan croissant</td>
+                                    <td class="px-6 py-4 text-sm font-medium text-green-600">+ Rp 250.000</td>
+                                    <td class="px-6 py-4">
+                                        <button onclick="editTransaction(this)" class="text-green-600 hover:text-green-800 mr-2">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="deleteTransaction(this)" class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Pengeluaran -->
+                                <tr data-type="pengeluaran" data-category="utilitas">
+                                    <td class="px-6 py-4 text-sm text-gray-500">03/10/2025</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            <i class="fas fa-arrow-down mr-1"></i>
+                                            Pengeluaran
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">Utilitas</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">Bayar listrik dan air bulan Oktober</td>
+                                    <td class="px-6 py-4 text-sm font-medium text-red-600">- Rp 450.000</td>
+                                    <td class="px-6 py-4">
+                                        <button onclick="editTransaction(this)" class="text-green-600 hover:text-green-800 mr-2">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="deleteTransaction(this)" class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Table Footer Summary -->
+                    <div class="p-6 border-t bg-gray-50">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Total Pemasukan:</span>
+                                <span id="footerTotalRevenue" class="text-lg font-bold text-green-600">Rp 1.100.000</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Total Pengeluaran:</span>
+                                <span id="footerTotalExpense" class="text-lg font-bold text-red-600">Rp 450.000</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Saldo Bersih:</span>
+                                <span id="footerNetBalance" class="text-lg font-bold text-blue-600">Rp 650.000</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Tambah/Edit Transaksi -->
+    <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center">
+                        <h3 id="modalTitle" class="text-lg font-semibold text-gray-900">Tambah Transaksi</h3>
+                        <button onclick="closeTransactionModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <form id="transactionForm" class="p-6 space-y-4">
+                    <input type="hidden" id="transactionType" value="">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
+                        <input type="date" id="transactionDate" 
+                               class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Transaksi</label>
+                        <select id="transactionTypeSelect" disabled
+                                class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400 bg-gray-100">
+                            <option value="pemasukan">Pemasukan</option>
+                            <option value="pengeluaran">Pengeluaran</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+                        <select id="transactionCategory"
+                                class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400">
+                            <!-- Options will be dynamically populated -->
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan</label>
+                        <textarea id="transactionDescription" rows="3" placeholder="Contoh: Penjualan roti coklat dan donat" 
+                               class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nominal (Rp)</label>
+                        <input type="number" id="transactionAmount" placeholder="0" 
+                               class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400">
+                    </div>
+                    
+                    <div class="flex space-x-3 pt-4">
+                        <button type="button" onclick="closeTransactionModal()" 
+                                class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                            Batal
+                        </button>
+                        <button type="submit" id="submitButton"
+                                class="flex-1 px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+                            Simpan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Categories configuration
+        const categories = {
+            pemasukan: [
+                { value: 'penjualan', label: 'Penjualan' },
+                { value: 'lainnya', label: 'Lainnya' }
+            ],
+            pengeluaran: [
+                { value: 'operasional', label: 'Operasional' },
+                { value: 'utilitas', label: 'Utilitas (Listrik, Air, dll)' },
+                { value: 'lainnya', label: 'Lainnya' }
+            ]
+        };
+
+        // Category labels for display
+        const categoryLabels = {
+            'penjualan': 'Penjualan',
+            'operasional': 'Operasional',
+            'utilitas': 'Utilitas',
+            'lainnya': 'Lainnya'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+            
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('transactionDate').value = today;
+            document.getElementById('filterDate').value = today;
+            
+            // Calculate summary on page load
+            updateSummary();
+        });
+
+        // Update date time
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            const dateTimeString = now.toLocaleDateString('id-ID', options);
+            const dateTimeElement = document.getElementById('currentDateTime');
+            if (dateTimeElement) {
+                dateTimeElement.textContent = dateTimeString;
+            }
+        }
+
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Open transaction modal
+        function openTransactionModal(type) {
+            const modal = document.getElementById('transactionModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const typeSelect = document.getElementById('transactionTypeSelect');
+            const typeInput = document.getElementById('transactionType');
+            const submitButton = document.getElementById('submitButton');
+            
+            // Set type
+            typeInput.value = type;
+            typeSelect.value = type;
+            
+            // Update modal title and button
+            if (type === 'pemasukan') {
+                modalTitle.textContent = 'Tambah Pemasukan';
+                submitButton.className = 'flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700';
+            } else {
+                modalTitle.textContent = 'Tambah Pengeluaran';
+                submitButton.className = 'flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700';
+            }
+            
+            // Populate categories
+            populateCategories(type);
+            
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close transaction modal
+        function closeTransactionModal() {
+            document.getElementById('transactionModal').classList.add('hidden');
+            document.body.style.overflow = '';
+            document.getElementById('transactionForm').reset();
+        }
+
+        // Populate categories based on transaction type
+        function populateCategories(type) {
+            const categorySelect = document.getElementById('transactionCategory');
+            categorySelect.innerHTML = '';
+            
+            categories[type].forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.value;
+                option.textContent = cat.label;
+                categorySelect.appendChild(option);
+            });
+        }
+
+        // Handle form submission
+        document.getElementById('transactionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const type = document.getElementById('transactionType').value;
+            const date = document.getElementById('transactionDate').value;
+            const category = document.getElementById('transactionCategory').value;
+            const description = document.getElementById('transactionDescription').value;
+            const amount = document.getElementById('transactionAmount').value;
+
+            if (!date || !category || !description || !amount) {
+                alert('Semua field harus diisi!');
+                return;
+            }
+
+            if (amount <= 0) {
+                alert('Nominal harus lebih dari 0!');
+                return;
+            }
+
+            // Add transaction to table
+            addTransactionToTable(type, date, category, description, amount);
+            
+            // Close modal
+            closeTransactionModal();
+            
+            // Show success message
+            showSuccessMessage(`${type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'} berhasil ditambahkan!`);
+            
+            // Update summary
+            updateSummary();
+        });
+
+        // Add transaction to table
+        function addTransactionToTable(type, date, category, description, amount) {
+            const tbody = document.querySelector('#transactionTable tbody');
+            const badgeClass = type === 'pemasukan' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+            const iconClass = type === 'pemasukan' ? 'fa-arrow-up' : 'fa-arrow-down';
+            const amountClass = type === 'pemasukan' ? 'text-green-600' : 'text-red-600';
+            const amountPrefix = type === 'pemasukan' ? '+' : '-';
+            const categoryLabel = categoryLabels[category] || category;
+
+            const newRow = document.createElement('tr');
+            newRow.setAttribute('data-type', type);
+            newRow.setAttribute('data-category', category);
+            newRow.innerHTML = `
+                <td class="px-6 py-4 text-sm text-gray-500">${formatDate(date)}</td>
+                <td class="px-6 py-4 text-sm">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClass}">
+                        <i class="fas ${iconClass} mr-1"></i>
+                        ${type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">${categoryLabel}</td>
+                <td class="px-6 py-4 text-sm text-gray-900">${description}</td>
+                <td class="px-6 py-4 text-sm font-medium ${amountClass}">${amountPrefix} Rp ${parseInt(amount).toLocaleString('id-ID')}</td>
+                <td class="px-6 py-4">
+                    <button onclick="editTransaction(this)" class="text-green-600 hover:text-green-800 mr-2">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteTransaction(this)" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            
+            tbody.appendChild(newRow);
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            });
+        }
+
+        // Update summary - FIXED CALCULATION
+        function updateSummary() {
+            const rows = document.querySelectorAll('#transactionTable tbody tr');
+            let totalRevenue = 0;
+            let totalExpense = 0;
+            let revenueCount = 0;
+            let expenseCount = 0;
+            
+            rows.forEach(row => {
+                // Skip hidden rows
+                if (row.style.display === 'none') return;
+                
+                const type = row.getAttribute('data-type');
+                
+                // Get amount from cell (index 4)
+                const amountCell = row.cells[4];
+                if (!amountCell) return;
+                
+                // Extract number from text like "+ Rp 350.000" or "- Rp 650.000"
+                const amountText = amountCell.textContent.trim();
+                const amountNumber = amountText.replace(/[^0-9]/g, '');
+                const amount = parseInt(amountNumber) || 0;
+                
+                if (type === 'pemasukan') {
+                    totalRevenue += amount;
+                    revenueCount++;
+                } else if (type === 'pengeluaran') {
+                    totalExpense += amount;
+                    expenseCount++;
+                }
+            });
+            
+            const netBalance = totalRevenue - totalExpense;
+            
+            // Update summary cards
+            document.getElementById('summaryTotalRevenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
+            document.getElementById('summaryTotalExpense').textContent = `Rp ${totalExpense.toLocaleString('id-ID')}`;
+            document.getElementById('summaryNetBalance').textContent = `Rp ${netBalance.toLocaleString('id-ID')}`;
+            
+            document.getElementById('revenueCount').innerHTML = `<i class="fas fa-receipt mr-2"></i>${revenueCount} transaksi hari ini`;
+            document.getElementById('expenseCount').innerHTML = `<i class="fas fa-calendar-day mr-2"></i>${expenseCount} transaksi hari ini`;
+            
+            // Update footer
+            document.getElementById('footerTotalRevenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
+            document.getElementById('footerTotalExpense').textContent = `Rp ${totalExpense.toLocaleString('id-ID')}`;
+            document.getElementById('footerNetBalance').textContent = `Rp ${netBalance.toLocaleString('id-ID')}`;
+            
+            // Update net balance color
+            const netBalanceElements = [
+                document.getElementById('summaryNetBalance'),
+                document.getElementById('footerNetBalance')
+            ];
+            
+            netBalanceElements.forEach(el => {
+                el.classList.remove('text-blue-600', 'text-green-600', 'text-red-600');
+                if (netBalance > 0) {
+                    el.classList.add('text-green-600');
+                } else if (netBalance < 0) {
+                    el.classList.add('text-red-600');
+                } else {
+                    el.classList.add('text-blue-600');
+                }
+            });
+        }
+
+        // Filter transactions
+        function filterTransactions() {
+            const filterType = document.getElementById('filterType').value;
+            const filterCategory = document.getElementById('filterCategory').value;
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            
+            const rows = document.querySelectorAll('#transactionTable tbody tr');
+            
+            rows.forEach(row => {
+                const type = row.getAttribute('data-type');
+                const category = row.getAttribute('data-category');
+                const description = row.cells[3].textContent.toLowerCase();
+                
+                let showRow = true;
+                
+                // Filter by type
+                if (filterType !== 'semua' && type !== filterType) {
+                    showRow = false;
+                }
+                
+                // Filter by category
+                if (filterCategory !== 'semua' && category !== filterCategory) {
+                    showRow = false;
+                }
+                
+                // Filter by search
+                if (searchInput && !description.includes(searchInput)) {
+                    showRow = false;
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+            });
+            
+            // Update summary after filtering
+            updateSummary();
+        }
+
+        // Edit transaction
+        function editTransaction(button) {
+            alert('Fitur edit akan segera tersedia!');
+        }
+
+        // Delete transaction
+        function deleteTransaction(button) {
+            if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+                button.closest('tr').remove();
+                updateSummary();
+                showSuccessMessage('Transaksi berhasil dihapus!');
+            }
+        }
+
+        // Show success message
+        function showSuccessMessage(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    ${message}
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s';
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('transactionModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeTransactionModal();
+            }
+        });
+
+        // Filter by date
+        document.getElementById('filterDate').addEventListener('change', function() {
+            // This can be enhanced to filter transactions by date
+            console.log('Filter by date:', this.value);
+        });
+    </script>
+</body>
+</html>
+@endsection

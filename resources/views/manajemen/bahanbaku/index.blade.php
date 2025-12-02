@@ -1,737 +1,651 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="                    Dashboard Manajemen
-                </a>
+@extends('layouts.manajemen.index')
 
-                <!-- Jurnal Harian -->
-                <a href="jurnal.html" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Sanjaya - Stok Bahan Baku</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3B82F6',
-                        secondary: '#1E40AF',
-                        accent: '#F59E0B',
-                        success: '#10B981',
-                        danger: '#EF4444',
-                        dark: '#1F2937',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        @media (max-width: 1024px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.show { transform: translateX(0); }
-        }
-    </style>
-</head>
-<body class="bg-gray-50 min-h-screen lg:flex">
-    <!-- Mobile Overlay -->
-    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+@section('content')
+  <!-- Main Content -->
+  <div class="content flex-1 lg:flex-1">
+    <!-- Header -->
     
-    <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative lg:flex-shrink-0">
-        <div class="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-gradient-to-r from-green-400 to-green-700 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-cash-register text-white text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold text-gray-900">Sanjaya Bakery</h1>
-                </div>
-            </div>
-            <button onclick="toggleSidebar()" class="lg:hidden w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                <i class="fas fa-times text-gray-600"></i>
-            </button>
-        </div>
-
-        <!-- Navigation -->
-        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            <a href="{{ route("manajemen") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-home text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Dashboard Manajemen
-            </a>
-            <a href="{{ route("manajemen_jurnal") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-book text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Jurnal Harian
-            </a>
-            <a href="{{ route("manajemen_bahanbaku") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-400 to-green-700 rounded-lg">
-                <i class="fas fa-boxes text-white mr-3"></i>
-                Stok Bahan Baku
-            </a>
-            <a href="{{ route("manajemen_produk") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-cookie-bite text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Stok Produk
-            </a>
-            <a href="{{ route("manajemen_konversi") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-exchange-alt text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Konversi Satuan
-            </a>
-            <a href="{{ route("manajemen_resep") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-utensils text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Resep & Produksi
-            </a>
-            <a href="{{ route("manajemen_laporan") }}" class="nav-item group flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-chart-line text-gray-400 group-hover:text-green-600 mr-3"></i>
-                Laporan
-            </a>
-        </nav>
-
-        <!-- User Profile -->
-        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                    <i class="fas fa-user text-gray-600"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate">Admin</p>
-                    <p class="text-xs text-gray-500">Kasir</p>
-                </div>
-                <button class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200">
-                    <i class="fas fa-sign-out-alt text-gray-600 text-sm"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sidebar Overlay for Mobile -->
-    <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()"></div>
-
-    <!-- Main Content -->
-    <div class="content flex-1 lg:flex-1">
+    <!-- Page Content -->
+    <main class="p-4 sm:p-6 lg:p-8">
+      <div class="space-y-6">
         <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-            <div class="px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <!-- Mobile Menu Button & Page Title -->
-                    <div class="flex items-center space-x-4">
-                        <button onclick="toggleSidebar()" class="lg:hidden w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <i class="fas fa-bars text-gray-600"></i>
-                        </button>
-                    </div>
-
-                    <!-- Header Actions -->
-                    <div class="flex items-center space-x-4">
-                        <div class="hidden md:block text-right">
-                            <p class="text-sm font-medium text-gray-900">Kasir: Admin</p>
-                            <p class="text-xs text-gray-500" id="currentDateTime"></p>
-                        </div>
-                        <button class="relative w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200">
-                            <i class="fas fa-bell text-gray-600"></i>
-                            <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Page Content -->
-        <main class="p-4 sm:p-6 lg:p-8">
-            <div class="space-y-6">
-                <!-- Header -->
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h2 class="text-2xl font-bold text-gray-900">Stok Bahan Baku</h2>
-                    <div class="flex gap-2">
-                        <a href="stok-opname.html" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
-                            <i class="fas fa-clipboard-check mr-2"></i>Stok Opname
-                        </a>
-                        <button class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 transition-all flex items-center">
-                            <i class="fas fa-plus mr-2"></i>Tambah Bahan
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Alert Stok Rendah -->
-                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div class="flex items-center">
-                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
-                        <span class="text-red-800 font-medium">Peringatan: 3 bahan baku memiliki stok rendah!</span>
-                    </div>
-                </div>
-
-                <!-- Search & Filter -->
-                <div class="bg-white rounded-lg border border-gray-200 p-4">
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <div class="flex-1">
-                            <input type="text" id="searchInput" placeholder="Cari bahan baku..." 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                                   onkeyup="filterData()">
-                        </div>
-                        <select id="categoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                                onchange="filterData()">
-                            <option value="">Semua Kategori</option>
-                            <option value="Bahan Utama">Bahan Utama</option>
-                            <option value="Bahan Pembantu">Bahan Pembantu</option>
-                        </select>
-                        <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                                onchange="filterData()">
-                            <option value="">Semua Status</option>
-                            <option value="Cukup">Stok Cukup</option>
-                            <option value="Rendah">Stok Rendah</option>
-                            <option value="Habis">Habis</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Stock Grid -->
-                <div id="stockGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <!-- Stock Item Normal -->
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-gray-900">Beras</h3>
-                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-success/10 text-success">Cukup</span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Stok Saat Ini</span>
-                                <span class="font-medium">50 kg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Min. Stok</span>
-                                <span class="font-medium">10 kg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Harga/kg</span>
-                                <span class="font-medium">Rp 12.000</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Kategori</span>
-                                <span class="font-medium">Biji-bijian</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 pt-4 border-t flex space-x-2">
-                            <button class="flex-1 px-3 py-2 bg-primary/10 text-primary rounded-lg text-sm hover:bg-primary/20">
-                                Edit
-                            </button>
-                            <button class="flex-1 px-3 py-2 bg-success/10 text-success rounded-lg text-sm hover:bg-success/20">
-                                Tambah
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Low Stock Item -->
-                    <div class="bg-white rounded-lg border border-red-200 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-gray-900">Ayam</h3>
-                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-danger/10 text-danger">Rendah</span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Stok Saat Ini</span>
-                                <span class="font-medium text-danger">5 kg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Min. Stok</span>
-                                <span class="font-medium">15 kg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Harga/kg</span>
-                                <span class="font-medium">Rp 35.000</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Kategori</span>
-                                <span class="font-medium">Daging</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 pt-4 border-t flex space-x-2">
-                            <button class="flex-1 px-3 py-2 bg-primary/10 text-primary rounded-lg text-sm hover:bg-primary/20">
-                                Edit
-                            </button>
-                            <button class="flex-1 px-3 py-2 bg-danger/10 text-danger rounded-lg text-sm hover:bg-danger/20">
-                                Tambah
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Normal Stock Item -->
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-gray-900">Santan</h3>
-                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-success/10 text-success">Cukup</span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Stok Saat Ini</span>
-                                <span class="font-medium">20 liter</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Min. Stok</span>
-                                <span class="font-medium">5 liter</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Harga/liter</span>
-                                <span class="font-medium">Rp 25.000</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Kategori</span>
-                                <span class="font-medium">Bahan Overhead</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 pt-4 border-t flex space-x-2">
-                            <button class="flex-1 px-3 py-2 bg-primary/10 text-primary rounded-lg text-sm hover:bg-primary/20">
-                                Edit
-                            </button>
-                            <button class="flex-1 px-3 py-2 bg-success/10 text-success rounded-lg text-sm hover:bg-success/20">
-                                Tambah
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Normal Stock Item - Garam -->
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-gray-900">Garam</h3>
-                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-success/10 text-success">Cukup</span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Stok Saat Ini</span>
-                                <span class="font-medium">25 kg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Min. Stok</span>
-                                <span class="font-medium">5 kg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Harga/kg</span>
-                                <span class="font-medium">Rp 8.000</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Kategori</span>
-                                <span class="font-medium">Bahan Overhead</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 pt-4 border-t flex space-x-2">
-                            <button class="flex-1 px-3 py-2 bg-primary/10 text-primary rounded-lg text-sm hover:bg-primary/20">
-                                Edit
-                            </button>
-                            <button class="flex-1 px-3 py-2 bg-success/10 text-success rounded-lg text-sm hover:bg-success/20">
-                                Tambah
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Good Stock Item -->
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-gray-900">Kacang Tolo</h3>
-                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-success/10 text-success">Cukup</span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Stok Saat Ini</span>
-                                <span class="font-medium">15 kg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Min. Stok</span>
-                                <span class="font-medium">5 kg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Harga/kg</span>
-                                <span class="font-medium">Rp 18.000</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Kategori</span>
-                                <span class="font-medium">Sayuran</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 pt-4 border-t flex space-x-2">
-                            <button class="flex-1 px-3 py-2 bg-primary/10 text-primary rounded-lg text-sm hover:bg-primary/20">
-                                Edit
-                            </button>
-                            <button class="flex-1 px-3 py-2 bg-success/10 text-success rounded-lg text-sm hover:bg-success/20">
-                                Tambah
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Low Stock Item -->
-                    <div class="bg-white rounded-lg border border-red-200 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-gray-900">Cabai Merah</h3>
-                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-danger/10 text-danger">Rendah</span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Stok Saat Ini</span>
-                                <span class="font-medium text-danger">2 kg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Min. Stok</span>
-                                <span class="font-medium">3 kg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Harga/kg</span>
-                                <span class="font-medium">Rp 45.000</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Kategori</span>
-                                <span class="font-medium">Sayuran</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 pt-4 border-t flex space-x-2">
-                            <button class="flex-1 px-3 py-2 bg-primary/10 text-primary rounded-lg text-sm hover:bg-primary/20">
-                                Edit
-                            </button>
-                            <button class="flex-1 px-3 py-2 bg-danger/10 text-danger rounded-lg text-sm hover:bg-danger/20">
-                                Tambah
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script>
-        let sidebarOpen = false;
-
-        // Data Bahan Baku Array
-        const bahanBakuData = [
-            {
-                id: 1,
-                nama: 'Tepung Terigu Protein Tinggi',
-                stokSaatIni: 50,
-                minStok: 20,
-                satuan: 'kg',
-                harga: 12000,
-                kategori: 'Bahan Utama',
-                status: 'Cukup'
-            },
-            {
-                id: 2,
-                nama: 'Ragi Instan',
-                stokSaatIni: 2,
-                minStok: 5,
-                satuan: 'kg',
-                harga: 85000,
-                kategori: 'Bahan Utama',
-                status: 'Rendah'
-            },
-            {
-                id: 3,
-                nama: 'Gula Pasir',
-                stokSaatIni: 25,
-                minStok: 10,
-                satuan: 'kg',
-                harga: 15000,
-                kategori: 'Bahan Utama',
-                status: 'Cukup'
-            },
-            {
-                id: 4,
-                nama: 'Mentega/Margarin',
-                stokSaatIni: 8,
-                minStok: 10,
-                satuan: 'kg',
-                harga: 35000,
-                kategori: 'Bahan Utama',
-                status: 'Rendah'
-            },
-            {
-                id: 5,
-                nama: 'Susu Bubuk',
-                stokSaatIni: 15,
-                minStok: 8,
-                satuan: 'kg',
-                harga: 65000,
-                kategori: 'Bahan Utama',
-                status: 'Cukup'
-            },
-            {
-                id: 6,
-                nama: 'Telur',
-                stokSaatIni: 30,
-                minStok: 20,
-                satuan: 'kg',
-                harga: 28000,
-                kategori: 'Bahan Utama',
-                status: 'Cukup'
-            },
-            {
-                id: 7,
-                nama: 'Garam',
-                stokSaatIni: 8,
-                minStok: 3,
-                satuan: 'kg',
-                harga: 8000,
-                kategori: 'Bahan Pembantu',
-                status: 'Cukup'
-            },
-            {
-                id: 8,
-                nama: 'Bread Improver',
-                stokSaatIni: 3,
-                minStok: 5,
-                satuan: 'kg',
-                harga: 45000,
-                kategori: 'Bahan Pembantu',
-                status: 'Rendah'
-            },
-            {
-                id: 9,
-                nama: 'Susu Cair',
-                stokSaatIni: 20,
-                minStok: 15,
-                satuan: 'liter',
-                harga: 18000,
-                kategori: 'Bahan Utama',
-                status: 'Cukup'
-            },
-            {
-                id: 10,
-                nama: 'Minyak Sayur',
-                stokSaatIni: 0,
-                minStok: 10,
-                satuan: 'liter',
-                harga: 16000,
-                kategori: 'Bahan Pembantu',
-                status: 'Habis'
-            },
-            {
-                id: 11,
-                nama: 'Cokelat Bubuk',
-                stokSaatIni: 6,
-                minStok: 5,
-                satuan: 'kg',
-                harga: 75000,
-                kategori: 'Bahan Pembantu',
-                status: 'Cukup'
-            },
-            {
-                id: 12,
-                nama: 'Keju Parut',
-                stokSaatIni: 2,
-                minStok: 5,
-                satuan: 'kg',
-                harga: 120000,
-                kategori: 'Bahan Pembantu',
-                status: 'Rendah'
-            },
-            {
-                id: 13,
-                nama: 'Vanilla Extract',
-                stokSaatIni: 4,
-                minStok: 2,
-                satuan: 'botol',
-                harga: 35000,
-                kategori: 'Bahan Pembantu',
-                status: 'Cukup'
-            },
-            {
-                id: 14,
-                nama: 'Kismis',
-                stokSaatIni: 5,
-                minStok: 3,
-                satuan: 'kg',
-                harga: 55000,
-                kategori: 'Bahan Pembantu',
-                status: 'Cukup'
-            },
-            {
-                id: 15,
-                nama: 'Selai Strawberry',
-                stokSaatIni: 10,
-                minStok: 8,
-                satuan: 'kg',
-                harga: 45000,
-                kategori: 'Bahan Pembantu',
-                status: 'Cukup'
-            }
-        ];
-
-        // Format rupiah
-        function formatRupiah(amount) {
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            }).format(amount);
-        }
-
-        // Generate card HTML
-        function generateStockCard(item) {
-            const statusConfig = {
-                'Cukup': {
-                    bg: 'border-gray-200',
-                    badge: 'bg-green-100 text-green-600',
-                    textColor: 'text-gray-900',
-                    button: 'bg-green-100 text-green-600 hover:bg-green-200'
-                },
-                'Rendah': {
-                    bg: 'border-red-200',
-                    badge: 'bg-red-100 text-red-600',
-                    textColor: 'text-red-600',
-                    button: 'bg-red-100 text-red-600 hover:bg-red-200'
-                },
-                'Habis': {
-                    bg: 'border-red-300',
-                    badge: 'bg-red-200 text-red-700',
-                    textColor: 'text-red-700',
-                    button: 'bg-red-200 text-red-700 hover:bg-red-300'
-                }
-            };
-
-            const config = statusConfig[item.status];
-            const actionButtonText = item.status === 'Cukup' ? 'Tambah' : 'Tambah';
-
-            return `
-                <div class="bg-white rounded-lg border ${config.bg} p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-gray-900">${item.nama}</h3>
-                        <span class="px-2 py-1 text-xs font-medium rounded-full ${config.badge}">${item.status}</span>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Stok Saat Ini</span>
-                            <span class="font-medium ${item.status !== 'Cukup' ? config.textColor : ''}">${item.stokSaatIni} ${item.satuan}</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Min. Stok</span>
-                            <span class="font-medium">${item.minStok} ${item.satuan}</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Harga/${item.satuan}</span>
-                            <span class="font-medium">${formatRupiah(item.harga)}</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Kategori</span>
-                            <span class="font-medium">${item.kategori}</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 pt-4 border-t flex space-x-2">
-                        <button class="flex-1 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm hover:bg-blue-200">
-                            Edit
-                        </button>
-                        <button class="flex-1 px-3 py-2 ${config.button} rounded-lg text-sm">
-                            ${actionButtonText}
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Render data ke grid
-        function renderStockGrid(data) {
-            const grid = document.getElementById('stockGrid');
-            const noDataMessage = document.getElementById('noDataMessage');
-            
-            if (data.length === 0) {
-                grid.innerHTML = '';
-                if (noDataMessage) noDataMessage.classList.remove('hidden');
-                return;
-            }
-            
-            if (noDataMessage) noDataMessage.classList.add('hidden');
-            grid.innerHTML = data.map(item => generateStockCard(item)).join('');
-        }
-
-        // Filter data berdasarkan kategori, status, dan pencarian
-        function filterData() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const categoryFilter = document.getElementById('categoryFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-
-            let filteredData = bahanBakuData.filter(item => {
-                const matchesSearch = item.nama.toLowerCase().includes(searchTerm);
-                const matchesCategory = !categoryFilter || item.kategori === categoryFilter;
-                const matchesStatus = !statusFilter || item.status === statusFilter;
-                
-                return matchesSearch && matchesCategory && matchesStatus;
-            });
-
-            renderStockGrid(filteredData);
-            updateLowStockAlert(filteredData);
-        }
-
-        // Update alert stok rendah
-        function updateLowStockAlert(data = bahanBakuData) {
-            const lowStockItems = data.filter(item => item.status === 'Rendah' || item.status === 'Habis');
-            const alertElement = document.querySelector('.bg-red-50');
-            if (alertElement) {
-                const alertText = alertElement.querySelector('span');
-                if (lowStockItems.length > 0) {
-                    alertText.textContent = `Peringatan: ${lowStockItems.length} bahan baku memiliki stok rendah atau habis!`;
-                    alertElement.classList.remove('hidden');
-                } else {
-                    alertElement.classList.add('hidden');
-                }
-            }
-        }
-
-        // Toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            sidebarOpen = !sidebarOpen;
-            
-            if (sidebarOpen) {
-                sidebar.classList.add('show');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.remove('show');
-                overlay.classList.add('hidden');
-            }
-        }
-
-        // Update current date and time
-        function updateDateTime() {
-            const now = new Date();
-            const options = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            const dateTimeElement = document.getElementById('currentDateTime');
-            if (dateTimeElement) {
-                dateTimeElement.textContent = now.toLocaleDateString('id-ID', options);
-            }
-        }
-
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 1024) {
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                sidebar.classList.remove('show');
-                overlay.classList.add('hidden');
-                sidebarOpen = false;
-            }
-        });
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            updateDateTime();
-            setInterval(updateDateTime, 60000);
-            
-            // Render initial data
-            renderStockGrid(bahanBakuData);
-            updateLowStockAlert();
-        });
-    </script>
-
-    <!-- No Data Message (initially hidden, moved here for better structure) -->
-    <div id="noDataMessage" class="hidden text-center py-12">
-        <div class="text-gray-400 text-6xl mb-4">
-            <i class="fas fa-search"></i>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 class="text-2xl font-bold text-gray-900">Stok Bahan Baku</h2>
+          <div class="flex gap-2">
+            <a href="{{ route("management.opname.index") }}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+              <i class="fas fa-clipboard-check mr-2"></i>Stok Opname
+            </a>
+            <button onclick="openAddBahanModal()" class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 transition-all flex items-center">
+              <i class="fas fa-plus mr-2"></i>Tambah Bahan
+            </button>
+          </div>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">Tidak ada data yang ditemukan</h3>
-        <p class="text-gray-500">Coba ubah filter pencarian atau kata kunci</p>
+
+        <!-- Alert Stok Rendah -->
+        <div id="lowStockAlert" class="bg-red-50 border border-red-200 rounded-lg p-4 hidden">
+          <div class="flex items-center">
+            <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+            <span id="alertText" class="text-red-800 font-medium"></span>
+          </div>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="bg-white rounded-lg border border-gray-200 p-4">
+          <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+              <input type="text" id="searchInput" placeholder="Cari bahan baku..." 
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                     onkeyup="filterData()">
+            </div>
+            <select id="categoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                    onchange="filterData()">
+              <option value="">Semua Kategori</option>
+              <option value="Bahan Utama">Bahan Utama</option>
+              <option value="Bahan Pembantu">Bahan Pembantu</option>
+            </select>
+            <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                    onchange="filterData()">
+              <option value="">Semua Status</option>
+              <option value="Cukup">Stok Cukup</option>
+              <option value="Rendah">Stok Rendah</option>
+              <option value="Habis">Habis</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Stock Grid -->
+        <div id="stockGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          @foreach($bahan_baku as $item)
+            @php
+              $status = 'Cukup';
+              if ($item->stok == 0) {
+                $status = 'Habis';
+              } elseif ($item->stok <= $item->min_stok) {
+                $status = 'Rendah';
+              }
+            @endphp
+            <div class="bahan-item bg-white rounded-lg border {{ $status == 'Cukup' ? 'border-gray-200' : 'border-red-200' }} p-6"
+                 data-nama="{{ strtolower($item->nama) }}"
+                 data-kategori="{{ $item->kategori }}"
+                 data-status="{{ $status }}">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-gray-900">{{ $item->nama }}</h3>
+                <span class="px-2 py-1 text-xs font-medium rounded-full 
+                  {{ $status == 'Cukup' ? 'bg-green-100 text-green-600' : 
+                     ($status == 'Rendah' ? 'bg-red-100 text-red-600' : 'bg-red-200 text-red-700') }}">
+                  {{ $status }}
+                </span>
+              </div>
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Stok Saat Ini</span>
+                  <span class="font-medium {{ $status != 'Cukup' ? 'text-red-600' : '' }}">{{ $item->stok }} kg</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Min. Stok</span>
+                  <span class="font-medium">{{ $item->min_stok }} kg</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Harga/kg</span>
+                  <span class="font-medium">Rp {{ number_format($item->harga_satuan, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Kategori</span>
+                  <span class="font-medium">{{ $item->kategori }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Terakhir Update</span>
+                  <span class="font-medium text-xs">{{ \Carbon\Carbon::parse($item->tglupdate)->format('d M Y H:i') }}</span>
+                </div>
+              </div>
+              <div class="mt-4 pt-4 border-t flex space-x-2">
+                <button onclick="openEditBahanModal({{ $item->id }})" class="flex-1 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm hover:bg-blue-200">
+                  Edit
+                </button>
+                <button onclick="tambahStok({{ $item->id }})" class="flex-1 px-3 py-2 
+                  {{ $status == 'Cukup' ? 'bg-green-100 text-green-600 hover:bg-green-200' : 
+                     ($status == 'Rendah' ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-red-200 text-red-700 hover:bg-red-300') }} 
+                  rounded-lg text-sm">
+                  Tambah
+                </button>
+                <button onclick="deleteBahan({{ $item->id }})" class="flex-1 px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200">
+                  Hapus
+                </button>
+              </div>
+            </div>
+          @endforeach
+        </div>
+
+        <!-- No Data Message -->
+        <div id="noDataMessage" class="hidden text-center py-12">
+          <div class="text-gray-400 text-6xl mb-4">
+            <i class="fas fa-search"></i>
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Tidak ada data yang ditemukan</h3>
+          <p class="text-gray-500">Coba ubah filter pencarian atau kata kunci</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Bahan Baku Modal -->
+  <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg w-full max-w-md">
+        <div class="flex items-center justify-between p-6 border-b">
+          <h3 class="text-lg font-semibold">Tambah Bahan Baku Baru</h3>
+          <button onclick="closeAddModal()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form id="addBahanForm" class="p-6 space-y-4">
+          @csrf
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Nama Bahan Baku</label>
+            <input type="text" name="nama" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+            <select name="kategori" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+              <option value="">Pilih Kategori</option>
+              <option value="Bahan Utama">Bahan Utama</option>
+              <option value="Bahan Pembantu">Bahan Pembantu</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Stok Awal (kg)</label>
+              <input type="number" name="stok" value="0" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Min. Stok (kg)</label>
+              <input type="number" name="min_stok" value="0" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Harga Satuan (per kg)</label>
+            <input type="number" name="harga_satuan" value="0" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div class="flex space-x-3 pt-4">
+            <button type="button" onclick="closeAddModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+              Batal
+            </button>
+            <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+              Simpan
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-</body>
-</html>
+  </div>
+
+  <!-- Edit Bahan Baku Modal -->
+  <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg w-full max-w-md">
+        <div class="flex items-center justify-between p-6 border-b">
+          <h3 class="text-lg font-semibold">Edit Bahan Baku</h3>
+          <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form id="editBahanForm" class="p-6 space-y-4">
+          @csrf
+          @method('PUT')
+          <input type="hidden" name="id" id="edit_id">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Nama Bahan Baku</label>
+            <input type="text" name="nama" id="edit_nama" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+            <select name="kategori" id="edit_kategori" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+              <option value="">Pilih Kategori</option>
+              <option value="Bahan Utama">Bahan Utama</option>
+              <option value="Bahan Pembantu">Bahan Pembantu</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Stok (kg)</label>
+              <input type="number" name="stok" id="edit_stok" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Min. Stok (kg)</label>
+              <input type="number" name="min_stok" id="edit_min_stok" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Harga Satuan (per kg)</label>
+            <input type="number" name="harga_satuan" id="edit_harga_satuan" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div class="flex space-x-3 pt-4">
+            <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+              Batal
+            </button>
+            <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+              Update
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tambah Stok Modal -->
+  <div id="tambahStokModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg w-full max-w-md">
+        <div class="flex items-center justify-between p-6 border-b">
+          <h3 class="text-lg font-semibold">Tambah Stok Bahan Baku</h3>
+          <button onclick="closeTambahStokModal()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form id="tambahStokForm" class="p-6 space-y-4">
+          @csrf
+          <input type="hidden" name="id" id="tambah_stok_id">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Nama Bahan Baku</label>
+            <input type="text" id="tambah_stok_nama" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah Stok Tambahan (kg)</label>
+            <input type="number" name="tambah_stok" id="tambah_stok_jumlah" min="1" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+          </div>
+          <div class="flex space-x-3 pt-4">
+            <button type="button" onclick="closeTambahStokModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+              Batal
+            </button>
+            <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+              Tambah Stok
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+@endsection
+
+@section('js')
+<script>
+    let sidebarOpen = false;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Toggle sidebar
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      
+      sidebarOpen = !sidebarOpen;
+      
+      if (sidebarOpen) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
+    }
+
+    // Modal functions
+    function openAddBahanModal() {
+      document.getElementById('addModal').classList.remove('hidden');
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.add('hidden');
+      document.getElementById('addBahanForm').reset();
+    }
+
+    function openEditBahanModal(bahanId) {
+      // Gunakan route resource show
+      fetch(`/management/bahanbaku/${bahanId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Bahan baku tidak ditemukan');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
+          document.getElementById('edit_id').value = data.id;
+          document.getElementById('edit_nama').value = data.nama;
+          document.getElementById('edit_stok').value = data.stok;
+          document.getElementById('edit_min_stok').value = data.min_stok;
+          document.getElementById('edit_harga_satuan').value = data.harga_satuan;
+          document.getElementById('edit_kategori').value = data.kategori;
+          
+          document.getElementById('editModal').classList.remove('hidden');
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          Swal.fire('Error', error.message || 'Gagal memuat data bahan baku', 'error');
+        });
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.add('hidden');
+    }
+
+    function tambahStok(bahanId) {
+      // Gunakan route resource show untuk mendapatkan data bahan baku
+      fetch(`/management/bahanbaku/${bahanId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Bahan baku tidak ditemukan');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
+          document.getElementById('tambah_stok_id').value = data.id;
+          document.getElementById('tambah_stok_nama').value = data.nama;
+          document.getElementById('tambah_stok_jumlah').value = '';
+          
+          document.getElementById('tambahStokModal').classList.remove('hidden');
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          Swal.fire('Error', error.message || 'Gagal memuat data bahan baku', 'error');
+        });
+    }
+
+    function closeTambahStokModal() {
+      document.getElementById('tambahStokModal').classList.add('hidden');
+    }
+
+    // Delete bahan baku - OPTIMIZED VERSION
+    function deleteBahan(bahanId) {
+      Swal.fire({
+        title: 'Apakah Anda yakin?',
+        text: "Bahan baku yang dihapus tidak dapat dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#EF4444',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Gunakan route resource destroy
+          fetch(`/management/bahanbaku/${bahanId}`, {
+            method: 'DELETE',
+            headers: {
+              'X-CSRF-TOKEN': csrfToken,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          })
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              Swal.fire('Terhapus!', data.message || 'Bahan baku berhasil dihapus.', 'success');
+              location.reload();
+            } else {
+              Swal.fire('Error', data.message || 'Gagal menghapus bahan baku', 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+          });
+        }
+      });
+    }
+
+    // Form submission handlers - OPTIMIZED VERSION
+    document.getElementById('addBahanForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Convert numbers
+      data.stok = parseInt(data.stok);
+      data.min_stok = parseInt(data.min_stok);
+      data.harga_satuan = parseInt(data.harga_satuan);
+      
+      // Gunakan route resource store
+      fetch('/management/bahanbaku', {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': csrfToken,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          Swal.fire('Sukses', data.message || 'Bahan baku berhasil ditambahkan', 'success');
+          closeAddModal();
+          location.reload();
+        } else {
+          Swal.fire('Error', data.message || 'Gagal menambahkan bahan baku', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+      });
+    });
+
+    document.getElementById('editBahanForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const bahanId = document.getElementById('edit_id').value;
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Remove _token and _method from data
+      delete data._token;
+      delete data._method;
+      
+      // Convert numbers
+      data.stok = parseInt(data.stok);
+      data.min_stok = parseInt(data.min_stok);
+      data.harga_satuan = parseInt(data.harga_satuan);
+      
+      // Gunakan route resource update
+      fetch(`/management/bahanbaku/${bahanId}`, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': csrfToken,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-HTTP-Method-Override': 'PUT'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          Swal.fire('Sukses', data.message || 'Bahan baku berhasil diupdate', 'success');
+          closeEditModal();
+          location.reload();
+        } else {
+          Swal.fire('Error', data.message || 'Gagal mengupdate bahan baku', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+      });
+    });
+
+    // Form tambah stok - OPTIMIZED VERSION (menggunakan route update)
+    document.getElementById('tambahStokForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const bahanId = document.getElementById('tambah_stok_id').value;
+      const tambahStok = parseInt(document.getElementById('tambah_stok_jumlah').value);
+      
+      // Gunakan route resource update dengan field tambah_stok
+      fetch(`/management/bahanbaku/${bahanId}`, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': csrfToken,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-HTTP-Method-Override': 'PUT'
+        },
+        body: JSON.stringify({ 
+          tambah_stok: tambahStok 
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          Swal.fire('Sukses', data.message || 'Stok berhasil ditambahkan', 'success');
+          closeTambahStokModal();
+          location.reload();
+        } else {
+          Swal.fire('Error', data.message || 'Gagal menambah stok', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+      });
+    });
+
+    // Filter data function
+    function filterData() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const categoryFilter = document.getElementById('categoryFilter').value;
+      const statusFilter = document.getElementById('statusFilter').value;
+      const items = document.querySelectorAll('.bahan-item');
+      let visibleCount = 0;
+      let lowStockCount = 0;
+      
+      items.forEach(item => {
+        const nama = item.getAttribute('data-nama');
+        const kategori = item.getAttribute('data-kategori');
+        const status = item.getAttribute('data-status');
+        
+        const matchesSearch = nama.includes(searchTerm);
+        const matchesCategory = !categoryFilter || kategori === categoryFilter;
+        const matchesStatus = !statusFilter || status === statusFilter;
+        
+        if (matchesSearch && matchesCategory && matchesStatus) {
+          item.style.display = 'block';
+          visibleCount++;
+          if (status === 'Rendah' || status === 'Habis') {
+            lowStockCount++;
+          }
+        } else {
+          item.style.display = 'none';
+        }
+      });
+      
+      // Show/hide no data message
+      const noDataMessage = document.getElementById('noDataMessage');
+      if (visibleCount === 0) {
+        noDataMessage.classList.remove('hidden');
+      } else {
+        noDataMessage.classList.add('hidden');
+      }
+      
+      // Update low stock alert
+      updateLowStockAlert(lowStockCount);
+    }
+
+    // Update low stock alert
+    function updateLowStockAlert(lowStockCount) {
+      const alertElement = document.getElementById('lowStockAlert');
+      const alertText = document.getElementById('alertText');
+      
+      if (lowStockCount > 0) {
+        alertText.textContent = `Peringatan: ${lowStockCount} bahan baku memiliki stok rendah atau habis!`;
+        alertElement.classList.remove('hidden');
+      } else {
+        alertElement.classList.add('hidden');
+      }
+    }
+
+    // Initialize low stock alert on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      let initialLowStockCount = 0;
+      document.querySelectorAll('.bahan-item').forEach(item => {
+        const status = item.getAttribute('data-status');
+        if (status === 'Rendah' || status === 'Habis') {
+          initialLowStockCount++;
+        }
+      });
+      updateLowStockAlert(initialLowStockCount);
+    });
+
+    // Update current date and time
+    function updateDateTime() {
+      const now = new Date();
+      const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      const dateTimeElement = document.getElementById('currentDateTime');
+      if (dateTimeElement) {
+        dateTimeElement.textContent = now.toLocaleDateString('id-ID', options);
+      }
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      if (window.innerWidth >= 1024) {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+        sidebarOpen = false;
+      }
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+      const addModal = document.getElementById('addModal');
+      const editModal = document.getElementById('editModal');
+      const tambahStokModal = document.getElementById('tambahStokModal');
+      
+      if (e.target === addModal) closeAddModal();
+      if (e.target === editModal) closeEditModal();
+      if (e.target === tambahStokModal) closeTambahStokModal();
+    });
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      updateDateTime();
+      setInterval(updateDateTime, 60000);
+    });
+</script>
+@endsection

@@ -9,6 +9,7 @@ use App\Http\Controllers\Manajemen\DashboardController;
 use App\Http\Controllers\Manajemen\JurnalController;
 use App\Http\Controllers\Manajemen\KonversiController;
 use App\Http\Controllers\Manajemen\LaporanController;
+use App\Http\Controllers\Manajemen\OpnameController;
 use App\Http\Controllers\Manajemen\ProdukController;
 use App\Http\Controllers\Manajemen\ResepController;
 use App\Http\Controllers\RedirectController;
@@ -48,6 +49,7 @@ Route::middleware([IsManagement::class])->group(function () {
             'konversi' => KonversiController::class,
             'jurnal' => JurnalController::class,
             'laporan' => LaporanController::class,
+            'opname' => OpnameController::class,
         ]);
     });
 });
