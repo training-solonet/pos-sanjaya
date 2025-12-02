@@ -889,7 +889,7 @@
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
+                    <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" value="${b.stok}">
                     <div class="ingredient-stock text-xs text-gray-500 mt-1">Stok: -</div>
                 </div>
                 <select class="ingredient-unit md:col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
