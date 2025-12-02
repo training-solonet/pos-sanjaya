@@ -16,6 +16,7 @@ class Resep extends Model
         'langkah',
         'harga_jual',
         'catatan',
+        'margin',
         'status',
     ];
 

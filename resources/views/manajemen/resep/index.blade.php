@@ -77,10 +77,10 @@
                                 class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 onchange="filterRecipes()">
                                 <option value="">Semua Kategori</option>
-                                <option value="Roti & Pastry">Roti & Pastry</option>
-                                <option value="Kue & Dessert">Kue & Dessert</option>
+                                <option value="Roti dan Pastry">Roti dan Pastry</option>
+                                <option value="Kue dan Dessert">Kue dan Dessert</option>
                                 <option value="Minuman">Minuman</option>
-                                <option value="Makanan Utama">Makanan Utama</option>
+                                <option value="Makanan">Makanan</option>
                                 <option value="Snack">Snack</option>
                             </select>
                             <select id="statusFilter"
@@ -195,10 +195,10 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
                         <select id="recipeCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                             <option value="">Pilih Kategori</option>
-                            <option value="Roti & Pastry">Roti & Pastry</option>
-                            <option value="Kue & Dessert">Kue & Dessert</option>
+                            <option value="Roti dan Pastry">Roti dan Pastry</option>
+                            <option value="Kue dan Dessert">Kue dan Dessert</option>
                             <option value="Minuman">Minuman</option>
-                            <option value="Makanan Utama">Makanan Utama</option>
+                            <option value="Makanan">Makanan</option>
                             <option value="Snack">Snack</option>
                         </select>
                     </div>
@@ -211,16 +211,6 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Waktu Pembuatan</label>
                         <input id="recipeDuration" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="90 menit">
                     </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select id="recipeStatus" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                            <option value="Aktif">Aktif</option>
-                            <option value="Draft">Draft (Belum Final)</option>
-                            <option value="Nonaktif">Nonaktif</option>
-                        </select>
-                    </div>
-                    <!-- target price is displayed in totals section to match design -->
                 </div>
             </div>
                 <style>
@@ -530,10 +520,10 @@
 
     function getCategoryGradient(category) {
         const gradients = {
-            'Roti & Pastry': 'from-orange-400 to-orange-600',
-            'Kue & Dessert': 'from-pink-400 to-pink-600',
+            'Roti dan Pastry': 'from-orange-400 to-orange-600',
+            'Kue dan Dessert': 'from-pink-400 to-pink-600',
             'Minuman': 'from-blue-400 to-blue-600',
-            'Makanan Utama': 'from-green-400 to-green-600',
+            'Makanan': 'from-green-400 to-green-600',
             'Snack': 'from-purple-400 to-purple-600'
         };
         return gradients[category] || 'from-gray-400 to-gray-600';
@@ -541,10 +531,10 @@
 
     function getCategoryIcon(category) {
         const icons = {
-            'Roti & Pastry': 'fa-bread-slice',
-            'Kue & Dessert': 'fa-birthday-cake',
+            'Roti dan Pastry': 'fa-bread-slice',
+            'Kue dan Dessert': 'fa-birthday-cake',
             'Minuman': 'fa-mug-hot',
-            'Makanan Utama': 'fa-utensils',
+            'Makanan': 'fa-utensils',
             'Snack': 'fa-cookie-bite'
         };
         return icons[category] || 'fa-utensils';
@@ -889,7 +879,7 @@
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" value="${b.stok}">
+                    <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
                     <div class="ingredient-stock text-xs text-gray-500 mt-1">Stok: -</div>
                 </div>
                 <select class="ingredient-unit md:col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">

@@ -17,12 +17,15 @@ class ResepController extends Controller
 
         $recipes = $resep->map(function ($r) {
             $ingredients = $r->rincianResep->map(function ($ir) {
+                $qty = (int) ($ir->qty ?? 0);
+                $price = (int) ($ir->harga ?? 0);
+                $subtotal = $qty * $price;
                 return [
                     'name' => optional($ir->bahanBaku)->nama ?? '',
-                    'quantity' => $ir->qty ?? 0,
+                    'quantity' => $qty,
                     'unit' => $ir->hitungan ?? '',
-                    'price' => $ir->harga ?? 0,
-                    'subtotal' => $ir->harga ?? 0,
+                    'price' => $price,
+                    'subtotal' => $subtotal,
                 ];
             })->toArray();
 
@@ -36,7 +39,7 @@ class ResepController extends Controller
                 'duration' => $r->waktu_pembuatan ?? '',
                 'foodCost' => $foodCost,
                 'sellingPrice' => $r->harga_jual ?? null,
-                'margin' => 0,
+                'margin' => $r->margin ?? 0,
                 'status' => $r->status ?? 'Draft',
                 'ingredients' => $ingredients,
                 'instructions' => $r->langkah ?? '',
@@ -52,6 +55,34 @@ class ResepController extends Controller
         }
 
         return view('manajemen.resep.index', compact('resep', 'recipes', 'bahans'));
+    }
+
+    /**
+     * Normalize category labels coming from the frontend to match DB enum values.
+     */
+    private function normalizeCategory($category)
+    {
+        if (!$category) return null;
+        $cat = trim($category);
+
+        // direct replacements for common variants
+        $map = [
+            'Kue & Dessert' => 'Kue dan Dessert',
+            'Roti & Pastry' => 'Roti dan Pastry',
+            'Makanan Utama' => 'Makanan',
+            'Kue dan Dessert' => 'Kue dan Dessert',
+            'Roti dan Pastry' => 'Roti dan Pastry',
+            'Makanan' => 'Makanan',
+            'Minuman' => 'Minuman',
+            'Snack' => 'Snack',
+        ];
+
+        if (isset($map[$cat])) return $map[$cat];
+
+        // fallback: replace & with 'dan' and trim
+        $cat2 = str_replace('&', 'dan', $cat);
+        $cat2 = preg_replace('/\s+/', ' ', $cat2);
+        return $cat2;
     }
 
     /**
@@ -83,11 +114,13 @@ class ResepController extends Controller
 
         try {
             \Illuminate\Support\Facades\DB::beginTransaction();
+            // normalize category to match DB enum values
+            $category = $this->normalizeCategory($data['category'] ?? null);
 
             $resep = \App\Models\Resep::create([
                 'nama' => $data['name'],
                 'porsi' => $data['yield'] ?? 1,
-                'kategori' => $data['category'] ?? null,
+                'kategori' => $category,
                 'waktu_pembuatan' => $data['duration'] ?? null,
                 'langkah' => $data['instructions'] ?? null,
                 'catatan' => $data['notes'] ?? null,
@@ -130,9 +163,25 @@ class ResepController extends Controller
                 $r->save();
             }
 
+            // commit first, then compute and save margin based on persisted rincian
             \Illuminate\Support\Facades\DB::commit();
 
             $resep->load('rincianResep');
+
+            // compute food cost from persisted rincian
+            $foodCost = $resep->rincianResep->reduce(function ($carry, $ir) {
+                $qty = (int) ($ir->qty ?? 0);
+                $price = (int) ($ir->harga ?? 0);
+                return $carry + ($qty * $price);
+            }, 0);
+
+            $selling = (int) ($resep->harga_jual ?? 0);
+            $marginPercent = 0;
+            if ($selling > 0) {
+                $marginPercent = (int) round((($selling - $foodCost) / $selling) * 100);
+            }
+            $resep->margin = $marginPercent;
+            $resep->save();
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => true, 'recipe' => $resep], 201);
@@ -188,10 +237,13 @@ class ResepController extends Controller
 
             $resep = \App\Models\Resep::findOrFail($id);
 
+            // normalize category to match DB enum values
+            $category = $this->normalizeCategory($data['category'] ?? $resep->kategori);
+
             $resep->update([
                 'nama' => $data['name'],
                 'porsi' => $data['yield'] ?? $resep->porsi,
-                'kategori' => $data['category'] ?? $resep->kategori,
+                'kategori' => $category,
                 'waktu_pembuatan' => $data['duration'] ?? $resep->waktu_pembuatan,
                 'langkah' => $data['instructions'] ?? $resep->langkah,
                 'catatan' => $data['notes'] ?? $resep->catatan,
@@ -239,6 +291,21 @@ class ResepController extends Controller
             \Illuminate\Support\Facades\DB::commit();
 
             $resep->load('rincianResep');
+
+            // compute food cost from persisted rincian
+            $foodCost = $resep->rincianResep->reduce(function ($carry, $ir) {
+                $qty = (int) ($ir->qty ?? 0);
+                $price = (int) ($ir->harga ?? 0);
+                return $carry + ($qty * $price);
+            }, 0);
+
+            $selling = (int) ($resep->harga_jual ?? 0);
+            $marginPercent = 0;
+            if ($selling > 0) {
+                $marginPercent = (int) round((($selling - $foodCost) / $selling) * 100);
+            }
+            $resep->margin = $marginPercent;
+            $resep->save();
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => true, 'recipe' => $resep], 200);
