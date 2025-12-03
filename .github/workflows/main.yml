@@ -48,12 +48,13 @@ jobs:
         continue-on-error: false
 
 
- # Job 2: Deploy to VPS (only on push to main/master)
+  # Job 2: Deploy to VPS (only on push to main/master)
   deploy:
     name: Deploy to VPS
+    needs: code-quality
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,8 +71,8 @@ jobs:
             echo "🚀 Starting deployment..."
 
             # Navigate to project directory
-            cd /var/www/pos-sanjaya
-
+            cd ${{ secrets.PROJECT_PATH }}
+            
             echo "📦 Pulling latest changes from Git..."
             git fetch origin
             git reset --hard origin/${{ github.ref_name }}
@@ -99,16 +100,23 @@ jobs:
 
             echo "📥 Installing Composer dependencies..."
             composer install --no-dev --optimize-autoloader --no-interaction
-
-            echo "🔑 Generating application key..."
-            php artisan key:generate --force
-
-            echo "🗄️ Running migrations..."
-            php artisan migrate --force
-
-            echo "🧹 Optimizing application..."
+            
+            echo "📥 Installing Node dependencies..."
+            npm i
+            
+            echo "🔨 Building assets..."
+            npm run build
+            
+            echo "⚙️ Running Laravel optimizations..."
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
-
+            
+            echo "🗄️ Running database migrations..."
+            php artisan migrate --force
+            
+            echo "🧹 Clearing caches..."
+            php artisan cache:clear
+            php artisan optimize:clear
+            
             echo "✅ Deployment completed successfully!"

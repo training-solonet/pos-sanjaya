@@ -21,7 +21,7 @@ class ResepController extends Controller
                 $price = (int) ($ir->harga ?? 0);
                 $subtotal = $qty * $price;
                 return [
-                    'name' => optional($ir->bahanBaku)->nama ?? '',
+                    'name' => optional($ir->bahanBaku)->nama ?? ($ir->nama_bahan ?? ''),
                     'quantity' => $qty,
                     'unit' => $ir->hitungan ?? '',
                     'price' => $price,
@@ -157,6 +157,8 @@ class ResepController extends Controller
                 if ($hasIdBahan && $idBahan) {
                     $r->id_bahan = $idBahan;
                 }
+                // store the nama_bahan as provided (redundant but convenient)
+                $r->nama_bahan = $name;
                 $r->qty = $qty;
                 $r->hitungan = $unit;
                 $r->harga = $price;
@@ -202,7 +204,38 @@ class ResepController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $r = \App\Models\Resep::with('rincianResep.bahanBaku')->findOrFail($id);
+
+            $ingredients = $r->rincianResep->map(function ($ir) {
+                $qty = (int) ($ir->qty ?? 0);
+                $price = (int) ($ir->harga ?? 0);
+                return [
+                    'name' => optional($ir->bahanBaku)->nama ?? ($ir->nama_bahan ?? ''),
+                    'quantity' => $qty,
+                    'unit' => $ir->hitungan ?? '',
+                    'price' => $price,
+                    'subtotal' => $qty * $price,
+                ];
+            })->toArray();
+
+        $foodCost = array_sum(array_column($ingredients, 'subtotal'));
+
+        $recipe = [
+            'id' => $r->id,
+            'name' => $r->nama,
+            'category' => $r->kategori,
+            'yield' => $r->porsi,
+            'duration' => $r->waktu_pembuatan ? ($r->waktu_pembuatan . ' menit') : null,
+            'foodCost' => $foodCost,
+            'sellingPrice' => $r->harga_jual ?? 0,
+            'margin' => $r->margin ?? 0,
+            'status' => $r->status ?? '',
+            'ingredients' => $ingredients,
+            'instructions' => $r->langkah ?? null,
+            'notes' => $r->catatan ?? null,
+        ];
+
+        return view('manajemen.resep.show', compact('recipe'));
     }
 
     /**
@@ -282,6 +315,8 @@ class ResepController extends Controller
                 if ($hasIdBahan && $idBahan) {
                     $r->id_bahan = $idBahan;
                 }
+                // store the nama_bahan as provided (redundant but convenient)
+                $r->nama_bahan = $name;
                 $r->qty = $qty;
                 $r->hitungan = $unit;
                 $r->harga = $price;

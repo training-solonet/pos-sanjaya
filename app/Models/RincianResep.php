@@ -12,6 +12,7 @@ class RincianResep extends Model
         'qty',
         'hitungan',
         'harga',
+        'nama_bahan',
     ];
 
     public function resep()

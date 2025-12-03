@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-
+<html lang="id">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,140 +27,124 @@
     </script>
     <style>
         @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
-
-        body {
-            font-family: "Inter", sans-serif;
-        }
-
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* Responsive sidebar styles */
+        body { font-family: "Inter", sans-serif; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
         @media (max-width: 1023px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .sidebar:not(.-translate-x-full) {
-                transform: translateX(0);
-            }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar:not(.-translate-x-full) { transform: translateX(0); }
         }
-
         @media (min-width: 1024px) {
-            .sidebar {
-                transform: translateX(0) !important;
-            }
+            .sidebar { transform: translateX(0) !important; }
         }
     </style>
 </head>
-
-<!-- Mobile Overlay -->
-{{-- <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()">
-  </div> --}}
-
-<!-- Sidebar -->
-@include('layouts.manajemen.sidebar')
-
-<!-- Sidebar Overlay for Mobile -->
-<div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()">
-</div>
-
-<!-- Main Content -->
-<div class="content flex-1 lg:ml-64">
-    <!-- Header -->
-    @include('layouts.manajemen.header')
-    <!-- Page Content -->
-    <main class="p-4 sm:p-6 lg:p-8">
-        <div class="space-y-6">
-            @yield('content')
-        </div>
-    </main>
-</div>
-
-@yield('js')
-
-<script>
-    let sidebarOpen = false;
-
-    // Toggle sidebar
-    function toggleSidebar() {
-        const sidebar = document.getElementById("sidebar");
-        const overlay = document.getElementById("mobileOverlay");
-
-        // Only toggle on mobile/tablet
-        if (window.innerWidth < 1024) {
-            sidebar.classList.toggle("-translate-x-full");
-            overlay.classList.toggle("hidden");
-            sidebarOpen = !sidebar.classList.contains("-translate-x-full");
+<body class="bg-gray-50 min-h-screen">
+    <!-- Mobile Overlay -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+    
+    <!-- Sidebar -->
+    @include('layouts.manajemen.sidebar')
+    
+    <!-- Sidebar Overlay for Mobile -->
+    <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()"></div>
+    
+    <!-- Main Content -->
+    <div class="content flex-1 lg:ml-64">
+        <!-- Header -->
+        @include('layouts.manajemen.header')
+        
+        <!-- Page Content -->
+        <main class="p-4 sm:p-6 lg:p-8">
+            <div class="space-y-6">
+                @yield('content')
+            </div>
+        </main>
+    </div>
+    
+    @yield('js')
+    
+    <!-- PERBAIKAN: Tambahkan script untuk update waktu di layout utama -->
+    <script>
+        let sidebarOpen = false;
+        
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const overlay = document.getElementById("mobileOverlay");
+            
+            if (window.innerWidth < 1024) {
+                sidebar.classList.toggle("-translate-x-full");
+                overlay.classList.toggle("hidden");
+                sidebarOpen = !sidebar.classList.contains("-translate-x-full");
+            }
         }
-    }
-
-    // Update current date and time
-    function updateDateTime() {
-        const now = new Date();
-        const options = {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        };
-        const dateTimeElement = document.getElementById("currentDateTime");
-        if (dateTimeElement) {
-            dateTimeElement.textContent = now.toLocaleDateString(
-                "id-ID",
-                options
-            );
+        
+        // Update current date and time
+        function updateDateTime() {
+            const now = new Date();
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            
+            const dayName = days[now.getDay()];
+            const date = now.getDate();
+            const monthName = months[now.getMonth()];
+            const year = now.getFullYear();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            
+            const dateTimeElement = document.getElementById('currentDateTime');
+            if (dateTimeElement) {
+                dateTimeElement.textContent = `${dayName}, ${date} ${monthName} ${year} ${hours}:${minutes}`;
+            }
         }
-    }
-
-    // Handle window resize
-    window.addEventListener("resize", function() {
-        const sidebar = document.getElementById("sidebar");
-        const overlay = document.getElementById("mobileOverlay");
-
-        if (window.innerWidth >= 1024) {
-            sidebar.classList.remove("-translate-x-full");
-            overlay.classList.add("hidden");
-            sidebarOpen = false;
-        } else {
-            sidebar.classList.add("-translate-x-full");
-            overlay.classList.add("hidden");
-            sidebarOpen = false;
-        }
-    });
-
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener("click", function(e) {
-        const sidebar = document.getElementById("sidebar");
-        const overlay = document.getElementById("mobileOverlay");
-        const menuButtons = document.querySelectorAll(
-            '[onclick*="toggleSidebar"]'
-        );
-
-        let clickedMenuButton = false;
-        menuButtons.forEach((button) => {
-            if (button.contains(e.target)) {
-                clickedMenuButton = true;
+        
+        // Handle window resize
+        window.addEventListener("resize", function() {
+            const sidebar = document.getElementById("sidebar");
+            const overlay = document.getElementById("mobileOverlay");
+            
+            if (window.innerWidth >= 1024) {
+                sidebar.classList.remove("-translate-x-full");
+                overlay.classList.add("hidden");
+                sidebarOpen = false;
+            } else {
+                sidebar.classList.add("-translate-x-full");
+                overlay.classList.add("hidden");
+                sidebarOpen = false;
             }
         });
-
-        if (
-            window.innerWidth < 1024 &&
-            !sidebar.contains(e.target) &&
-            !clickedMenuButton &&
-            !sidebar.classList.contains("-translate-x-full")
-        ) {
-            sidebar.classList.add("-translate-x-full");
-            overlay.classList.add("hidden");
-            sidebarOpen = false;
-        }
-    });
-</script>
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener("click", function(e) {
+            const sidebar = document.getElementById("sidebar");
+            const overlay = document.getElementById("mobileOverlay");
+            const menuButtons = document.querySelectorAll('[onclick*="toggleSidebar"]');
+            
+            let clickedMenuButton = false;
+            menuButtons.forEach((button) => {
+                if (button.contains(e.target)) {
+                    clickedMenuButton = true;
+                }
+            });
+            
+            if (window.innerWidth < 1024 &&
+                !sidebar.contains(e.target) &&
+                !clickedMenuButton &&
+                !sidebar.classList.contains("-translate-x-full")) {
+                sidebar.classList.add("-translate-x-full");
+                overlay.classList.add("hidden");
+                sidebarOpen = false;
+            }
+        });
+        
+        // Initialize datetime on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000); // Update setiap 1 detik
+        });
+    </script>
+</body>
+</html>

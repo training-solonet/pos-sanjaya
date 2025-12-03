@@ -1159,16 +1159,16 @@
         },
         {
             "name": "laravel/fortify",
-            "version": "v1.32.1",
+            "version": "v1.32.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/fortify.git",
-                "reference": "26db37ed915770e5f0f91f6b7e153d9b3e6c09e8"
+                "reference": "6f2d630aef2ab5bc82fdd0dd7dafd5e9cd21384c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/fortify/zipball/26db37ed915770e5f0f91f6b7e153d9b3e6c09e8",
-                "reference": "26db37ed915770e5f0f91f6b7e153d9b3e6c09e8",
+                "url": "https://api.github.com/repos/laravel/fortify/zipball/6f2d630aef2ab5bc82fdd0dd7dafd5e9cd21384c",
+                "reference": "6f2d630aef2ab5bc82fdd0dd7dafd5e9cd21384c",
                 "shasum": ""
             },
             "require": {
@@ -1218,20 +1218,20 @@
                 "issues": "https://github.com/laravel/fortify/issues",
                 "source": "https://github.com/laravel/fortify"
             },
-            "time": "2025-11-21T01:53:28+00:00"
+            "time": "2025-11-16T14:53:25+00:00"
         },
         {
             "name": "laravel/framework",
-            "version": "v12.40.2",
+            "version": "v12.39.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "1ccd99220b474500e672b373f32bd709ec38de50"
+                "reference": "1a6176129ef28eaf42b6b4a6250025120c3d8dac"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/1ccd99220b474500e672b373f32bd709ec38de50",
-                "reference": "1ccd99220b474500e672b373f32bd709ec38de50",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/1a6176129ef28eaf42b6b4a6250025120c3d8dac",
+                "reference": "1a6176129ef28eaf42b6b4a6250025120c3d8dac",
                 "shasum": ""
             },
             "require": {
@@ -1437,7 +1437,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2025-11-26T19:24:25+00:00"
+            "time": "2025-11-18T15:16:10+00:00"
         },
         {
             "name": "laravel/jetstream",
@@ -7060,16 +7060,16 @@
         },
         {
             "name": "laravel/boost",
-            "version": "v1.8.3",
+            "version": "v1.8.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/boost.git",
-                "reference": "26572e858e67334952779c0110ca4c378a44d28d"
+                "reference": "992cc774b2b2977312efe19860fd16b866db441e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/boost/zipball/26572e858e67334952779c0110ca4c378a44d28d",
-                "reference": "26572e858e67334952779c0110ca4c378a44d28d",
+                "url": "https://api.github.com/repos/laravel/boost/zipball/992cc774b2b2977312efe19860fd16b866db441e",
+                "reference": "992cc774b2b2977312efe19860fd16b866db441e",
                 "shasum": ""
             },
             "require": {
@@ -7122,7 +7122,7 @@
                 "issues": "https://github.com/laravel/boost/issues",
                 "source": "https://github.com/laravel/boost"
             },
-            "time": "2025-11-26T14:12:52+00:00"
+            "time": "2025-11-18T19:27:07+00:00"
         },
         {
             "name": "laravel/mcp",
@@ -7711,16 +7711,16 @@
         },
         {
             "name": "pestphp/pest",
-            "version": "v4.1.6",
+            "version": "v4.1.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pestphp/pest.git",
-                "reference": "ae419afd363299c29ad5b17e8b70d118b1068bb4"
+                "reference": "1a39826935b730b0bcad805013d4b2607b83fe3f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pestphp/pest/zipball/ae419afd363299c29ad5b17e8b70d118b1068bb4",
-                "reference": "ae419afd363299c29ad5b17e8b70d118b1068bb4",
+                "url": "https://api.github.com/repos/pestphp/pest/zipball/1a39826935b730b0bcad805013d4b2607b83fe3f",
+                "reference": "1a39826935b730b0bcad805013d4b2607b83fe3f",
                 "shasum": ""
             },
             "require": {
@@ -7811,7 +7811,7 @@
             ],
             "support": {
                 "issues": "https://github.com/pestphp/pest/issues",
-                "source": "https://github.com/pestphp/pest/tree/v4.1.6"
+                "source": "https://github.com/pestphp/pest/tree/v4.1.4"
             },
             "funding": [
                 {
@@ -7823,7 +7823,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-11-28T12:04:48+00:00"
+            "time": "2025-11-20T02:59:27+00:00"
         },
         {
             "name": "pestphp/pest-plugin",
@@ -8344,16 +8344,16 @@
         },
         {
             "name": "phpdocumentor/reflection-docblock",
-            "version": "5.6.5",
+            "version": "5.6.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/ReflectionDocBlock.git",
-                "reference": "90614c73d3800e187615e2dd236ad0e2a01bf761"
+                "reference": "90a04bcbf03784066f16038e87e23a0a83cee3c2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/90614c73d3800e187615e2dd236ad0e2a01bf761",
-                "reference": "90614c73d3800e187615e2dd236ad0e2a01bf761",
+                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/90a04bcbf03784066f16038e87e23a0a83cee3c2",
+                "reference": "90a04bcbf03784066f16038e87e23a0a83cee3c2",
                 "shasum": ""
             },
             "require": {
@@ -8402,22 +8402,22 @@
             "description": "With this component, a library can provide support for annotations via DocBlocks or otherwise retrieve information that is embedded in a DocBlock.",
             "support": {
                 "issues": "https://github.com/phpDocumentor/ReflectionDocBlock/issues",
-                "source": "https://github.com/phpDocumentor/ReflectionDocBlock/tree/5.6.5"
+                "source": "https://github.com/phpDocumentor/ReflectionDocBlock/tree/5.6.4"
             },
-            "time": "2025-11-27T19:50:05+00:00"
+            "time": "2025-11-17T21:13:10+00:00"
         },
         {
             "name": "phpdocumentor/type-resolver",
-            "version": "1.12.0",
+            "version": "1.10.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/TypeResolver.git",
-                "reference": "92a98ada2b93d9b201a613cb5a33584dde25f195"
+                "reference": "431c02da15e566adb0ad9c5030fa6f6204d9de9e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/TypeResolver/zipball/92a98ada2b93d9b201a613cb5a33584dde25f195",
-                "reference": "92a98ada2b93d9b201a613cb5a33584dde25f195",
+                "url": "https://api.github.com/repos/phpDocumentor/TypeResolver/zipball/431c02da15e566adb0ad9c5030fa6f6204d9de9e",
+                "reference": "431c02da15e566adb0ad9c5030fa6f6204d9de9e",
                 "shasum": ""
             },
             "require": {
@@ -8460,9 +8460,9 @@
             "description": "A PSR-5 based resolver of Class names, Types and Structural Element Names",
             "support": {
                 "issues": "https://github.com/phpDocumentor/TypeResolver/issues",
-                "source": "https://github.com/phpDocumentor/TypeResolver/tree/1.12.0"
+                "source": "https://github.com/phpDocumentor/TypeResolver/tree/1.10.1"
             },
-            "time": "2025-11-21T15:09:14+00:00"
+            "time": "2025-11-18T07:51:16+00:00"
         },
         {
             "name": "phpstan/phpdoc-parser",
