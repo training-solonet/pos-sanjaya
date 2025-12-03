@@ -16,7 +16,7 @@ return new class extends Migration
             $table->dateTime('tgl');
             $table->enum('jenis', ['pemasukan', 'pengeluaran']);
             $table->text('keterangan')->nullable();
-            $table->integer('nomimal')->default(0);
+            $table->integer('nominal')->default(0);
             $table->enum('kategori', ['Operasioanl', 'Utiilitas', 'Bahan Baku', 'Penjualan', 'Trankspotasi', 'lainnya'])->nullable();
             $table->enum('role', ['admin', 'manajemen'])->nullable();
             $table->timestamps();
