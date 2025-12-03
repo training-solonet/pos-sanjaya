@@ -6,6 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>POS Sanjaya - Jurnal Harian</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -72,7 +73,9 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h2 class="text-2xl font-bold text-gray-900">Jurnal Harian</h2>
                     <div class="flex space-x-2">
-                        <input type="date" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg" value="2025-10-03">
+                        <form action="{{ route('kasir.jurnal.index') }}" method="GET" id="filterDateForm">
+                            <input type="date" name="tanggal" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg" value="{{ $tanggal }}" onchange="this.form.submit()">
+                        </form>
                         <button class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
                             <i class="fas fa-download mr-2"></i>Export
                         </button>
@@ -92,10 +95,10 @@
                             </div>
                         </div>
                         <div class="space-y-1">
-                            <p id="summaryTotalRevenue" class="text-3xl font-bold text-green-600">Rp 2.450.000</p>
+                            <p id="summaryTotalRevenue" class="text-3xl font-bold text-green-600">Rp {{ number_format($totalPemasukan, 0, ',', '.') }}</p>
                             <p id="revenueCount" class="text-sm text-gray-500 flex items-center">
                                 <i class="fas fa-receipt mr-2"></i>
-                                3 transaksi hari ini
+                                {{ $jumlahPemasukan }} transaksi hari ini
                             </p>
                         </div>
                     </div>
@@ -111,10 +114,10 @@
                             </div>
                         </div>
                         <div class="space-y-1">
-                            <p id="summaryTotalExpense" class="text-3xl font-bold text-red-600">Rp 450.000</p>
+                            <p id="summaryTotalExpense" class="text-3xl font-bold text-red-600">Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</p>
                             <p id="expenseCount" class="text-sm text-gray-500 flex items-center">
                                 <i class="fas fa-calendar-day mr-2"></i>
-                                1 transaksi hari ini
+                                {{ $jumlahPengeluaran }} transaksi hari ini
                             </p>
                         </div>
                     </div>
@@ -130,7 +133,7 @@
                             </div>
                         </div>
                         <div class="space-y-1">
-                            <p id="summaryNetBalance" class="text-3xl font-bold text-green-600">Rp 650.000</p>
+                            <p id="summaryNetBalance" class="text-3xl font-bold {{ ($totalPemasukan - $totalPengeluaran) >= 0 ? 'text-green-600' : 'text-red-600' }}">Rp {{ number_format($totalPemasukan - $totalPengeluaran, 0, ',', '.') }}</p>
                             <p class="text-sm text-gray-500 flex items-center">
                                 <i class="fas fa-chart-line mr-2"></i>
                                 Pemasukan - Pengeluaran
@@ -178,9 +181,11 @@
                                 <select id="filterCategory" onchange="filterTransactions()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
                                     <option value="semua">Semua Kategori</option>
                                     <option value="penjualan">Penjualan</option>
-                                    <option value="lainnya">Lainnya</option>
                                     <option value="operasional">Operasional</option>
                                     <option value="utilitas">Utilitas</option>
+                                    <option value="bahan baku">Bahan Baku</option>
+                                    <option value="transportasi">Transportasi</option>
+                                    <option value="lainnya">Lainnya</option>
                                 </select>
                             </div>
                             <div>
@@ -205,89 +210,37 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
-                                <!-- Pemasukan -->
-                                <tr data-type="pemasukan" data-category="penjualan">
-                                    <td class="px-6 py-4 text-sm text-gray-500">03/10/2025</td>
+                                @forelse($jurnals as $jurnal)
+                                <tr data-type="{{ $jurnal->jenis }}" data-category="{{ strtolower($jurnal->kategori) }}" data-id="{{ $jurnal->id }}">
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ \Carbon\Carbon::parse($jurnal->tgl)->format('d/m/Y') }}</td>
                                     <td class="px-6 py-4 text-sm">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            <i class="fas fa-arrow-up mr-1"></i>
-                                            Pemasukan
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $jurnal->jenis == 'pemasukan' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                            <i class="fas fa-arrow-{{ $jurnal->jenis == 'pemasukan' ? 'up' : 'down' }} mr-1"></i>
+                                            {{ ucfirst($jurnal->jenis) }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan roti coklat dan donat</td>
-                                    <td class="px-6 py-4 text-sm font-medium text-green-600">+ Rp 350.000</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">{{ $jurnal->kategori }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">{{ $jurnal->keterangan }}</td>
+                                    <td class="px-6 py-4 text-sm font-medium {{ $jurnal->jenis == 'pemasukan' ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ $jurnal->jenis == 'pemasukan' ? '+' : '-' }} Rp {{ number_format($jurnal->nominal, 0, ',', '.') }}
+                                    </td>
                                     <td class="px-6 py-4">
-                                        <button onclick="editTransaction(this)" class="text-green-600 hover:text-green-800 mr-2">
+                                        <button onclick="editTransaction({{ $jurnal->id }})" class="text-green-600 hover:text-green-800 mr-2">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button onclick="deleteTransaction(this)" class="text-red-500 hover:text-red-700">
+                                        <button onclick="deleteTransaction({{ $jurnal->id }})" class="text-red-500 hover:text-red-700">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </td>
                                 </tr>
-                                <tr data-type="pemasukan" data-category="penjualan">
-                                    <td class="px-6 py-4 text-sm text-gray-500">03/10/2025</td>
-                                    <td class="px-6 py-4 text-sm">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            <i class="fas fa-arrow-up mr-1"></i>
-                                            Pemasukan
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan kue ulang tahun custom</td>
-                                    <td class="px-6 py-4 text-sm font-medium text-green-600">+ Rp 500.000</td>
-                                    <td class="px-6 py-4">
-                                        <button onclick="editTransaction(this)" class="text-green-600 hover:text-green-800 mr-2">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="deleteTransaction(this)" class="text-red-500 hover:text-red-700">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                @empty
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                                        <p>Belum ada transaksi untuk tanggal ini</p>
                                     </td>
                                 </tr>
-                                <tr data-type="pemasukan" data-category="penjualan">
-                                    <td class="px-6 py-4 text-sm text-gray-500">03/10/2025</td>
-                                    <td class="px-6 py-4 text-sm">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            <i class="fas fa-arrow-up mr-1"></i>
-                                            Pemasukan
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Penjualan pastry dan croissant</td>
-                                    <td class="px-6 py-4 text-sm font-medium text-green-600">+ Rp 250.000</td>
-                                    <td class="px-6 py-4">
-                                        <button onclick="editTransaction(this)" class="text-green-600 hover:text-green-800 mr-2">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="deleteTransaction(this)" class="text-red-500 hover:text-red-700">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-
-                                <!-- Pengeluaran -->
-                                <tr data-type="pengeluaran" data-category="utilitas">
-                                    <td class="px-6 py-4 text-sm text-gray-500">03/10/2025</td>
-                                    <td class="px-6 py-4 text-sm">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            <i class="fas fa-arrow-down mr-1"></i>
-                                            Pengeluaran
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Utilitas</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Bayar listrik dan air bulan Oktober</td>
-                                    <td class="px-6 py-4 text-sm font-medium text-red-600">- Rp 450.000</td>
-                                    <td class="px-6 py-4">
-                                        <button onclick="editTransaction(this)" class="text-green-600 hover:text-green-800 mr-2">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="deleteTransaction(this)" class="text-red-500 hover:text-red-700">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -297,15 +250,15 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="flex justify-between items-center">
                                 <span class="text-sm font-medium text-gray-700">Total Pemasukan:</span>
-                                <span id="footerTotalRevenue" class="text-lg font-bold text-green-600">Rp 1.100.000</span>
+                                <span id="footerTotalRevenue" class="text-lg font-bold text-green-600">Rp {{ number_format($totalPemasukan, 0, ',', '.') }}</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-sm font-medium text-gray-700">Total Pengeluaran:</span>
-                                <span id="footerTotalExpense" class="text-lg font-bold text-red-600">Rp 450.000</span>
+                                <span id="footerTotalExpense" class="text-lg font-bold text-red-600">Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-sm font-medium text-gray-700">Saldo Bersih:</span>
-                                <span id="footerNetBalance" class="text-lg font-bold text-blue-600">Rp 650.000</span>
+                                <span id="footerNetBalance" class="text-lg font-bold {{ ($totalPemasukan - $totalPengeluaran) >= 0 ? 'text-green-600' : 'text-red-600' }}">Rp {{ number_format($totalPemasukan - $totalPengeluaran, 0, ',', '.') }}</span>
                             </div>
                         </div>
                     </div>
@@ -380,26 +333,35 @@
     </div>
 
     <script>
+        // CSRF Token setup for AJAX
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+        
         // Categories configuration
         const categories = {
             pemasukan: [
-                { value: 'penjualan', label: 'Penjualan' },
+                { value: 'Penjualan', label: 'Penjualan' },
                 { value: 'lainnya', label: 'Lainnya' }
             ],
             pengeluaran: [
-                { value: 'operasional', label: 'Operasional' },
-                { value: 'utilitas', label: 'Utilitas (Listrik, Air, dll)' },
+                { value: 'Operasional', label: 'Operasional' },
+                { value: 'Utilitas', label: 'Utilitas (Listrik, Air, dll)' },
+                { value: 'Bahan Baku', label: 'Bahan Baku' },
+                { value: 'Transportasi', label: 'Transportasi' },
                 { value: 'lainnya', label: 'Lainnya' }
             ]
         };
 
         // Category labels for display
         const categoryLabels = {
-            'penjualan': 'Penjualan',
-            'operasional': 'Operasional',
-            'utilitas': 'Utilitas',
+            'Penjualan': 'Penjualan',
+            'Operasional': 'Operasional',
+            'Utilitas': 'Utilitas',
+            'Bahan Baku': 'Bahan Baku',
+            'Transportasi': 'Transportasi',
             'lainnya': 'Lainnya'
         };
+
+        let editingId = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -409,10 +371,6 @@
             // Set today's date as default
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('transactionDate').value = today;
-            document.getElementById('filterDate').value = today;
-            
-            // Calculate summary on page load
-            updateSummary();
         });
 
         // Update date time
@@ -450,6 +408,8 @@
             const typeInput = document.getElementById('transactionType');
             const submitButton = document.getElementById('submitButton');
             
+            editingId = null;
+            
             // Set type
             typeInput.value = type;
             typeSelect.value = type;
@@ -475,6 +435,7 @@
             document.getElementById('transactionModal').classList.add('hidden');
             document.body.style.overflow = '';
             document.getElementById('transactionForm').reset();
+            editingId = null;
         }
 
         // Populate categories based on transaction type
@@ -491,7 +452,7 @@
         }
 
         // Handle form submission
-        document.getElementById('transactionForm').addEventListener('submit', function(e) {
+        document.getElementById('transactionForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const type = document.getElementById('transactionType').value;
@@ -510,128 +471,129 @@
                 return;
             }
 
-            // Add transaction to table
-            addTransactionToTable(type, date, category, description, amount);
-            
-            // Close modal
-            closeTransactionModal();
-            
-            // Show success message
-            showSuccessMessage(`${type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'} berhasil ditambahkan!`);
-            
-            // Update summary
-            updateSummary();
+            const formData = {
+                tgl: date,
+                jenis: type,
+                kategori: category,
+                keterangan: description,
+                nominal: amount
+            };
+
+            try {
+                let url = '{{ route("kasir.jurnal.store") }}';
+                let method = 'POST';
+                
+                if (editingId) {
+                    url = `/kasir/jurnal/${editingId}`;
+                    method = 'PUT';
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeTransactionModal();
+                    showSuccessMessage(result.message);
+                    
+                    // Reload page to show updated data
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert('Gagal menyimpan transaksi!');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat menyimpan transaksi!');
+            }
         });
 
-        // Add transaction to table
-        function addTransactionToTable(type, date, category, description, amount) {
-            const tbody = document.querySelector('#transactionTable tbody');
-            const badgeClass = type === 'pemasukan' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-            const iconClass = type === 'pemasukan' ? 'fa-arrow-up' : 'fa-arrow-down';
-            const amountClass = type === 'pemasukan' ? 'text-green-600' : 'text-red-600';
-            const amountPrefix = type === 'pemasukan' ? '+' : '-';
-            const categoryLabel = categoryLabels[category] || category;
-
-            const newRow = document.createElement('tr');
-            newRow.setAttribute('data-type', type);
-            newRow.setAttribute('data-category', category);
-            newRow.innerHTML = `
-                <td class="px-6 py-4 text-sm text-gray-500">${formatDate(date)}</td>
-                <td class="px-6 py-4 text-sm">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClass}">
-                        <i class="fas ${iconClass} mr-1"></i>
-                        ${type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}
-                    </span>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-900">${categoryLabel}</td>
-                <td class="px-6 py-4 text-sm text-gray-900">${description}</td>
-                <td class="px-6 py-4 text-sm font-medium ${amountClass}">${amountPrefix} Rp ${parseInt(amount).toLocaleString('id-ID')}</td>
-                <td class="px-6 py-4">
-                    <button onclick="editTransaction(this)" class="text-green-600 hover:text-green-800 mr-2">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deleteTransaction(this)" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
-            
-            tbody.appendChild(newRow);
-        }
-
-        // Format date
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('id-ID', { 
-                day: '2-digit', 
-                month: '2-digit', 
-                year: 'numeric' 
-            });
-        }
-
-        // Update summary - FIXED CALCULATION
-        function updateSummary() {
-            const rows = document.querySelectorAll('#transactionTable tbody tr');
-            let totalRevenue = 0;
-            let totalExpense = 0;
-            let revenueCount = 0;
-            let expenseCount = 0;
-            
-            rows.forEach(row => {
-                // Skip hidden rows
-                if (row.style.display === 'none') return;
+        // Edit transaction
+        async function editTransaction(id) {
+            try {
+                const response = await fetch(`/kasir/jurnal/${id}/edit`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
                 
-                const type = row.getAttribute('data-type');
+                const jurnal = await response.json();
                 
-                // Get amount from cell (index 4)
-                const amountCell = row.cells[4];
-                if (!amountCell) return;
+                // Fill form with data
+                editingId = id;
+                document.getElementById('transactionType').value = jurnal.jenis;
+                document.getElementById('transactionTypeSelect').value = jurnal.jenis;
+                document.getElementById('transactionDate').value = jurnal.tgl.split(' ')[0];
+                document.getElementById('transactionDescription').value = jurnal.keterangan;
+                document.getElementById('transactionAmount').value = jurnal.nominal;
                 
-                // Extract number from text like "+ Rp 350.000" or "- Rp 650.000"
-                const amountText = amountCell.textContent.trim();
-                const amountNumber = amountText.replace(/[^0-9]/g, '');
-                const amount = parseInt(amountNumber) || 0;
+                // Open modal
+                const modal = document.getElementById('transactionModal');
+                const modalTitle = document.getElementById('modalTitle');
+                const submitButton = document.getElementById('submitButton');
                 
-                if (type === 'pemasukan') {
-                    totalRevenue += amount;
-                    revenueCount++;
-                } else if (type === 'pengeluaran') {
-                    totalExpense += amount;
-                    expenseCount++;
-                }
-            });
-            
-            const netBalance = totalRevenue - totalExpense;
-            
-            // Update summary cards
-            document.getElementById('summaryTotalRevenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
-            document.getElementById('summaryTotalExpense').textContent = `Rp ${totalExpense.toLocaleString('id-ID')}`;
-            document.getElementById('summaryNetBalance').textContent = `Rp ${netBalance.toLocaleString('id-ID')}`;
-            
-            document.getElementById('revenueCount').innerHTML = `<i class="fas fa-receipt mr-2"></i>${revenueCount} transaksi hari ini`;
-            document.getElementById('expenseCount').innerHTML = `<i class="fas fa-calendar-day mr-2"></i>${expenseCount} transaksi hari ini`;
-            
-            // Update footer
-            document.getElementById('footerTotalRevenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
-            document.getElementById('footerTotalExpense').textContent = `Rp ${totalExpense.toLocaleString('id-ID')}`;
-            document.getElementById('footerNetBalance').textContent = `Rp ${netBalance.toLocaleString('id-ID')}`;
-            
-            // Update net balance color
-            const netBalanceElements = [
-                document.getElementById('summaryNetBalance'),
-                document.getElementById('footerNetBalance')
-            ];
-            
-            netBalanceElements.forEach(el => {
-                el.classList.remove('text-blue-600', 'text-green-600', 'text-red-600');
-                if (netBalance > 0) {
-                    el.classList.add('text-green-600');
-                } else if (netBalance < 0) {
-                    el.classList.add('text-red-600');
+                if (jurnal.jenis === 'pemasukan') {
+                    modalTitle.textContent = 'Edit Pemasukan';
+                    submitButton.className = 'flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700';
                 } else {
-                    el.classList.add('text-blue-600');
+                    modalTitle.textContent = 'Edit Pengeluaran';
+                    submitButton.className = 'flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700';
                 }
-            });
+                
+                populateCategories(jurnal.jenis);
+                document.getElementById('transactionCategory').value = jurnal.kategori;
+                document.getElementById('transactionAmount').value = jurnal.nominal;
+                
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Gagal mengambil data transaksi!');
+            }
+        }
+
+        // Delete transaction
+        async function deleteTransaction(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/kasir/jurnal/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccessMessage(result.message);
+                    
+                    // Reload page to show updated data
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert('Gagal menghapus transaksi!');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat menghapus transaksi!');
+            }
         }
 
         // Filter transactions
@@ -645,7 +607,11 @@
             rows.forEach(row => {
                 const type = row.getAttribute('data-type');
                 const category = row.getAttribute('data-category');
-                const description = row.cells[3].textContent.toLowerCase();
+                const cells = row.querySelectorAll('td');
+                
+                if (cells.length < 4) return; // Skip empty row
+                
+                const description = cells[3].textContent.toLowerCase();
                 
                 let showRow = true;
                 
@@ -655,7 +621,7 @@
                 }
                 
                 // Filter by category
-                if (filterCategory !== 'semua' && category !== filterCategory) {
+                if (filterCategory !== 'semua' && category !== filterCategory.toLowerCase()) {
                     showRow = false;
                 }
                 
@@ -666,23 +632,6 @@
                 
                 row.style.display = showRow ? '' : 'none';
             });
-            
-            // Update summary after filtering
-            updateSummary();
-        }
-
-        // Edit transaction
-        function editTransaction(button) {
-            alert('Fitur edit akan segera tersedia!');
-        }
-
-        // Delete transaction
-        function deleteTransaction(button) {
-            if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
-                button.closest('tr').remove();
-                updateSummary();
-                showSuccessMessage('Transaksi berhasil dihapus!');
-            }
         }
 
         // Show success message
@@ -712,12 +661,6 @@
             if (e.target === this) {
                 closeTransactionModal();
             }
-        });
-
-        // Filter by date
-        document.getElementById('filterDate').addEventListener('change', function() {
-            // This can be enhanced to filter transactions by date
-            console.log('Filter by date:', this.value);
         });
     </script>
 </body>

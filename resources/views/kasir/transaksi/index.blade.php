@@ -149,7 +149,7 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <span class="bg-green-100 text-green-600 text-sm px-3 py-1 rounded-lg font-semibold">87 Produk</span>
+                                    <span class="bg-green-100 text-green-600 text-sm px-3 py-1 rounded-lg font-semibold">{{ $totalProduk }} Produk</span>
                                 </div>
                             </div>
                             
@@ -199,274 +199,42 @@
                                     </div>
                                 </div>
                                 <div class="text-sm text-gray-500">
-                                    Menampilkan 1-20 dari 87 produk
+                                    Menampilkan 1-{{ $totalProduk }} dari {{ $totalProduk }} produk
                                 </div>
                             </div>
                             
                             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                                <!-- Product Card: Roti Tawar -->
+                                @forelse($produks as $produk)
+                                <!-- Product Card: {{ $produk->nama }} -->
                                 <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Roti Tawar', 8000, 'roti-tawar.jpg')">
+                                     onclick="addToCart('{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg')">
                                     <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-bread-slice text-amber-500 text-2xl group-hover:scale-110 transition-transform"></i>
+                                        <div class="aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
+                                            <i class="fas fa-bread-slice text-green-500 text-2xl group-hover:scale-110 transition-transform"></i>
                                         </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">40</div>
+                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">{{ $produk->stok }}</div>
                                     </div>
                                     <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Roti Tawar</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 8.000</p>
+                                        <h3 class="font-semibold text-gray-900 text-sm">{{ $produk->nama }}</h3>
+                                        <p class="text-green-600 font-bold text-lg">Rp {{ number_format($produk->harga, 0, ',', '.') }}</p>
                                         <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Roti</span>
+                                            <span class="text-xs text-gray-500">Produk</span>
                                             <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
+                                                <div class="w-2 h-2 {{ $produk->stok > 0 ? 'bg-success' : 'bg-red-500' }} rounded-full"></div>
+                                                <span class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-medium">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Roti Coklat -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Roti Coklat', 12000, 'roti-coklat.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-birthday-cake text-orange-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">28</div>
+                                @empty
+                                <div class="col-span-full text-center py-12">
+                                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-box-open text-gray-400 text-3xl"></i>
                                     </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Roti Coklat</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 12.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Roti</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Tidak Ada Produk</h3>
+                                    <p class="text-sm text-gray-500">Belum ada produk yang tersedia</p>
                                 </div>
-
-                                <!-- Croissant -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Croissant', 15000, 'croissant.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-rose-100 to-rose-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-cookie text-rose-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">18</div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Croissant</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 15.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Roti</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Pain au Chocolat -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Pain au Chocolat', 16000, 'pain-choco.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-pink-100 to-pink-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-bread-slice text-pink-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">12</div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Pain au Chocolat</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 16.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Roti</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Bagel -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Bagel', 10000, 'bagel.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-lime-100 to-lime-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-circle-notch text-lime-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">22</div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Bagel</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 10.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Roti</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Brioche -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Brioche', 18000, 'brioche.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-cookie-bite text-purple-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">10</div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Brioche</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 18.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Roti</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Donat Coklat -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Donat Coklat', 7000, 'donat-coklat.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-donut text-amber-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">35</div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Donat Coklat</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 7.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Roti</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Donat Isi -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Donat Isi', 9000, 'donat-isi.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-red-100 to-red-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-cookie-bite text-red-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">20</div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Donat Isi</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 9.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Roti</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Teh Botol -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Teh Botol', 6000, 'teh-botol.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-wine-bottle text-blue-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">60</div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Teh Botol</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 6.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Minuman Kemasan</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Air Mineral -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Air Mineral 600ml', 3000, 'air-mineral.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-cyan-100 to-cyan-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-water text-cyan-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">120</div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Air Mineral 600ml</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 3.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Minuman Kemasan</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Soda Kaleng -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Soda Kaleng', 8000, 'soda-kaleng.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-cocktail text-indigo-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">30</div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Soda Kaleng</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 8.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Minuman Kemasan</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Jus Botol -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('Jus Botol', 11000, 'jus-botol.jpg')">
-                                    <div class="relative">
-                                        <div class="aspect-square bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-lemon text-emerald-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">25</div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">Jus Botol</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp 11.000</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Minuman Kemasan</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 bg-success rounded-full"></div>
-                                                <span class="text-xs text-success font-medium">Tersedia</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                @endforelse
                             </div>
                         </div>
                     </div>
