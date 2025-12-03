@@ -3,63 +3,193 @@
 namespace App\Http\Controllers\Manajemen;
 
 use App\Http\Controllers\Controller;
+use App\Models\Jurnal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class JurnalController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        // Jika request meminta data JSON (untuk AJAX)
+        if ($request->ajax() || $request->has('data')) {
+            return $this->getData($request);
+        }
+
+        // Jika request meminta summary
+        if ($request->has('summary')) {
+            return $this->getSummary($request);
+        }
+
+        // Ambil data jurnal untuk hari ini (default view)
+        $today = now()->format('Y-m-d');
+        $jurnals = Jurnal::whereDate('tgl', $today)
+            ->where('role', 'manajemen')
+            ->orderBy('tgl', 'desc')
+            ->get();
+
+        return view('manajemen.jurnal.index', compact('jurnals'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+
+        $validated = $request->validate([
+            'tgl' => 'required|date',
+            'jenis' => 'required|in:pemasukan,pengeluaran',
+            'keterangan' => 'required|string|max:500',
+            'nominal' => 'required|integer|min:1',
+            'kategori' => 'required|in:Operasional,Utilitas,Bahan Baku,Penjualan,Transportasi,lainnya',
+        ]);
+
+        try {
+            Jurnal::create([
+                'tgl' => $validated['tgl'],
+                'jenis' => $validated['jenis'],
+                'keterangan' => $validated['keterangan'],
+                'nominal' => $validated['nominal'],
+                'kategori' => $validated['kategori'],
+                'role' => 'manajemen',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil ditambahkan!',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambah transaksi: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show($id)
     {
-        //
+        try {
+            $jurnal = Jurnal::where('id', $id)
+                ->where('role', 'manajemen')
+                ->firstOrFail();
+
+            return response()->json($jurnal);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Transaksi tidak ditemukan',
+            ], 404);
+        }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $validated = $request->validate([
+            'tgl' => 'required|date',
+            'jenis' => 'required|in:pemasukan,pengeluaran',
+            'keterangan' => 'required|string|max:500',
+            'nominal' => 'required|integer|min:1',
+            'kategori' => 'required|in:Operasional,Utilitas,Bahan Baku,Penjualan,Transportasi,lainnya',
+        ]);
+
+        try {
+            $jurnal = Jurnal::where('id', $id)
+                ->where('role', 'manajemen')
+                ->firstOrFail();
+
+            $jurnal->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil diupdate!',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupdate transaksi: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function destroy($id)
     {
-        //
+        try {
+            $jurnal = Jurnal::where('id', $id)
+                ->where('role', 'manajemen')
+                ->firstOrFail();
+
+            $jurnal->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil dihapus!',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus transaksi: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    // Method untuk mendapatkan data jurnal berdasarkan filter - sekarang bagian dari index
+    private function getData(Request $request)
     {
-        //
+        $query = Jurnal::where('role', 'manajemen');
+
+        // Filter by date
+        if ($request->has('date') && $request->date) {
+            $query->whereDate('tgl', $request->date);
+        }
+
+        // Filter by jenis
+        if ($request->has('jenis') && $request->jenis != 'semua') {
+            $query->where('jenis', $request->jenis);
+        }
+
+        // Filter by kategori
+        if ($request->has('kategori') && $request->kategori != 'semua') {
+            $query->where('kategori', $request->kategori);
+        }
+
+        // Search
+        if ($request->has('search') && $request->search) {
+            $query->where('keterangan', 'like', '%'.$request->search.'%');
+        }
+
+        $jurnals = $query->orderBy('tgl', 'desc')->get();
+
+        return response()->json($jurnals);
     }
+
+    // Method untuk mendapatkan summary - sekarang bagian dari index
+    private function getSummary(Request $request)
+    {
+        $query = Jurnal::where('role', 'manajemen');
+
+        if ($request->has('date') && $request->date) {
+            $query->whereDate('tgl', $request->date);
+        }
+
+        $data = $query->select(
+            DB::raw('COUNT(*) as total_transaksi'),
+            DB::raw('SUM(CASE WHEN jenis = "pemasukan" THEN nominal ELSE 0 END) as total_pemasukan'),
+            DB::raw('SUM(CASE WHEN jenis = "pengeluaran" THEN nominal ELSE 0 END) as total_pengeluaran'),
+            DB::raw('COUNT(CASE WHEN jenis = "pemasukan" THEN 1 END) as jumlah_pemasukan'),
+            DB::raw('COUNT(CASE WHEN jenis = "pengeluaran" THEN 1 END) as jumlah_pengeluaran')
+        )->first();
+
+        return response()->json([
+            'total_revenue' => $data->total_pemasukan ?? 0,
+            'total_expense' => $data->total_pengeluaran ?? 0,
+            'net_balance' => ($data->total_pemasukan ?? 0) - ($data->total_pengeluaran ?? 0),
+            'revenue_count' => $data->jumlah_pemasukan ?? 0,
+            'expense_count' => $data->jumlah_pengeluaran ?? 0,
+        ]);
+    }
+
+    // Method create dan edit (kosong karena menggunakan modal)
+    public function create() {}
+
+    public function edit($id) {}
 }

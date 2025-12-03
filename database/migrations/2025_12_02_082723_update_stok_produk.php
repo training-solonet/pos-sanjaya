@@ -11,14 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('jurnal', function (Blueprint $table) {
+        Schema::create('update_stok_produk', function (Blueprint $table) {
             $table->id();
-            $table->dateTime('tgl');
-            $table->enum('jenis', ['pemasukan', 'pengeluaran']);
+            $table->foreignId('id_produk')->constrained('produk')->onDelete('cascade');
+            $table->integer('stok_awal')->default(0);
+            $table->integer('stok_baru')->default(0);
+            $table->integer('total_stok')->default(0);
+            $table->dateTime('kadaluarsa');
+            $table->dateTime('tanggal_update');
             $table->text('keterangan')->nullable();
-            $table->integer('nominal')->default(0);
-            $table->enum('kategori', ['Operasional', 'Utilitas', 'Bahan Baku', 'Penjualan', 'Transportasi', 'lainnya'])->nullable();
-            $table->enum('role', ['admin', 'manajemen'])->nullable();
             $table->timestamps();
         });
     }
@@ -28,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('jurnal');
+        Schema::dropIfExists('update_stok_produk');
     }
 };

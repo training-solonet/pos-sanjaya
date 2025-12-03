@@ -4,72 +4,59 @@ on:
   push:
     branches:
       - master
-      - kasir-frmn
   pull_request:
     branches:
       - master
 
 jobs:
-  deploy:
-    name: Deploy to VPS
+ # Job 1: Code Quality Checks
+  code-quality:
+    name: Code Quality & Formatting
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: ${{ secrets.PORT || 22 }}
-          script_stop: true
-          script: |
-            echo "🚀 Starting deployment..."
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, json, bcmath
+          coverage: none
 
-            # Navigate to project directory
-            cd /var/www/pos-sanjaya
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
-            echo "📦 Pulling latest changes from Git..."
-            git fetch origin
-            git reset --hard origin/${{ github.ref_name }}
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --optimize-autoloader
 
-            echo "⚙️ Setting up environment FIRST..."
-            if [ ! -f .env ]; then
-              echo "Creating .env file before composer install..."
-              echo "APP_NAME=Laravel
-            APP_ENV=production
-            APP_KEY=
-            APP_DEBUG=false
-            APP_URL=http://connectis.my.id
+      - name: Run Laravel Pint (Code Style Check)
+        run: ./vendor/bin/pint --test
+        continue-on-error: false
 
-            DB_CONNECTION=mysql
-            DB_HOST=127.0.0.1
-            DB_PORT=3306
-            DB_DATABASE=sanjaya
-            DB_USERNAME=root
-            DB_PASSWORD=
 
-            SESSION_DRIVER=file
-            CACHE_DRIVER=file
-            QUEUE_CONNECTION=sync" > .env
-            fi
-
-            echo "📥 Installing Composer dependencies..."
-            composer install --no-dev --optimize-autoloader --no-interaction
-
-            echo "🔑 Generating application key..."
-            php artisan key:generate --force
-
-            echo "🗄️ Running migrations..."
-            php artisan migrate --force
-
-            echo "🧹 Optimizing application..."
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-
-            echo "✅ Deployment completed successfully!"
+  # Job 2: Deploy to VPS (only on push to main/master)
+  deploy:
+    name: Deploy to VPS
+    needs: code-quality
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: executing remote ssh commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /var/www/pos-sanjaya
+          git pull origin master
+          composer install --no-interaction --prefer-dist --optimize-autoloader

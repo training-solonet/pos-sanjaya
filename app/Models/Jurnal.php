@@ -12,12 +12,13 @@ class Jurnal extends Model
         'tgl',
         'jenis',
         'keterangan',
-        'nominal',
+        'nominal', // Diperbaiki dari 'nomimal'
         'kategori',
         'role',
     ];
 
     protected $casts = [
         'tgl' => 'datetime',
+        'nominal' => 'integer',
     ];
 }

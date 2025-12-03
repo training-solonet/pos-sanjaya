@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 class Produk extends Model
@@ -14,15 +16,122 @@ class Produk extends Model
         'min_stok',
         'harga',
         'kadaluarsa',
+        'id_bahan_baku',
     ];
 
-    public function rekapProduk()
+    protected $casts = [
+        'kadaluarsa' => 'datetime',
+    ];
+
+    // Relasi ke update stok produk
+    public function updateStokHistory()
     {
-        return $this->hasMany(RekapProduk::class, 'id_produk');
+        return $this->hasMany(UpdateStokProduk::class, 'id_produk')
+            ->orderBy('tanggal_update', 'desc');
     }
 
-    public function transaksi()
+    // Relasi ke bahan baku
+    public function bahan_baku()
     {
-        return $this->hasMany(Transaksi::class, 'id_produk');
+        return $this->belongsTo(BahanBaku::class, 'id_bahan_baku');
+    }
+
+    // Method untuk update stok
+    public function updateStok($stok_baru, $kadaluarsa_baru = null, $keterangan = null)
+    {
+        try {
+            $stok_awal = $this->stok;
+            $total_stok = $stok_awal + $stok_baru;
+
+            // Update produk
+            $this->update([
+                'stok' => $total_stok,
+                'kadaluarsa' => $kadaluarsa_baru ?? $this->kadaluarsa,
+            ]);
+
+            // Simpan history
+            UpdateStokProduk::create([
+                'id_produk' => $this->id,
+                'stok_awal' => $stok_awal,
+                'stok_baru' => $stok_baru,
+                'total_stok' => $total_stok,
+                'kadaluarsa' => $kadaluarsa_baru ?? $this->kadaluarsa,
+                'tanggal_update' => now(),
+                'keterangan' => $keterangan,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    // Get latest kadaluarsa from updates
+    public function getLatestKadaluarsa()
+    {
+        $latestUpdate = $this->updateStokHistory()->first();
+
+        return $latestUpdate ? $latestUpdate->kadaluarsa : $this->kadaluarsa;
+    }
+
+    // Hitung sisa hari kadaluarsa
+    public function getDaysUntilExpired()
+    {
+        $now = Carbon::now();
+        $kadaluarsa = Carbon::parse($this->kadaluarsa);
+
+        return $now->diffInDays($kadaluarsa, false); // false untuk hasil negatif jika sudah expired
+    }
+
+    // Cek status stok
+    public function getStockStatus()
+    {
+        if ($this->stok == 0) {
+            return 'habis';
+        } elseif ($this->stok <= $this->min_stok) {
+            return 'rendah';
+        } else {
+            return 'aman';
+        }
+    }
+
+    // Cek status kadaluarsa
+    public function getExpiryStatus()
+    {
+        $days = $this->getDaysUntilExpired();
+
+        if ($days < 0) {
+            return 'expired';
+        } elseif ($days == 0) {
+            return 'hari_ini';
+        } elseif ($days <= 7) {
+            return 'mendekati';
+        } else {
+            return 'aman';
+        }
+    }
+
+    // Attribute accessor untuk status stok
+    protected function statusStok(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->getStockStatus(),
+        );
+    }
+
+    // Attribute accessor untuk status kadaluarsa
+    protected function statusKadaluarsa(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->getExpiryStatus(),
+        );
+    }
+
+    // Attribute accessor untuk sisa hari
+    protected function sisaHari(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->getDaysUntilExpired(),
+        );
     }
 }
