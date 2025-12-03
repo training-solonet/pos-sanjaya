@@ -50,7 +50,7 @@ Route::middleware([IsManagement::class])->group(function () {
             'konversi' => KonversiController::class,
             'jurnal' => JurnalController::class,
             'laporan' => LaporanController::class,
-            'opname' => OpnameController::class,
+            // 'opname' => OpnameController::class,
             'updateproduk' => UpdateStokProdukController::class,
         ]);
 
