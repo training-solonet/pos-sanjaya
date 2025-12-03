@@ -16,6 +16,7 @@ use App\Http\Controllers\RedirectController;
 use App\Http\Middleware\IsKasir;
 use App\Http\Middleware\IsManagement;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Manajemen\UpdateStokProdukController;
 
 Route::get('/redirect', [RedirectController::class, 'redirectToRoleBasedDashboard']);
 
@@ -50,6 +51,9 @@ Route::middleware([IsManagement::class])->group(function () {
             'jurnal' => JurnalController::class,
             'laporan' => LaporanController::class,
             'opname' => OpnameController::class,
+            'updateproduk' => UpdateStokProdukController::class
         ]);
+        
     });
+    
 });
