@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Manajemen;
 
-use App\Models\UpdateStokProduk;
-use App\Models\Produk;
 use App\Http\Controllers\Controller;
+use App\Models\Produk;
+use App\Models\UpdateStokProduk;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class UpdateStokProdukController extends Controller
 {
@@ -21,45 +21,46 @@ class UpdateStokProdukController extends Controller
             // Set timezone ke Asia/Jakarta untuk semua tanggal
             config(['app.timezone' => 'Asia/Jakarta']);
             date_default_timezone_set('Asia/Jakarta');
-            
+
             // Ambil semua produk untuk dropdown
             $produk = Produk::orderBy('nama')->get();
-            
+
             // Ambil history update stok dengan relasi produk
             $history = UpdateStokProduk::with('produk')
                 ->orderBy('tanggal_update', 'desc')
                 ->get();
-            
+
             // Hitung summary dengan timezone Jakarta
             $now = Carbon::now('Asia/Jakarta');
             $totalEntries = $history->count();
-            
+
             // Count today entries
             $todayEntries = $history->filter(function ($item) use ($now) {
                 return Carbon::parse($item->tanggal_update)->isSameDay($now);
             })->count();
-            
+
             // Count week entries
             $weekEntries = $history->filter(function ($item) use ($now) {
                 return Carbon::parse($item->tanggal_update) >= $now->copy()->startOfWeek();
             })->count();
-            
+
             // Count month entries
             $monthEntries = $history->filter(function ($item) use ($now) {
                 return Carbon::parse($item->tanggal_update) >= $now->copy()->startOfMonth();
             })->count();
-            
-            return view("manajemen.produk.UpdateStokProduk", compact(
-                'produk', 
+
+            return view('manajemen.produk.UpdateStokProduk', compact(
+                'produk',
                 'history',
                 'totalEntries',
                 'todayEntries',
                 'weekEntries',
                 'monthEntries'
             ));
-            
+
         } catch (\Exception $e) {
             Log::error('Index Update Stok Error: '.$e->getMessage());
+
             return back()->with('error', 'Gagal memuat data: '.$e->getMessage());
         }
     }
@@ -75,26 +76,26 @@ class UpdateStokProdukController extends Controller
             'id_produk' => 'required|exists:produk,id',
             'stok_baru' => 'required|integer|min:1',
             'kadaluarsa' => 'required|date|after_or_equal:today',
-            'keterangan' => 'nullable|string|max:500'
+            'keterangan' => 'nullable|string|max:500',
         ]);
 
         try {
             DB::transaction(function () use ($request) {
                 // Ambil produk yang akan diupdate
                 $produk = Produk::findOrFail($request->id_produk);
-                
+
                 // Simpan stok awal
                 $stok_awal = $produk->stok;
-                
+
                 // Hitung total stok baru
                 $total_stok = $stok_awal + $request->stok_baru;
-                
+
                 // Update produk (termasuk kadaluarsa)
                 $produk->update([
                     'stok' => $total_stok,
                     'kadaluarsa' => $request->kadaluarsa,
                 ]);
-                
+
                 // Simpan history update dengan waktu WIB (Asia/Jakarta)
                 UpdateStokProduk::create([
                     'id_produk' => $request->id_produk,
@@ -103,7 +104,7 @@ class UpdateStokProdukController extends Controller
                     'total_stok' => $total_stok,
                     'kadaluarsa' => $request->kadaluarsa,
                     'tanggal_update' => Carbon::now('Asia/Jakarta'),
-                    'keterangan' => $request->keterangan
+                    'keterangan' => $request->keterangan,
                 ]);
             });
 
@@ -134,7 +135,7 @@ class UpdateStokProdukController extends Controller
             $tanggalUpdate = Carbon::parse($updateStok->tanggal_update)
                 ->timezone('Asia/Jakarta')
                 ->translatedFormat('l, d F Y H:i');
-            
+
             $kadaluarsa = Carbon::parse($updateStok->kadaluarsa)
                 ->translatedFormat('d F Y');
 
@@ -148,8 +149,8 @@ class UpdateStokProdukController extends Controller
                     'total_stok' => $updateStok->total_stok,
                     'kadaluarsa' => $kadaluarsa,
                     'tanggal_update' => $tanggalUpdate,
-                    'keterangan' => $updateStok->keterangan
-                ]
+                    'keterangan' => $updateStok->keterangan,
+                ],
             ]);
         } catch (\Exception $e) {
             Log::error('Show Update Stok Error: '.$e->getMessage());
@@ -171,7 +172,7 @@ class UpdateStokProdukController extends Controller
         $request->validate([
             'stok_baru' => 'required|integer|min:1',
             'kadaluarsa' => 'required|date|after_or_equal:today',
-            'keterangan' => 'nullable|string|max:500'
+            'keterangan' => 'nullable|string|max:500',
         ]);
 
         try {
@@ -179,26 +180,26 @@ class UpdateStokProdukController extends Controller
                 // Ambil data history yang akan diupdate
                 $updateStok = UpdateStokProduk::findOrFail($id);
                 $produk = Produk::findOrFail($updateStok->id_produk);
-                
+
                 // Simpan nilai lama untuk perhitungan
                 $stok_baru_lama = $updateStok->stok_baru;
                 $stok_baru_baru = $request->stok_baru;
-                
+
                 // Hitung selisih stok
                 $selisih_stok = $stok_baru_baru - $stok_baru_lama;
-                
+
                 // Update stok produk
                 $produk->update([
                     'stok' => $produk->stok + $selisih_stok,
                     'kadaluarsa' => $request->kadaluarsa,
                 ]);
-                
+
                 // Update history
                 $updateStok->update([
                     'stok_baru' => $stok_baru_baru,
                     'total_stok' => $updateStok->stok_awal + $stok_baru_baru,
                     'kadaluarsa' => $request->kadaluarsa,
-                    'keterangan' => $request->keterangan
+                    'keterangan' => $request->keterangan,
                 ]);
             });
 
@@ -225,15 +226,15 @@ class UpdateStokProdukController extends Controller
             DB::transaction(function () use ($id) {
                 // Ambil data update stok
                 $updateStok = UpdateStokProduk::with('produk')->findOrFail($id);
-                
+
                 // Ambil produk terkait
                 $produk = $updateStok->produk;
-                
+
                 // Kembalikan stok produk ke semula
                 $produk->update([
-                    'stok' => $produk->stok - $updateStok->stok_baru
+                    'stok' => $produk->stok - $updateStok->stok_baru,
                 ]);
-                
+
                 // Hapus history
                 $updateStok->delete();
             });
@@ -261,22 +262,22 @@ class UpdateStokProdukController extends Controller
 
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'exists:update_stok_produk,id'
+            'ids.*' => 'exists:update_stok_produk,id',
         ]);
 
         try {
             DB::transaction(function () use ($request) {
                 $ids = $request->ids;
-                
+
                 foreach ($ids as $id) {
                     $updateStok = UpdateStokProduk::with('produk')->findOrFail($id);
                     $produk = $updateStok->produk;
-                    
+
                     // Kembalikan stok produk
                     $produk->update([
-                        'stok' => $produk->stok - $updateStok->stok_baru
+                        'stok' => $produk->stok - $updateStok->stok_baru,
                     ]);
-                    
+
                     // Hapus history
                     $updateStok->delete();
                 }
@@ -298,5 +299,6 @@ class UpdateStokProdukController extends Controller
 
     // Method create dan edit (kosong karena menggunakan modal)
     public function create() {}
+
     public function edit($id) {}
 }

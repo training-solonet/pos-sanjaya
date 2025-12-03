@@ -2,25 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
 
 class Produk extends Model
 {
     protected $table = 'produk';
-    
+
     protected $fillable = [
         'nama',
         'stok',
         'min_stok',
         'harga',
         'kadaluarsa',
-        'id_bahan_baku'
+        'id_bahan_baku',
     ];
 
     protected $casts = [
-        'kadaluarsa' => 'datetime'
+        'kadaluarsa' => 'datetime',
     ];
 
     // Relasi ke update stok produk
@@ -42,13 +42,13 @@ class Produk extends Model
         try {
             $stok_awal = $this->stok;
             $total_stok = $stok_awal + $stok_baru;
-            
+
             // Update produk
             $this->update([
                 'stok' => $total_stok,
                 'kadaluarsa' => $kadaluarsa_baru ?? $this->kadaluarsa,
             ]);
-            
+
             // Simpan history
             UpdateStokProduk::create([
                 'id_produk' => $this->id,
@@ -57,9 +57,9 @@ class Produk extends Model
                 'total_stok' => $total_stok,
                 'kadaluarsa' => $kadaluarsa_baru ?? $this->kadaluarsa,
                 'tanggal_update' => now(),
-                'keterangan' => $keterangan
+                'keterangan' => $keterangan,
             ]);
-            
+
             return true;
         } catch (\Exception $e) {
             return false;
@@ -70,6 +70,7 @@ class Produk extends Model
     public function getLatestKadaluarsa()
     {
         $latestUpdate = $this->updateStokHistory()->first();
+
         return $latestUpdate ? $latestUpdate->kadaluarsa : $this->kadaluarsa;
     }
 
@@ -78,6 +79,7 @@ class Produk extends Model
     {
         $now = Carbon::now();
         $kadaluarsa = Carbon::parse($this->kadaluarsa);
+
         return $now->diffInDays($kadaluarsa, false); // false untuk hasil negatif jika sudah expired
     }
 
@@ -97,7 +99,7 @@ class Produk extends Model
     public function getExpiryStatus()
     {
         $days = $this->getDaysUntilExpired();
-        
+
         if ($days < 0) {
             return 'expired';
         } elseif ($days == 0) {

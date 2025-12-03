@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class UpdateStokProduk extends Model
 {
     protected $table = 'update_stok_produk';
-    
+
     protected $fillable = [
         'id_produk',
         'stok_awal',
@@ -15,12 +15,12 @@ class UpdateStokProduk extends Model
         'total_stok',
         'kadaluarsa',
         'tanggal_update',
-        'keterangan'
+        'keterangan',
     ];
 
     protected $casts = [
         'tanggal_update' => 'datetime',
-        'kadaluarsa' => 'datetime'
+        'kadaluarsa' => 'datetime',
     ];
 
     // Relasi ke produk
