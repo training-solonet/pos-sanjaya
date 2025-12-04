@@ -12,7 +12,7 @@ class OpnameController extends Controller
      */
     public function index()
     {
-        return view("manajemen.bahanbaku.opname");
+        return view('manajemen.bahanbaku.opname');
     }
 
     /**
