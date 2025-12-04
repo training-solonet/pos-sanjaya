@@ -189,7 +189,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nama Resep</label>
-                        <input id="recipeName" type="text" required class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Contoh: Croissant Coklat Premium">
+                        <div class="flex gap-2">
+                            <select id="productSelect" onchange="onProductSelected(this)" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                                <option value="">Pilih Produk (opsional)</option>
+                            </select>
+                            <input type="hidden" id="recipeNameHidden">
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">Pilih produk untuk mengisi nama & harga otomatis. Kolom nama manual telah dihilangkan.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
@@ -302,6 +308,41 @@
     </div>
 </div>
 <script>
+    // Produk list (to autofill recipe name & price). Provided by controller.
+    let produkList = @json($produks ?? []);
+
+    // populate product select in modal
+    function populateProductSelect() {
+        try {
+            const sel = document.getElementById('productSelect');
+            if (!sel) return;
+            // clear existing but keep first empty option; show only product name in list
+            sel.innerHTML = '<option value="">Pilih Produk (opsional)</option>' + (produkList || []).map(p => `<option value="${p.id}" data-harga="${p.harga}">${p.nama}</option>`).join('');
+        } catch (e) {
+            console.error('populateProductSelect error', e);
+        }
+    }
+
+    // when product selected, autofill recipe name (hidden) and target price
+    function onProductSelected(sel) {
+        try {
+            const id = sel.value;
+            const hiddenName = document.getElementById('recipeNameHidden');
+            const priceEl = document.getElementById('targetPrice');
+            if (!id) {
+                // if cleared, do not overwrite hidden name (use existing for edit flows)
+                calculateMargin();
+                return;
+            }
+            const found = (produkList || []).find(p => String(p.id) === String(id));
+            if (!found) return;
+            if (hiddenName) hiddenName.value = found.nama || hiddenName.value;
+            if (priceEl) priceEl.value = found.harga ?? priceEl.value;
+            calculateMargin();
+        } catch (e) {
+            console.error('onProductSelected error', e);
+        }
+    }
     // Resep dimuat dari database (disiapkan di controller)
     let recipes = @json($recipes ?? []);
     // Bahan baku list (id, nama, stok)
@@ -369,6 +410,8 @@
 
     // Inisialisasi saat halaman dimuat
     window.addEventListener('DOMContentLoaded', function() {
+        // populate product select if produk provided
+        populateProductSelect();
         updateDateTime();
         setInterval(updateDateTime, 60000); // Perbarui setiap menit
         renderTableView(); // Show all recipes by default
@@ -416,7 +459,7 @@
                                 <i class="fas ${getCategoryIcon(recipe.category)} text-white text-sm"></i>
                             </div>
                             <div>
-                                <div class="text-sm font-medium text-gray-900">${recipe.name}</div>
+                                <div class="text-sm font-medium text-gray-900 cursor-pointer text-blue-600" onclick="viewRecipe(${recipe.id})">${recipe.name}</div>
                                 <div class="text-xs text-gray-500">${recipe.yield} porsi • ${formatDuration(recipe.duration)}</div>
                             </div>
                         </div>
@@ -435,14 +478,8 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center space-x-2">
-                            <button onclick="viewRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Lihat Detail">
-                                <i class="fas fa-eye"></i>
-                            </button>
                             <button onclick="editRecipe(${recipe.id})" class="text-green-600 hover:text-green-700" title="Edit">
                                 <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="duplicateRecipe(${recipe.id})" class="text-purple-600 hover:text-purple-700" title="Duplikat">
-                                <i class="fas fa-copy"></i>
                             </button>
                             <button onclick="deleteRecipe(${recipe.id})" class="text-red-600 hover:text-red-700" title="Hapus">
                                 <i class="fas fa-trash"></i>
@@ -498,16 +535,12 @@
                         </div>
 
                         <div class="flex items-center justify-between">
-                            <button onclick="viewRecipe(${recipe.id})" class="text-green-600 hover:text-green-700 text-sm font-medium">
-                                <i class="fas fa-eye mr-1"></i>Detail Resep
-                            </button>
+                            <!-- Name click navigates to detail page; removed separate detail button -->
                             <div class="flex items-center space-x-2">
                                 <button onclick="editRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="duplicateRecipe(${recipe.id})" class="text-purple-600 hover:text-purple-700" title="Duplikat">
-                                    <i class="fas fa-copy"></i>
-                                </button>
+                                <!-- duplicate removed -->
                                 <button onclick="deleteRecipe(${recipe.id})" class="text-red-600 hover:text-red-700" title="Hapus">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -611,6 +644,8 @@
         resetIngredientsForm();
         resetCostCalculation();
         editingRecipeId = null;
+        const hiddenName = document.getElementById('recipeNameHidden');
+        if (hiddenName) hiddenName.value = '';
         // dim sidebar and show modal
         const sidebar = document.getElementById('sidebar');
         if (sidebar && sidebar.classList) {
@@ -629,6 +664,8 @@
             sidebar.classList.remove('opacity-40', 'pointer-events-none');
         }
         document.getElementById('recipeForm').reset();
+        const hiddenName2 = document.getElementById('recipeNameHidden');
+        if (hiddenName2) hiddenName2.value = '';
         resetIngredientsForm();
         resetCostCalculation();
         editingRecipeId = null;
@@ -724,7 +761,23 @@
         const recipe = recipes.find(r => parseInt(r.id) === parseInt(id));
         if (!recipe) return alert('Resep tidak ditemukan');
         editingRecipeId = id;
-        document.getElementById('recipeName').value = recipe.name || '';
+        // set product select if product exists, otherwise store name in hidden input
+        const prodSelEdit = document.getElementById('productSelect');
+        const hiddenEdit = document.getElementById('recipeNameHidden');
+        if (prodSelEdit) {
+            const foundProd = (produkList || []).find(p => p.nama === (recipe.name || ''));
+            if (foundProd) {
+                prodSelEdit.value = foundProd.id;
+                onProductSelected(prodSelEdit);
+                // keep hidden name in sync
+                if (hiddenEdit) hiddenEdit.value = foundProd.nama || '';
+            } else {
+                prodSelEdit.value = '';
+                if (hiddenEdit) hiddenEdit.value = recipe.name || '';
+            }
+        } else {
+            if (hiddenEdit) hiddenEdit.value = recipe.name || '';
+        }
         document.getElementById('recipeCategory').value = recipe.category || '';
         document.getElementById('recipeYield').value = recipe.yield || 1;
         document.getElementById('recipeDuration').value = recipe.duration || '';
@@ -751,7 +804,22 @@
         const recipe = recipes.find(r => parseInt(r.id) === parseInt(id));
         if (!recipe) return alert('Resep tidak ditemukan');
         editingRecipeId = null;
-        document.getElementById('recipeName').value = recipe.name + ' (Copy)';
+        // set product select if product exists, otherwise set hidden name
+        const prodSelDup = document.getElementById('productSelect');
+        const hiddenDup = document.getElementById('recipeNameHidden');
+        if (prodSelDup) {
+            const foundProd = (produkList || []).find(p => p.nama === (recipe.name || ''));
+            if (foundProd) {
+                prodSelDup.value = foundProd.id;
+                onProductSelected(prodSelDup);
+                if (hiddenDup) hiddenDup.value = (foundProd.nama || '') + ' (Copy)';
+            } else {
+                prodSelDup.value = '';
+                if (hiddenDup) hiddenDup.value = (recipe.name || '') + ' (Copy)';
+            }
+        } else {
+            if (hiddenDup) hiddenDup.value = (recipe.name || '') + ' (Copy)';
+        }
         document.getElementById('recipeCategory').value = recipe.category || '';
         document.getElementById('recipeYield').value = recipe.yield || 1;
         document.getElementById('recipeDuration').value = recipe.duration || '';
@@ -1121,7 +1189,7 @@
         }
 
         const payload = {
-            name: document.getElementById('recipeName').value,
+            name: document.getElementById('recipeNameHidden').value,
             category: document.getElementById('recipeCategory').value,
             yield: parseInt(document.getElementById('recipeYield').value) || 1,
             duration: document.getElementById('recipeDuration').value,

@@ -49,12 +49,14 @@ class ResepController extends Controller
 
         // also provide bahan baku list to view for ingredient selection
         $bahans = \App\Models\BahanBaku::select('id', 'nama', 'stok')->get()->toArray();
+        // provide produk list so the recipe modal can autofill name & harga
+        $produks = \App\Models\Produk::select('id', 'nama', 'harga')->get()->toArray();
 
         if ($request->wantsJson() || $request->ajax()) {
-            return response()->json(['success' => true, 'recipes' => $recipes, 'bahans' => $bahans], 200);
+            return response()->json(['success' => true, 'recipes' => $recipes, 'bahans' => $bahans, 'produks' => $produks], 200);
         }
 
-        return view('manajemen.resep.index', compact('resep', 'recipes', 'bahans'));
+        return view('manajemen.resep.index', compact('resep', 'recipes', 'bahans', 'produks'));
     }
 
     /**
