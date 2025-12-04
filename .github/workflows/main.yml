@@ -13,7 +13,7 @@ jobs:
   code-quality:
     name: Code Quality & Formatting
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,7 +47,7 @@ jobs:
     needs: code-quality
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-
+    
     steps:
     - name: executing remote ssh commands using password
       uses: appleboy/ssh-action@master
