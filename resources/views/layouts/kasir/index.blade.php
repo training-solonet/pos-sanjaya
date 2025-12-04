@@ -61,10 +61,6 @@
 </head>
 
 <body class="bg-gray-50 min-h-screen lg:flex">
-    <!-- Mobile Overlay -->
-    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()">
-    </div>
-
     <!-- Sidebar -->
     @include('layouts.kasir.sidebar')
 
@@ -73,16 +69,18 @@
         onclick="toggleSidebar()"></div>
 
     <!-- Main Content -->
-    <div class="content flex-1 lg:flex-1">
+    <div class="content flex-1">
         <!-- Header -->
         @include('layouts.kasir.header')
 
-        <!-- Page Content -->
-        <main class="p-4 sm:p-6 lg:p-8">
-            <div class="space-y-6">
-                @yield('content')
-            </div>
-        </main>
+        <!-- Scrollable page content area; header is sticky so we subtract its height (4rem) -->
+        <div style="height: calc(100vh - 4rem);" class="overflow-auto">
+            <main class="p-4 sm:p-6 lg:p-8">
+                <div class="space-y-6">
+                    @yield('content')
+                </div>
+            </main>
+        </div>
     </div>
 
     <script>
@@ -91,7 +89,7 @@
         // Toggle sidebar
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobileOverlay');
+            const overlay = document.getElementById('sidebarOverlay');
 
             // Only toggle on mobile/tablet
             if (window.innerWidth < 1024) {
@@ -121,7 +119,7 @@
         // Handle window resize
         window.addEventListener('resize', function() {
             const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobileOverlay');
+            const overlay = document.getElementById('sidebarOverlay');
 
             if (window.innerWidth >= 1024) {
                 sidebar.classList.remove('-translate-x-full');
@@ -137,7 +135,7 @@
         // Close sidebar when clicking outside on mobile
         document.addEventListener('click', function(e) {
             const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobileOverlay');
+            const overlay = document.getElementById('sidebarOverlay');
             const menuButtons = document.querySelectorAll('[onclick*="toggleSidebar"]');
 
             let clickedMenuButton = false;

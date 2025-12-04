@@ -15,7 +15,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h2 class="text-2xl font-bold text-gray-900">Stok Produk Jadi</h2>
                     <div class="flex gap-2">
-                        <a href="{{ route("management.updateproduk.index") }}"
+                        <a href="{{ route('management.updateproduk.index') }}"
                             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
                             <i class="fas fa-clipboard-check mr-2"></i>Stok Produk
                         </a>
@@ -50,7 +50,8 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Stok</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Stok
+                                    </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expired Date</th>
                                     <th class="px6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
