@@ -2,31 +2,6 @@
 
 @section('content')
     <div class="content flex-1 lg:flex-1">
-        <!-- Header -->
-        {{-- <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-            <div class="px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <!-- Mobile Menu Button & Page Title -->
-                    <div class="flex items-center space-x-4">
-                        <button onclick="toggleSidebar()" class="lg:hidden w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <i class="fas fa-bars text-gray-600"></i>
-                        </button>
-                    </div>
-
-                    <!-- Header Actions -->
-                    <div class="flex items-center space-x-4">
-                        <div class="hidden md:block text-right">
-                            <p class="text-sm font-medium text-gray-900">Kasir: Admin</p>
-                            <p class="text-xs text-gray-500" id="currentDateTime"></p>
-                        </div>
-                        <button class="relative w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200">
-                            <i class="fas fa-bell text-gray-600"></i>
-                            <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header> --}}
 
         <!-- Page Content -->
         <main class="p-4 sm:p-6 lg:p-8">
@@ -82,8 +57,8 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Total Penjualan</p>
-                                <p class="text-2xl font-bold text-gray-900">Rp 2.450.000</p>
-                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>12% dari minggu lalu</p>
+                                <p class="text-2xl font-bold text-gray-900">Rp {{ number_format($totalSales ?? 0, 0, ',', '.') }}</p>
+                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>&nbsp;</p>
                             </div>
                             <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-chart-line text-primary text-xl"></i>
@@ -95,8 +70,8 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Total Transaksi</p>
-                                <p class="text-2xl font-bold text-gray-900">127</p>
-                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>8% dari minggu lalu</p>
+                                <p class="text-2xl font-bold text-gray-900">{{ $totalTransactions }}</p>
+                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>&nbsp;</p>
                             </div>
                             <div class="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-receipt text-success text-xl"></i>
@@ -108,8 +83,8 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Rata-rata per Transaksi</p>
-                                <p class="text-2xl font-bold text-gray-900">Rp 19.291</p>
-                                <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>3% dari minggu lalu</p>
+                                <p class="text-2xl font-bold text-gray-900">Rp {{ number_format($avgPerTransaction ?? 0, 0, ',', '.') }}</p>
+                                <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>&nbsp;</p>
                             </div>
                             <div class="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-calculator text-accent text-xl"></i>
@@ -121,8 +96,8 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Produk Terjual</p>
-                                <p class="text-2xl font-bold text-gray-900">234</p>
-                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>15% dari minggu lalu</p>
+                                <p class="text-2xl font-bold text-gray-900">{{ number_format($totalProductsSold ?? 0, 0, ',', '.') }}</p>
+                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>&nbsp;</p>
                             </div>
                             <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-box text-purple-600 text-xl"></i>
@@ -189,16 +164,16 @@
                                     <p class="text-sm text-gray-500 mb-2">Top Seller</p>
                                     <div class="flex items-center">
                                         <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                                        <span class="text-sm font-medium">Roti Tawar</span>
-                                        <span class="ml-auto text-sm text-gray-600">325 pcs</span>
+                                        <span class="text-sm font-medium">{{ $topSellerName ?? '-' }}</span>
+                                        <span class="ml-auto text-sm text-gray-600">{{ number_format($topSellerQty ?? 0,0,',','.') }} pcs</span>
                                     </div>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500 mb-2">Highest Revenue</p>
                                     <div class="flex items-center">
                                         <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                                        <span class="text-sm font-medium">Croissant</span>
-                                        <span class="ml-auto text-sm text-gray-600">Rp 4.5M</span>
+                                        <span class="text-sm font-medium">{{ $highestRevenueName ?? '-' }}</span>
+                                        <span class="ml-auto text-sm text-gray-600">Rp {{ number_format($highestRevenueValue ?? 0,0,',','.') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -224,71 +199,25 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-bread-slice text-gray-400"></i>
+                                @forelse($topProducts as $prod)
+                                    <tr>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-box text-gray-400"></i>
+                                                </div>
+                                                <span class="font-medium text-gray-900">{{ $prod->nama }}</span>
                                             </div>
-                                            <span class="font-medium text-gray-900">Roti Tawar</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">65 pcs</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 520.000</td>
-                                    <td class="px-6 py-4 text-sm text-success">Rp 260.000</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-cookie text-gray-400"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Croissant</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">48 pcs</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 720.000</td>
-                                    <td class="px-6 py-4 text-sm text-success">Rp 360.000</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-water text-gray-400"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Teh Botol</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">42 botol</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 252.000</td>
-                                    <td class="px-6 py-4 text-sm text-success">Rp 126.000</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-cookie-bite text-gray-400"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Donat Coklat</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">35 pcs</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 245.000</td>
-                                    <td class="px-6 py-4 text-sm text-success">Rp 122.500</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-bread-slice text-gray-400"></i>
-                                            </div>
-                                            <span class="font-medium text-gray-900">Roti Coklat</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">32 pcs</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">Rp 384.000</td>
-                                    <td class="px-6 py-4 text-sm text-success">Rp 192.000</td>
-                                </tr>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($prod->total_qty,0,',','.') }} pcs</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900">Rp {{ number_format($prod->revenue,0,',','.') }}</td>
+                                        <td class="px-6 py-4 text-sm text-success">Rp {{ number_format(($prod->revenue * 0.5) ?? 0,0,',','.') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">Tidak ada data produk terlaris</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -302,31 +231,28 @@
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div class="text-center">
-                                <div
-                                    class="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <div class="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-calendar text-primary text-2xl"></i>
                                 </div>
-                                <h4 class="text-xl font-bold text-gray-900">Januari 2024</h4>
+                                <h4 class="text-xl font-bold text-gray-900">{{ $monthlyReport['monthLabel'] ?? now()->format('F Y') }}</h4>
                                 <p class="text-sm text-gray-500 mb-2">Total Penjualan</p>
-                                <p class="text-2xl font-bold text-primary">Rp 9.850.000</p>
+                                <p class="text-2xl font-bold text-primary">Rp {{ number_format($monthlyReport['total'] ?? 0,0,',','.') }}</p>
                             </div>
                             <div class="text-center">
-                                <div
-                                    class="w-16 h-16 bg-success/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <div class="w-16 h-16 bg-success/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-trending-up text-success text-2xl"></i>
                                 </div>
                                 <h4 class="text-xl font-bold text-gray-900">Growth</h4>
                                 <p class="text-sm text-gray-500 mb-2">Vs Bulan Lalu</p>
-                                <p class="text-2xl font-bold text-success">+18%</p>
+                                <p class="text-2xl font-bold text-success">{{ is_null($monthlyReport['growthPercent']) ? '-' : ($monthlyReport['growthPercent'] > 0 ? '+' : '') . $monthlyReport['growthPercent'] . '%' }}</p>
                             </div>
                             <div class="text-center">
-                                <div
-                                    class="w-16 h-16 bg-accent/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <div class="w-16 h-16 bg-accent/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-star text-accent text-2xl"></i>
                                 </div>
                                 <h4 class="text-xl font-bold text-gray-900">Profit Margin</h4>
                                 <p class="text-sm text-gray-500 mb-2">Rata-rata</p>
-                                <p class="text-2xl font-bold text-accent">45%</p>
+                                <p class="text-2xl font-bold text-accent">-</p>
                             </div>
                         </div>
                     </div>
@@ -385,6 +311,10 @@
 
     // Chart variables
     let salesChart, productsChart;
+    // Server-provided datasets (if available)
+    let serverSales = @json($salesChart ?? null);
+    let serverProducts = @json($productsChart ?? null);
+    let serverMonthly = @json($monthlyReport ?? null);
 
     // Generate realistic sales data based on October 2025
     function generateSalesData(type = 'daily') {
@@ -433,85 +363,31 @@
         };
     }
 
-    // Generate product sales data with real Indonesian food names
+    // Generate product sales data (fallback) - kept for demo if server data not present
     function generateProductData(type = 'quantity') {
-        const products = [{
-                name: 'Roti Tawar',
-                qty: 325,
-                revenue: 2600000,
-                color: '#EF4444'
-            },
-            {
-                name: 'Croissant',
-                qty: 240,
-                revenue: 3600000,
-                color: '#F97316'
-            },
-            {
-                name: 'Teh Botol',
-                qty: 210,
-                revenue: 1260000,
-                color: '#F59E0B'
-            },
-            {
-                name: 'Roti Coklat',
-                qty: 185,
-                revenue: 2220000,
-                color: '#84CC16'
-            },
-            {
-                name: 'Donat Coklat',
-                qty: 175,
-                revenue: 1225000,
-                color: '#10B981'
-            },
-            {
-                name: 'Pain au Chocolat',
-                qty: 150,
-                revenue: 2400000,
-                color: '#06B6D4'
-            },
-            {
-                name: 'Brioche',
-                qty: 128,
-                revenue: 2304000,
-                color: '#3B82F6'
-            },
-            {
-                name: 'Bagel',
-                qty: 120,
-                revenue: 1200000,
-                color: '#8B5CF6'
-            },
-            {
-                name: 'Air Mineral',
-                qty: 180,
-                revenue: 540000,
-                color: '#EC4899'
-            }
-        ];
-
-        // Sort by the selected metric and take top 6
-        const sortedProducts = products.sort((a, b) => {
-            return type === 'quantity' ? b.qty - a.qty : b.revenue - a.revenue;
-        }).slice(0, 6);
-
         return {
-            labels: sortedProducts.map(p => p.name),
-            data: sortedProducts.map(p => type === 'quantity' ? p.qty : p.revenue),
-            colors: sortedProducts.map(p => p.color)
+            labels: ['Demo A', 'Demo B', 'Demo C'],
+            data: [120, 90, 60],
+            colors: ['#EF4444', '#F97316', '#F59E0B']
         };
     }
 
-    // Create sales chart
+    // Create sales chart (uses server data when available)
     function createSalesChart(type = 'daily') {
         const ctx = document.getElementById('salesChart');
         if (!ctx) return;
 
-        const {
-            labels,
-            data
-        } = generateSalesData(type);
+        let labels = [];
+        let data = [];
+
+        if (serverSales && serverSales.labels && serverSales.data) {
+            labels = serverSales.labels;
+            data = serverSales.data;
+        } else {
+            const generated = generateSalesData(type);
+            labels = generated.labels;
+            data = generated.data;
+        }
 
         if (salesChart) {
             salesChart.destroy();
@@ -540,9 +416,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     tooltip: {
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         titleColor: '#FFFFFF',
@@ -557,65 +431,42 @@
                     }
                 },
                 scales: {
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        title: {
-                            display: true,
-                            text: type === 'daily' ? 'Tanggal Oktober 2025' : 'Periode',
-                            font: {
-                                size: 12,
-                                weight: 'bold'
-                            }
-                        }
-                    },
-                    y: {
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        },
-                        title: {
-                            display: true,
-                            text: 'Penjualan (Rp)',
-                            font: {
-                                size: 12,
-                                weight: 'bold'
-                            }
-                        },
-                        ticks: {
-                            callback: function(value) {
-                                return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
-                            }
-                        }
-                    }
+                    x: { grid: { display: false }, title: { display: true, text: type === 'daily' ? 'Tanggal' : 'Periode', font: { size: 12, weight: 'bold' } } },
+                    y: { grid: { color: 'rgba(0, 0, 0, 0.05)' }, title: { display: true, text: 'Penjualan (Rp)', font: { size: 12, weight: 'bold' } }, ticks: { callback: function(value) { return 'Rp ' + (value / 1000000).toFixed(1) + 'M'; } } }
                 },
-                animation: {
-                    duration: 1500,
-                    easing: 'easeInOutQuart'
-                }
+                animation: { duration: 800, easing: 'easeInOutQuart' }
             }
         });
 
         // Update statistics
-        const max = Math.max(...data);
-        const min = Math.min(...data);
-        const avg = Math.round(data.reduce((a, b) => a + b, 0) / data.length);
+        const max = data.length ? Math.max(...data) : 0;
+        const min = data.length ? Math.min(...data) : 0;
+        const avg = data.length ? Math.round(data.reduce((a, b) => a + b, 0) / data.length) : 0;
 
         document.getElementById('maxSales').textContent = formatCurrency(max);
         document.getElementById('minSales').textContent = formatCurrency(min);
         document.getElementById('avgSales').textContent = formatCurrency(avg);
     }
 
-    // Create products chart
+    // Create products chart (uses server data when available)
     function createProductsChart(type = 'quantity') {
         const ctx = document.getElementById('productsChart');
         if (!ctx) return;
 
-        const {
-            labels,
-            data,
-            colors
-        } = generateProductData(type);
+        let labels = [];
+        let data = [];
+        let colors = [];
+
+        if (serverProducts && serverProducts.labels) {
+            labels = serverProducts.labels;
+            data = (type === 'quantity') ? serverProducts.dataQty : serverProducts.dataRevenue;
+            colors = serverProducts.colors || [];
+        } else {
+            const generated = generateProductData(type);
+            labels = generated.labels;
+            data = generated.data;
+            colors = generated.colors;
+        }
 
         if (productsChart) {
             productsChart.destroy();
@@ -623,65 +474,16 @@
 
         productsChart = new Chart(ctx, {
             type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: colors,
-                    borderWidth: 0,
-                    hoverBorderWidth: 3,
-                    hoverBorderColor: '#FFFFFF',
-                    hoverOffset: 10
-                }]
-            },
+            data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 0, hoverBorderWidth: 3, hoverBorderColor: '#FFFFFF', hoverOffset: 10 }] },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            boxWidth: 15,
-                            font: {
-                                size: 12
-                            },
-                            padding: 15,
-                            generateLabels: function(chart) {
-                                const data = chart.data;
-                                return data.labels.map((label, i) => ({
-                                    text: label,
-                                    fillStyle: data.datasets[0].backgroundColor[i],
-                                    hidden: false,
-                                    index: i
-                                }));
-                            }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: '#FFFFFF',
-                        bodyColor: '#FFFFFF',
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.parsed;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-
-                                if (type === 'quantity') {
-                                    return context.label + ': ' + value + ' porsi (' + percentage + '%)';
-                                } else {
-                                    return context.label + ': ' + formatCurrency(value) + ' (' +
-                                        percentage + '%)';
-                                }
-                            }
-                        }
-                    }
+                    legend: { position: 'right', labels: { boxWidth: 15, font: { size: 12 }, padding: 15, generateLabels: function(chart) { const data = chart.data; return data.labels.map((label, i) => ({ text: label, fillStyle: data.datasets[0].backgroundColor[i], hidden: false, index: i })); } } },
+                    tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', titleColor: '#FFF', bodyColor: '#FFF', callbacks: { label: function(context) { const value = context.parsed; const total = context.dataset.data.reduce((a,b)=>a+b,0); const percentage = ((value/total)*100).toFixed(1); if (type === 'quantity') return context.label + ': ' + value + ' porsi (' + percentage + '%)'; return context.label + ': ' + formatCurrency(value) + ' (' + percentage + '%)'; } } }
                 },
                 cutout: '65%',
-                animation: {
-                    animateRotate: true,
-                    duration: 1200
-                }
+                animation: { animateRotate: true, duration: 800 }
             }
         });
     }

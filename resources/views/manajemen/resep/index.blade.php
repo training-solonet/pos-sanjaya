@@ -36,8 +36,8 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Total Resep</p>
-                                <p class="text-2xl font-bold text-gray-900">{{ $totalResep }}</p>
-                                <p class="text-xs text-green-600">&nbsp;</p>
+                                <p id="totalRecipesCount" class="text-2xl font-bold text-gray-900">{{ $totalResep }}</p>
+                                <p id="totalRecipesNote" class="text-xs text-green-600">&nbsp;</p>
                             </div>
                             <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-utensils text-green-600 text-xl"></i>
@@ -49,8 +49,8 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Resep Aktif</p>
-                                <p class="text-2xl font-bold text-gray-900">{{ $activeResep }}</p>
-                                <p class="text-xs text-blue-600">{{ $activePercent }}% dari total</p>
+                                <p id="activeRecipesCount" class="text-2xl font-bold text-gray-900">{{ $activeResep }}</p>
+                                <p class="text-xs text-blue-600"><span id="activeRecipesPercent">{{ $activePercent }}%</span> dari total</p>
                             </div>
                             <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-check-circle text-blue-600 text-xl"></i>
@@ -77,10 +77,10 @@
                                 class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 onchange="filterRecipes()">
                                 <option value="">Semua Kategori</option>
-                                <option value="Roti & Pastry">Roti & Pastry</option>
-                                <option value="Kue & Dessert">Kue & Dessert</option>
+                                <option value="Roti dan Pastry">Roti dan Pastry</option>
+                                <option value="Kue dan Dessert">Kue dan Dessert</option>
                                 <option value="Minuman">Minuman</option>
-                                <option value="Makanan Utama">Makanan Utama</option>
+                                <option value="Makanan">Makanan</option>
                                 <option value="Snack">Snack</option>
                             </select>
                             <select id="statusFilter"
@@ -172,7 +172,7 @@
 @endsection
 <!-- Add Recipe Modal -->
 <div id="addRecipeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-lg max-h-[90vh] overflow-hidden">
+    <div class="w-full max-w-5xl bg-white rounded-2xl shadow-lg max-h-[90vh] overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">Buat Resep Baru</h3>
             <button onclick="closeAddRecipeModal()" class="text-gray-500 hover:text-gray-700">
@@ -189,16 +189,22 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nama Resep</label>
-                        <input id="recipeName" type="text" required class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Contoh: Croissant Coklat Premium">
+                        <div class="flex gap-2">
+                            <select id="productSelect" onchange="onProductSelected(this)" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                                <option value="">Pilih Produk (opsional)</option>
+                            </select>
+                            <input type="hidden" id="recipeNameHidden">
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">Pilih produk untuk mengisi nama & harga otomatis. Kolom nama manual telah dihilangkan.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
                         <select id="recipeCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                             <option value="">Pilih Kategori</option>
-                            <option value="Roti & Pastry">Roti & Pastry</option>
-                            <option value="Kue & Dessert">Kue & Dessert</option>
+                            <option value="Roti dan Pastry">Roti dan Pastry</option>
+                            <option value="Kue dan Dessert">Kue dan Dessert</option>
                             <option value="Minuman">Minuman</option>
-                            <option value="Makanan Utama">Makanan Utama</option>
+                            <option value="Makanan">Makanan</option>
                             <option value="Snack">Snack</option>
                         </select>
                     </div>
@@ -211,18 +217,32 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Waktu Pembuatan</label>
                         <input id="recipeDuration" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="90 menit">
                     </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select id="recipeStatus" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                            <option value="Aktif">Aktif</option>
-                            <option value="Draft">Draft (Belum Final)</option>
-                            <option value="Nonaktif">Nonaktif</option>
-                        </select>
-                    </div>
-                    <!-- target price is displayed in totals section to match design -->
                 </div>
             </div>
+                <style>
+                    /* Tweak ingredient stock text and subtotal appearance inside modal */
+                    #addRecipeModal .ingredient-stock { font-size: 0.75rem; color: #6B7280; }
+                    #addRecipeModal .ingredient-subtotal { background-color: #F3F4F6; }
+                    /* Suggestion dropdown for bahan name */
+                    .bahan-suggestions { font-size: 0.9rem; }
+                    .bahan-suggestions .item { padding: 0.5rem 0.75rem; cursor: pointer; }
+                    .bahan-suggestions .item:hover { background-color: #F3F4F6; }
+                    /* Make ingredient input look more like select (white, border) */
+                    .ingredient-name { background-color: #ffffff; }
+                    .ingredient-name:focus { box-shadow: 0 0 0 3px rgba(34,197,94,0.12); }
+                    /* ensure suggestion list text is dark on white */
+                    .bahan-suggestions { background: #fff; color: #111827; }
+                    /* increase gap and vertically center fields */
+                    .ingredient-item { align-items: center; }
+                    /* Force unit select to be compact */
+                    .ingredient-unit { max-width: 84px; }
+                    /* Make grid cards a consistent minimum height for a tidier layout */
+                    #recipeGrid .recipe-card { min-height: 220px; }
+                    /* Slightly increase modal responsiveness on very wide screens */
+                    @media (min-width: 1400px) {
+                        #addRecipeModal > div { max-width: 80rem; }
+                    }
+                </style>
 
             <!-- Bahan & Kalkulasi Biaya -->
             <div class="bg-blue-50 rounded-lg p-4 mb-4 border border-blue-100">
@@ -234,7 +254,7 @@
                     <!-- Ingredient rows inserted here -->
                 </div>
 
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-green-50 rounded-lg p-6">
                         <div class="text-xs text-green-700">Total Food Cost</div>
                         <div id="totalFoodCost" class="font-bold text-green-900">Rp 0</div>
@@ -243,10 +263,10 @@
                         <div class="text-xs text-green-700">Cost per Porsi</div>
                         <div id="costPerPortion" class="font-bold text-green-900">Rp 0</div>
                     </div>
-                    <div class="bg-green-50 rounded-lg p-6 flex items-center justify-between">
+                        <div class="bg-green-50 rounded-lg p-6 flex items-center justify-between">
                         <div>
                             <div class="text-xs text-green-700">Harga Jual Target</div>
-                            <input id="targetPrice" type="number" min="0" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white" value="35000" oninput="calculateMargin()">
+                            <input id="targetPrice" type="number" min="0" class="mt-1 w-28 px-2 py-1 border border-gray-300 rounded-lg bg-white" value="35000" oninput="calculateMargin()">
                         </div>
                         <div class="text-center">
                             <div class="text-xs text-green-700">Margin Profit</div>
@@ -288,18 +308,87 @@
     </div>
 </div>
 <script>
-    // Recipes loaded from database (prepared in controller)
+    // Produk list (to autofill recipe name & price). Provided by controller.
+    let produkList = @json($produks ?? []);
+
+    // populate product select in modal
+    function populateProductSelect() {
+        try {
+            const sel = document.getElementById('productSelect');
+            if (!sel) return;
+            // clear existing but keep first empty option; show only product name in list
+            sel.innerHTML = '<option value="">Pilih Produk (opsional)</option>' + (produkList || []).map(p => `<option value="${p.id}" data-harga="${p.harga}">${p.nama}</option>`).join('');
+        } catch (e) {
+            console.error('populateProductSelect error', e);
+        }
+    }
+
+    // when product selected, autofill recipe name (hidden) and target price
+    function onProductSelected(sel) {
+        try {
+            const id = sel.value;
+            const hiddenName = document.getElementById('recipeNameHidden');
+            const priceEl = document.getElementById('targetPrice');
+            if (!id) {
+                // if cleared, do not overwrite hidden name (use existing for edit flows)
+                calculateMargin();
+                return;
+            }
+            const found = (produkList || []).find(p => String(p.id) === String(id));
+            if (!found) return;
+            if (hiddenName) hiddenName.value = found.nama || hiddenName.value;
+            if (priceEl) priceEl.value = found.harga ?? priceEl.value;
+            calculateMargin();
+        } catch (e) {
+            console.error('onProductSelected error', e);
+        }
+    }
+    // Resep dimuat dari database (disiapkan di controller)
     let recipes = @json($recipes ?? []);
+    // Bahan baku list (id, nama, stok)
+    let bahanList = @json($bahans ?? []);
+
+    // Render datalist untuk nama bahan
+    (function renderBahanDatalist() {
+        try {
+            const container = document.createElement('div');
+            container.style.display = 'none';
+            const dl = document.createElement('datalist');
+            dl.id = 'bahanList';
+            (bahanList || []).forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.nama;
+                opt.setAttribute('data-stok', b.stok);
+                container.appendChild(opt);
+                dl.appendChild(opt);
+            });
+            container.appendChild(dl);
+            document.body.appendChild(container);
+        } catch (e) {
+            console.error('Failed to render bahan datalist', e);
+        }
+    })();
+
+    // Buat tag option untuk select bahan (digunakan pada baris bahan)
+    function createBahanOptions() {
+        try {
+            return (bahanList || []).map(b => `<option value="${b.id}" data-stok="${b.stok}">${b.nama}</option>`).join('');
+        } catch (e) {
+            console.error('createBahanOptions error', e);
+            return '';
+        }
+    }
 
     let currentView = 'table';
+    let editingRecipeId = null;
 
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobileOverlay');
 
         if (window.innerWidth < 1024) {
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+            if (sidebar && sidebar.classList) sidebar.classList.toggle('-translate-x-full');
+            if (overlay && overlay.classList) overlay.classList.toggle('hidden');
         }
     }
 
@@ -319,11 +408,16 @@
         }
     }
 
-    // Initialize on page load
+    // Inisialisasi saat halaman dimuat
     window.addEventListener('DOMContentLoaded', function() {
+        // populate product select if produk provided
+        populateProductSelect();
         updateDateTime();
-        setInterval(updateDateTime, 60000); // Update every minute
+        setInterval(updateDateTime, 60000); // Perbarui setiap menit
         renderTableView(); // Show all recipes by default
+        updateStats();
+        // sinkronkan dengan DB setiap 60 detik
+        setInterval(refreshRecipes, 60000);
     });
 
     function toggleView(view) {
@@ -334,16 +428,16 @@
         const gridBtn = document.getElementById('gridViewBtn');
 
         if (view === 'table') {
-            tableView.classList.remove('hidden');
-            gridView.classList.add('hidden');
-            tableBtn.classList.add('bg-gray-100');
-            gridBtn.classList.remove('bg-gray-100');
+            if (tableView && tableView.classList) tableView.classList.remove('hidden');
+            if (gridView && gridView.classList) gridView.classList.add('hidden');
+            if (tableBtn && tableBtn.classList) tableBtn.classList.add('bg-gray-100');
+            if (gridBtn && gridBtn.classList) gridBtn.classList.remove('bg-gray-100');
             renderTableView();
         } else {
-            tableView.classList.add('hidden');
-            gridView.classList.remove('hidden');
-            gridBtn.classList.add('bg-gray-100');
-            tableBtn.classList.remove('bg-gray-100');
+            if (tableView && tableView.classList) tableView.classList.add('hidden');
+            if (gridView && gridView.classList) gridView.classList.remove('hidden');
+            if (gridBtn && gridBtn.classList) gridBtn.classList.add('bg-gray-100');
+            if (tableBtn && tableBtn.classList) tableBtn.classList.remove('bg-gray-100');
             renderGridView();
         }
     }
@@ -365,8 +459,8 @@
                                 <i class="fas ${getCategoryIcon(recipe.category)} text-white text-sm"></i>
                             </div>
                             <div>
-                                <div class="text-sm font-medium text-gray-900">${recipe.name}</div>
-                                <div class="text-xs text-gray-500">${recipe.yield} porsi • ${recipe.duration}</div>
+                                <div class="text-sm font-medium text-gray-900 cursor-pointer text-blue-600" onclick="viewRecipe(${recipe.id})">${recipe.name}</div>
+                                <div class="text-xs text-gray-500">${recipe.yield} porsi • ${formatDuration(recipe.duration)}</div>
                             </div>
                         </div>
                     </td>
@@ -374,8 +468,8 @@
                         <span class="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">${recipe.category}</span>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-900">${recipe.yield}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">Rp ${recipe.foodCost.toLocaleString('id-ID')}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">Rp ${recipe.sellingPrice.toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">Rp ${((Number(recipe.foodCost) || 0)).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">Rp ${((Number(recipe.sellingPrice) || 0)).toLocaleString('id-ID')}</td>
                     <td class="px-6 py-4">
                         <span class="inline-block px-2 py-1 text-xs font-medium ${getMarginColor(recipe.margin)} rounded-full">${recipe.margin}%</span>
                     </td>
@@ -384,14 +478,8 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center space-x-2">
-                            <button onclick="viewRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Lihat Detail">
-                                <i class="fas fa-eye"></i>
-                            </button>
                             <button onclick="editRecipe(${recipe.id})" class="text-green-600 hover:text-green-700" title="Edit">
                                 <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="duplicateRecipe(${recipe.id})" class="text-purple-600 hover:text-purple-700" title="Duplikat">
-                                <i class="fas fa-copy"></i>
                             </button>
                             <button onclick="deleteRecipe(${recipe.id})" class="text-red-600 hover:text-red-700" title="Hapus">
                                 <i class="fas fa-trash"></i>
@@ -412,7 +500,7 @@
         }
 
         grid.innerHTML = recipesToRender.map(recipe => `
-                <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 recipe-card">
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-4">
                             <div class="flex items-center space-x-3">
@@ -430,11 +518,11 @@
                         <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
                             <div class="bg-gray-50 rounded-lg p-3 text-center">
                                 <div class="text-gray-600 text-xs">Food Cost</div>
-                                <div class="font-bold text-gray-900">Rp ${recipe.foodCost.toLocaleString('id-ID')}</div>
+                                <div class="font-bold text-gray-900">Rp ${((Number(recipe.foodCost) || 0)).toLocaleString('id-ID')}</div>
                             </div>
                             <div class="bg-gray-50 rounded-lg p-3 text-center">
                                 <div class="text-gray-600 text-xs">Harga Jual</div>
-                                <div class="font-bold text-gray-900">Rp ${recipe.sellingPrice.toLocaleString('id-ID')}</div>
+                                <div class="font-bold text-gray-900">Rp ${((Number(recipe.sellingPrice) || 0)).toLocaleString('id-ID')}</div>
                             </div>
                             <div class="bg-gray-50 rounded-lg p-3 text-center">
                                 <div class="text-gray-600 text-xs">Porsi</div>
@@ -447,16 +535,12 @@
                         </div>
 
                         <div class="flex items-center justify-between">
-                            <button onclick="viewRecipe(${recipe.id})" class="text-green-600 hover:text-green-700 text-sm font-medium">
-                                <i class="fas fa-eye mr-1"></i>Detail Resep
-                            </button>
+                            <!-- Name click navigates to detail page; removed separate detail button -->
                             <div class="flex items-center space-x-2">
                                 <button onclick="editRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="duplicateRecipe(${recipe.id})" class="text-purple-600 hover:text-purple-700" title="Duplikat">
-                                    <i class="fas fa-copy"></i>
-                                </button>
+                                <!-- duplicate removed -->
                                 <button onclick="deleteRecipe(${recipe.id})" class="text-red-600 hover:text-red-700" title="Hapus">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -469,10 +553,10 @@
 
     function getCategoryGradient(category) {
         const gradients = {
-            'Roti & Pastry': 'from-orange-400 to-orange-600',
-            'Kue & Dessert': 'from-pink-400 to-pink-600',
+            'Roti dan Pastry': 'from-orange-400 to-orange-600',
+            'Kue dan Dessert': 'from-pink-400 to-pink-600',
             'Minuman': 'from-blue-400 to-blue-600',
-            'Makanan Utama': 'from-green-400 to-green-600',
+            'Makanan': 'from-green-400 to-green-600',
             'Snack': 'from-purple-400 to-purple-600'
         };
         return gradients[category] || 'from-gray-400 to-gray-600';
@@ -480,10 +564,10 @@
 
     function getCategoryIcon(category) {
         const icons = {
-            'Roti & Pastry': 'fa-bread-slice',
-            'Kue & Dessert': 'fa-birthday-cake',
+            'Roti dan Pastry': 'fa-bread-slice',
+            'Kue dan Dessert': 'fa-birthday-cake',
             'Minuman': 'fa-mug-hot',
-            'Makanan Utama': 'fa-utensils',
+            'Makanan': 'fa-utensils',
             'Snack': 'fa-cookie-bite'
         };
         return icons[category] || 'fa-utensils';
@@ -506,6 +590,14 @@
         if (margin >= 70) return 'bg-green-100 text-green-800';
         if (margin >= 50) return 'bg-yellow-100 text-yellow-800';
         return 'bg-red-100 text-red-800';
+    }
+
+    function formatDuration(d) {
+        if (!d && d !== 0) return '';
+        const s = String(d).trim();
+        if (s === '') return '';
+        if (/\bmenit\b/i.test(s)) return s;
+        return s + ' menit';
     }
 
     function filterRecipes() {
@@ -551,34 +643,48 @@
         if (form) form.reset();
         resetIngredientsForm();
         resetCostCalculation();
+        editingRecipeId = null;
+        const hiddenName = document.getElementById('recipeNameHidden');
+        if (hiddenName) hiddenName.value = '';
         // dim sidebar and show modal
         const sidebar = document.getElementById('sidebar');
-        if (sidebar) {
+        if (sidebar && sidebar.classList) {
             sidebar.classList.add('opacity-40', 'pointer-events-none');
         }
         const modal = document.getElementById('addRecipeModal');
-        if (modal) modal.classList.remove('hidden');
+        if (modal && modal.classList) modal.classList.remove('hidden');
     }
 
     function closeAddRecipeModal() {
         const modal = document.getElementById('addRecipeModal');
-        if (modal) modal.classList.add('hidden');
+        if (modal && modal.classList) modal.classList.add('hidden');
         // restore sidebar
         const sidebar = document.getElementById('sidebar');
-        if (sidebar) {
+        if (sidebar && sidebar.classList) {
             sidebar.classList.remove('opacity-40', 'pointer-events-none');
         }
         document.getElementById('recipeForm').reset();
+        const hiddenName2 = document.getElementById('recipeNameHidden');
+        if (hiddenName2) hiddenName2.value = '';
         resetIngredientsForm();
         resetCostCalculation();
+        editingRecipeId = null;
     }
 
     function resetIngredientsForm() {
         document.getElementById('ingredientsList').innerHTML = `
-                <div class="ingredient-item grid grid-cols-1 md:grid-cols-6 gap-3 p-3 bg-white rounded-lg border">
-                    <input type="text" placeholder="Nama bahan" class="ingredient-name px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                    <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
-                    <select class="ingredient-unit px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                <div class="ingredient-item grid grid-cols-1 md:grid-cols-12 gap-6 p-3 bg-white rounded-lg border">
+                    <div class="relative md:col-span-5">
+                        <select class="ingredient-name w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" onchange="onBahanSelected(this)">
+                            <option value="">Pilih bahan...</option>
+                            ${createBahanOptions()}
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
+                        <div class="ingredient-stock text-xs text-gray-500 mt-1">Stok: -</div>
+                    </div>
+                    <select class="ingredient-unit md:col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                         <option value="gram">gram</option>
                         <option value="kg">kg</option>
                         <option value="ml">ml</option>
@@ -587,13 +693,281 @@
                         <option value="sdm">sdm</option>
                         <option value="sdt">sdt</option>
                     </select>
-                    <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
-                    <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
-                    <button type="button" onclick="removeIngredient(this)" class="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">
+                    <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
+                    <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal md:col-span-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                    <button type="button" onclick="removeIngredient(this)" class="md:col-span-1 flex items-center justify-center px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             `;
+            // ensure options disabled state is reset
+            refreshBahanOptionsDisable();
+    }
+
+    // --- CRUD helpers ---
+    function populateIngredientsFromRecipe(recipe) {
+        const list = document.getElementById('ingredientsList');
+        list.innerHTML = '';
+        (recipe.ingredients || []).forEach(ing => {
+            const newIngredient = document.createElement('div');
+            newIngredient.className = 'ingredient-item grid grid-cols-1 md:grid-cols-12 gap-6 p-3 bg-white rounded-lg border items-center';
+            newIngredient.innerHTML = `
+                <div class="relative md:col-span-5">
+                    <select class="ingredient-name w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="onBahanSelected(this)">
+                        <option value="">Pilih bahan...</option>
+                        ${createBahanOptions()}
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg" oninput="calculateIngredientCost(this)" value="${ing.quantity}">
+                    <div class="ingredient-stock text-xs text-gray-500 mt-1">Stok: -</div>
+                </div>
+                <select class="ingredient-unit md:col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <option value="gram">gram</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="liter">liter</option>
+                    <option value="pcs">pcs</option>
+                    <option value="sdm">sdm</option>
+                    <option value="sdt">sdt</option>
+                </select>
+                <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" oninput="calculateIngredientCost(this)" value="${ing.price}" required>
+                <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal md:col-span-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly value="${ing.subtotal}">
+                <button type="button" onclick="removeIngredient(this)" class="md:col-span-1 flex items-center justify-center px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            const sel = newIngredient.querySelector('.ingredient-unit');
+            if (sel) sel.value = ing.unit || 'gram';
+            // set bahan selection and apply stock limits (match by name -> id)
+            const nameSelect = newIngredient.querySelector('.ingredient-name');
+            if (nameSelect) {
+                const found = (bahanList || []).find(b => b.nama === (ing.name || ''));
+                if (found) {
+                    nameSelect.value = found.id;
+                    onBahanSelected(nameSelect);
+                } else {
+                    nameSelect.value = '';
+                }
+            }
+            list.appendChild(newIngredient);
+        });
+        calculateTotalCost();
+        // disable selected bahan in other selects
+        refreshBahanOptionsDisable();
+    }
+
+    function editRecipe(id) {
+        const recipe = recipes.find(r => parseInt(r.id) === parseInt(id));
+        if (!recipe) return alert('Resep tidak ditemukan');
+        editingRecipeId = id;
+        // set product select if product exists, otherwise store name in hidden input
+        const prodSelEdit = document.getElementById('productSelect');
+        const hiddenEdit = document.getElementById('recipeNameHidden');
+        if (prodSelEdit) {
+            const foundProd = (produkList || []).find(p => p.nama === (recipe.name || ''));
+            if (foundProd) {
+                prodSelEdit.value = foundProd.id;
+                onProductSelected(prodSelEdit);
+                // keep hidden name in sync
+                if (hiddenEdit) hiddenEdit.value = foundProd.nama || '';
+            } else {
+                prodSelEdit.value = '';
+                if (hiddenEdit) hiddenEdit.value = recipe.name || '';
+            }
+        } else {
+            if (hiddenEdit) hiddenEdit.value = recipe.name || '';
+        }
+        document.getElementById('recipeCategory').value = recipe.category || '';
+        document.getElementById('recipeYield').value = recipe.yield || 1;
+        document.getElementById('recipeDuration').value = recipe.duration || '';
+        // the top status was removed; use the bottom status select
+        const statusEl = document.getElementById('recipeStatusDuplicate') || document.getElementById('recipeStatus');
+        if (statusEl) statusEl.value = recipe.status || 'Draft';
+        document.getElementById('recipeInstructions').value = recipe.instructions || '';
+        document.getElementById('recipeNotes').value = recipe.notes || '';
+        // set target price from DB so calculations use the same base
+        const targetEl = document.getElementById('targetPrice');
+        if (targetEl) targetEl.value = recipe.sellingPrice || recipe.harga_jual || '';
+        populateIngredientsFromRecipe(recipe);
+        // ensure margin shown in modal matches DB value (override any client calc)
+        if (typeof recipe.margin !== 'undefined' && recipe.margin !== null) {
+            setProfitMarginDisplay(recipe.margin);
+        }
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && sidebar.classList) sidebar.classList.add('opacity-40', 'pointer-events-none');
+        const modal = document.getElementById('addRecipeModal');
+        if (modal && modal.classList) modal.classList.remove('hidden');
+    }
+
+    function duplicateRecipe(id) {
+        const recipe = recipes.find(r => parseInt(r.id) === parseInt(id));
+        if (!recipe) return alert('Resep tidak ditemukan');
+        editingRecipeId = null;
+        // set product select if product exists, otherwise set hidden name
+        const prodSelDup = document.getElementById('productSelect');
+        const hiddenDup = document.getElementById('recipeNameHidden');
+        if (prodSelDup) {
+            const foundProd = (produkList || []).find(p => p.nama === (recipe.name || ''));
+            if (foundProd) {
+                prodSelDup.value = foundProd.id;
+                onProductSelected(prodSelDup);
+                if (hiddenDup) hiddenDup.value = (foundProd.nama || '') + ' (Copy)';
+            } else {
+                prodSelDup.value = '';
+                if (hiddenDup) hiddenDup.value = (recipe.name || '') + ' (Copy)';
+            }
+        } else {
+            if (hiddenDup) hiddenDup.value = (recipe.name || '') + ' (Copy)';
+        }
+        document.getElementById('recipeCategory').value = recipe.category || '';
+        document.getElementById('recipeYield').value = recipe.yield || 1;
+        document.getElementById('recipeDuration').value = recipe.duration || '';
+        const statusEl2 = document.getElementById('recipeStatusDuplicate') || document.getElementById('recipeStatus');
+        if (statusEl2) statusEl2.value = recipe.status || 'Draft';
+        document.getElementById('recipeInstructions').value = recipe.instructions || '';
+        document.getElementById('recipeNotes').value = recipe.notes || '';
+        // prefill target price and ingredients, then display DB margin
+        const targetElCopy = document.getElementById('targetPrice');
+        if (targetElCopy) targetElCopy.value = recipe.sellingPrice || recipe.harga_jual || '';
+        populateIngredientsFromRecipe(recipe);
+        if (typeof recipe.margin !== 'undefined' && recipe.margin !== null) {
+            setProfitMarginDisplay(recipe.margin);
+        }
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && sidebar.classList) sidebar.classList.add('opacity-40', 'pointer-events-none');
+        const modal = document.getElementById('addRecipeModal');
+        if (modal && modal.classList) modal.classList.remove('hidden');
+    }
+
+    function viewRecipe(id) {
+        // redirect to the server-side show page for the recipe
+        // route: /management/resep/{id}
+        if (!id) return;
+        const base = "{{ url('management/resep') }}"; // '/management/resep'
+        window.location.href = base + '/' + encodeURIComponent(id);
+    }
+
+    function deleteRecipe(id) {
+        if (!confirm('Yakin ingin menghapus resep ini?')) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        fetch(`/management/resep/${id}`, { method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf } })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.success) {
+                    refreshRecipes();
+                    alert('Resep berhasil dihapus.');
+                } else {
+                    throw new Error((data && data.message) || 'Gagal menghapus resep');
+                }
+            }).catch(err => { console.error(err); alert(err.message || 'Terjadi kesalahan saat menghapus resep'); });
+    }
+
+    // Saat bahan dipilih pada input nama, set max qty dan tampilkan stok
+    function onBahanSelected(input) {
+        const row = input.closest('.ingredient-item');
+        if (!row) return;
+        const qtyInput = row.querySelector('.ingredient-quantity');
+        let found = null;
+        try {
+            if (input.tagName === 'SELECT') {
+                const id = input.value;
+                if (id) found = (bahanList || []).find(b => String(b.id) === String(id));
+            } else {
+                const name = (input.value || '').trim();
+                found = (bahanList || []).find(b => b.nama === name);
+            }
+        } catch (e) {
+            console.error('onBahanSelected error', e);
+        }
+
+        if (found) {
+            if (qtyInput) {
+                qtyInput.max = found.stok;
+                qtyInput.placeholder = `Max: ${found.stok}`;
+                if (parseFloat(qtyInput.value) > Number(found.stok)) {
+                    qtyInput.value = found.stok;
+                    calculateIngredientCost(qtyInput);
+                }
+            }
+            const stockEl = row.querySelector('.ingredient-stock');
+            if (stockEl) stockEl.textContent = `Stok: ${found.stok} • Sisa: ${Math.max(0, found.stok - (parseFloat(qtyInput.value) || 0))}`;
+            row.setAttribute('data-bahan-id', found.id);
+            row.setAttribute('data-bahan-stok', found.stok);
+        } else {
+            if (qtyInput) {
+                qtyInput.removeAttribute('max');
+                qtyInput.placeholder = '';
+            }
+            row.removeAttribute('data-bahan-id');
+            row.removeAttribute('data-bahan-stok');
+        }
+        // perbarui status disabled opsi bahan di semua select
+        refreshBahanOptionsDisable();
+    }
+
+    // Disable already-selected bahan options in other selects to prevent duplicates
+    function refreshBahanOptionsDisable() {
+        try {
+            const selects = Array.from(document.querySelectorAll('.ingredient-name'));
+            // collect selected values (non-empty)
+            const selected = selects.map(s => (s.value || '').toString()).filter(v => v !== '');
+
+            selects.forEach(s => {
+                const myVal = (s.value || '').toString();
+                Array.from(s.options).forEach(opt => {
+                    const val = (opt.value || '').toString();
+                    if (!val) {
+                        opt.disabled = false;
+                        return;
+                    }
+                    // disable if selected in other select
+                    if (val !== myVal && selected.includes(val)) {
+                        opt.disabled = true;
+                    } else {
+                        opt.disabled = false;
+                    }
+                });
+            });
+        } catch (e) {
+            console.error('refreshBahanOptionsDisable error', e);
+        }
+    }
+
+    // Show suggestions dropdown for bahan as user types
+    function onBahanInput(input) {
+        const val = (input.value || '').toLowerCase();
+        const row = input.closest('.ingredient-item');
+        if (!row) return;
+        const box = row.querySelector('.bahan-suggestions');
+        if (!box) return;
+        if (!val) {
+            box.innerHTML = '';
+            if (box && box.classList) box.classList.add('hidden');
+            return;
+        }
+        const matches = (bahanList || []).filter(b => (b.nama || '').toLowerCase().includes(val)).slice(0, 30);
+        if (matches.length === 0) {
+            box.innerHTML = '';
+            if (box && box.classList) box.classList.add('hidden');
+            return;
+        }
+        box.innerHTML = matches.map(m => `<div class="item" data-id="${m.id}" data-nama="${m.nama}" data-stok="${m.stok}">${m.nama} <span class="text-xs text-gray-400">• stok ${m.stok}</span></div>`).join('');
+        if (box && box.classList) box.classList.remove('hidden');
+
+        // attach click handlers
+        box.querySelectorAll('.item').forEach(el => {
+            el.onclick = function () {
+                const name = this.getAttribute('data-nama');
+                input.value = name;
+                // call existing handler to set stok etc
+                onBahanSelected(input);
+                if (box && box.classList) box.classList.add('hidden');
+            };
+        });
+
+        // hide suggestions on blur after short delay to allow click
+        input.addEventListener('blur', function () { setTimeout(() => { if (box && box.classList) box.classList.add('hidden'); }, 150); }, { once: true });
     }
 
     function resetCostCalculation() {
@@ -608,11 +982,19 @@
         const ingredientsList = document.getElementById('ingredientsList');
         const newIngredient = document.createElement('div');
         newIngredient.className =
-        'ingredient-item grid grid-cols-1 md:grid-cols-6 gap-3 p-3 bg-white rounded-lg border';
+        'ingredient-item grid grid-cols-1 md:grid-cols-12 gap-6 p-3 bg-white rounded-lg border items-center';
         newIngredient.innerHTML = `
-                <input type="text" placeholder="Nama bahan" class="ingredient-name px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
-                <select class="ingredient-unit px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                <div class="relative md:col-span-5">
+                    <select class="ingredient-name md:col-span-4 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" onchange="onBahanSelected(this)">
+                        <option value="">Pilih bahan...</option>
+                        ${createBahanOptions()}
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
+                    <div class="ingredient-stock text-xs text-gray-500 mt-1">Stok: -</div>
+                </div>
+                <select class="ingredient-unit md:col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                     <option value="gram">gram</option>
                     <option value="kg">kg</option>
                     <option value="ml">ml</option>
@@ -621,18 +1003,22 @@
                     <option value="sdm">sdm</option>
                     <option value="sdt">sdt</option>
                 </select>
-                <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
-                <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
-                <button type="button" onclick="removeIngredient(this)" class="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">
+                <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
+                <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal md:col-span-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                <button type="button" onclick="removeIngredient(this)" class="md:col-span-1 flex items-center justify-center px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">
                     <i class="fas fa-trash"></i>
                 </button>
             `;
         ingredientsList.appendChild(newIngredient);
+        // after adding new select, refresh disabled options so existing selections are respected
+        refreshBahanOptionsDisable();
     }
 
     function removeIngredient(button) {
         button.parentElement.remove();
         calculateTotalCost();
+        // when a row is removed, re-enable that bahan in other selects
+        refreshBahanOptionsDisable();
     }
 
     function calculateIngredientCost(input) {
@@ -640,6 +1026,18 @@
         const quantity = parseFloat(row.querySelector('.ingredient-quantity').value) || 0;
         const price = parseFloat(row.querySelector('.ingredient-price').value) || 0;
         const subtotal = quantity * price;
+
+        // enforce max if bahan has stok
+        const stokAttr = row.getAttribute('data-bahan-stok');
+        const stok = stokAttr !== null ? Number(stokAttr) : null;
+        if (stok !== null && !isNaN(stok)) {
+            if (quantity > stok) {
+                row.querySelector('.ingredient-quantity').value = stok;
+            }
+            const remaining = stok - (parseFloat(row.querySelector('.ingredient-quantity').value) || 0);
+            const stockEl = row.querySelector('.ingredient-stock');
+            if (stockEl) stockEl.textContent = `Stok: ${stok} • Sisa: ${remaining}`;
+        }
 
         row.querySelector('.ingredient-subtotal').value = subtotal.toFixed(0);
         calculateTotalCost();
@@ -684,6 +1082,60 @@
         }
     }
 
+    // Set profit margin display using value from database (overrides calculated value)
+    function setProfitMarginDisplay(margin) {
+        const el = document.getElementById('profitMargin');
+        if (!el) return;
+        const m = (margin === null || margin === undefined || isNaN(Number(margin))) ? 0 : Number(margin);
+        el.textContent = `${m}%`;
+        if (m >= 70) {
+            el.className = 'text-lg font-bold text-green-600';
+        } else if (m >= 50) {
+            el.className = 'text-lg font-bold text-yellow-600';
+        } else {
+            el.className = 'text-lg font-bold text-red-600';
+        }
+    }
+
+    // update header stats from current recipes array
+    function updateStats() {
+        const total = recipes.length;
+        const active = recipes.filter(r => (r.status || '').toLowerCase() === 'aktif').length;
+        const percent = total ? Math.round((active / total) * 100) : 0;
+        const totalEl = document.getElementById('totalRecipesCount');
+        const activeEl = document.getElementById('activeRecipesCount');
+        const percentEl = document.getElementById('activeRecipesPercent');
+        if (totalEl) totalEl.textContent = total;
+        if (activeEl) activeEl.textContent = active;
+        if (percentEl) percentEl.textContent = percent + '%';
+    }
+
+    // fetch latest recipes from server and refresh UI
+    function refreshRecipes() {
+        fetch('/management/resep', { headers: { 'Accept': 'application/json' } })
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (!data || !data.success) return;
+                // map server representation to frontend shape
+                recipes = (data.recipes || []).map(r => ({
+                    id: r.id,
+                    name: r.name || r.nama || '',
+                    category: r.category || r.kategori || '',
+                    yield: r.yield || r.porsi || 1,
+                    duration: r.duration || r.waktu_pembuatan || '',
+                    foodCost: r.foodCost || 0,
+                    sellingPrice: r.sellingPrice || r.harga_jual || 0,
+                    margin: r.margin || 0,
+                    status: r.status || 'Draft',
+                    ingredients: r.ingredients || r.rincian_resep || r.rincianResep || [],
+                    instructions: r.instructions || r.langkah || '',
+                    notes: r.notes || r.catatan || ''
+                }));
+                if (currentView === 'table') renderTableView(); else renderGridView();
+                updateStats();
+            }).catch(err => console.error('refreshRecipes error', err));
+    }
+
     function saveRecipe() {
         const form = document.getElementById('recipeForm');
         if (!form.checkValidity()) {
@@ -691,62 +1143,86 @@
             return;
         }
 
-        // Collect ingredients
+        // Kumpulkan bahan (hanya izinkan pilihan dari daftar bahan/bahan baku)
         const ingredients = [];
+        let invalidSelection = false;
+        let missingPrice = false;
         document.querySelectorAll('.ingredient-item').forEach(item => {
-            const name = item.querySelector('.ingredient-name').value;
-            const quantity = parseFloat(item.querySelector('.ingredient-quantity').value);
+            const bahanEl = item.querySelector('.ingredient-name');
+            const bahanId = bahanEl ? bahanEl.value : '';
+            const quantity = parseFloat(item.querySelector('.ingredient-quantity').value) || 0;
             const unit = item.querySelector('.ingredient-unit').value;
-            const price = parseFloat(item.querySelector('.ingredient-price').value);
-            const subtotal = parseFloat(item.querySelector('.ingredient-subtotal').value);
+            const priceRaw = item.querySelector('.ingredient-price').value;
+            const price = priceRaw ? parseFloat(priceRaw) : 0;
+            const subtotal = parseFloat(item.querySelector('.ingredient-subtotal').value) || 0;
 
-            if (name && quantity && price) {
-                ingredients.push({
-                    name,
-                    quantity,
-                    unit,
-                    price,
-                    subtotal
-                });
+            const found = (bahanList || []).find(b => String(b.id) === String(bahanId));
+            if (!found) {
+                // If user entered qty or price but didn't pick bahan from list => invalid
+                if (quantity > 0 || price > 0) invalidSelection = true;
+                return; // skip empty/unused rows
             }
+
+            // If bahan is selected and quantity specified, price must be provided (>0)
+            if (found && quantity > 0) {
+                if (!price || price <= 0) {
+                    missingPrice = true;
+                }
+                ingredients.push({ bahan_id: found.id, name: found.nama, quantity, unit, price, subtotal });
+            }
+            // If bahan selected but no quantity and price provided, ignore row
         });
+
+        if (invalidSelection) {
+            alert('Beberapa bahan tidak dipilih dari daftar. Pilih bahan dari daftar stok.');
+            return;
+        }
+
+        if (missingPrice) {
+            alert('Harga/unit wajib diisi untuk semua bahan yang memiliki jumlah. Isi harga sebelum menyimpan.');
+            return;
+        }
 
         if (ingredients.length === 0) {
             alert('Minimal harus ada 1 bahan baku dengan harga!');
             return;
         }
 
-        const totalCost = parseFloat(document.getElementById('totalFoodCost').textContent.replace(/[^0-9]/g, '')) || 0;
-        const targetPrice = parseFloat(document.getElementById('targetPrice').value) || 0;
-        const margin = targetPrice > 0 ? ((targetPrice - totalCost) / targetPrice * 100) : 0;
-
-        const newRecipe = {
-            id: recipes.length + 1,
-            name: document.getElementById('recipeName').value,
+        const payload = {
+            name: document.getElementById('recipeNameHidden').value,
             category: document.getElementById('recipeCategory').value,
-            yield: parseInt(document.getElementById('recipeYield').value),
+            yield: parseInt(document.getElementById('recipeYield').value) || 1,
             duration: document.getElementById('recipeDuration').value,
-            foodCost: totalCost,
-            sellingPrice: targetPrice,
-            margin: parseFloat(margin.toFixed(1)),
-            status: document.getElementById('recipeStatus').value,
-            ingredients: ingredients,
+            status: (document.getElementById('recipeStatusDuplicate') || document.getElementById('recipeStatus')).value,
             instructions: document.getElementById('recipeInstructions').value,
-            notes: document.getElementById('recipeNotes').value
+            notes: document.getElementById('recipeNotes').value,
+            sellingPrice: parseFloat(document.getElementById('targetPrice').value) || 0,
+            ingredients: ingredients
         };
 
-        recipes.push(newRecipe);
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const isEdit = editingRecipeId !== null && editingRecipeId !== undefined;
+        const url = isEdit ? `/management/resep/${editingRecipeId}` : `{{ route('management.resep.store') }}`;
+        const method = isEdit ? 'PUT' : 'POST';
 
-        // Re-render current view
-        if (currentView === 'table') {
-            renderTableView();
-        } else {
-            renderGridView();
-        }
-
-        closeAddRecipeModal();
-
-        // Show success message
-        alert('Resep berhasil disimpan dengan kalkulasi biaya!');
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: JSON.stringify(payload)
+        }).then(res => res.json())
+        .then(data => {
+            if (data && data.success) {
+                closeAddRecipeModal();
+                // refresh from server to show canonical data
+                refreshRecipes();
+                editingRecipeId = null;
+                alert('Resep berhasil disimpan.');
+            } else {
+                throw new Error((data && data.message) || 'Gagal menyimpan resep');
+            }
+        }).catch(err => {
+            console.error(err);
+            alert(err.message || 'Terjadi kesalahan saat menyimpan resep');
+        });
     }
 </script>

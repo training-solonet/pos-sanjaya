@@ -50,7 +50,8 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Stok</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Stok
+                                    </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expired Date</th>
                                     <th class="px6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>

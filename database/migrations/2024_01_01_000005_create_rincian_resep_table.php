@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('qty')->default(0);
             $table->enum('hitungan', ['pcs', 'gram', 'kg', 'ml', 'liter', 'sdm'])->nullable();
             $table->integer('harga')->default(0);
+            $table->string('nama_bahan');
             $table->timestamps();
         });
     }

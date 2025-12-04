@@ -53,6 +53,7 @@ Route::middleware([IsManagement::class])->group(function () {
             'updateproduk' => UpdateStokProdukController::class,
             'opname' => OpnameController::class,
         ]);
+
     });
 
 });
