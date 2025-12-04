@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
+use App\Models\Produk;
 use Illuminate\Http\Request;
 
 class TransaksiController extends Controller
@@ -12,8 +13,10 @@ class TransaksiController extends Controller
      */
     public function index()
     {
-        //
-        return view('kasir.transaksi.index');
+        $produks = Produk::where('stok', '>', 0)->get();
+        $totalProduk = $produks->count();
+
+        return view('kasir.transaksi.index', compact('produks', 'totalProduk'));
     }
 
     /**
