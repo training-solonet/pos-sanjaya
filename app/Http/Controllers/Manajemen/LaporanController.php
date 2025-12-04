@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\manajemen;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
 use App\Models\Transaksi;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class LaporanController extends Controller
 {
@@ -67,9 +67,9 @@ class LaporanController extends Controller
 
         // Products chart data
         $productLabels = $topProducts->pluck('nama')->toArray();
-        $productQty = $topProducts->pluck('total_qty')->map(fn($v) => (int)$v)->toArray();
-        $productRevenue = $topProducts->pluck('revenue')->map(fn($v) => (int)$v)->toArray();
-        $colors = ['#EF4444','#F97316','#F59E0B','#84CC16','#10B981','#06B6D4'];
+        $productQty = $topProducts->pluck('total_qty')->map(fn ($v) => (int) $v)->toArray();
+        $productRevenue = $topProducts->pluck('revenue')->map(fn ($v) => (int) $v)->toArray();
+        $colors = ['#EF4444', '#F97316', '#F59E0B', '#84CC16', '#10B981', '#06B6D4'];
         $productColors = array_slice($colors, 0, count($productLabels));
 
         $productsChart = [
@@ -88,9 +88,9 @@ class LaporanController extends Controller
 
         $monthlyReport = [
             'monthLabel' => Carbon::now()->format('F Y'),
-            'total' => (int)$currentTotal,
+            'total' => (int) $currentTotal,
             'growthPercent' => $growth,
-            'previousTotal' => (int)$previousTotal,
+            'previousTotal' => (int) $previousTotal,
         ];
 
         return view('manajemen.laporan.index', compact(

@@ -20,6 +20,7 @@ class ResepController extends Controller
                 $qty = (int) ($ir->qty ?? 0);
                 $price = (int) ($ir->harga ?? 0);
                 $subtotal = $qty * $price;
+
                 return [
                     'name' => optional($ir->bahanBaku)->nama ?? ($ir->nama_bahan ?? ''),
                     'quantity' => $qty,
@@ -64,7 +65,9 @@ class ResepController extends Controller
      */
     private function normalizeCategory($category)
     {
-        if (!$category) return null;
+        if (! $category) {
+            return null;
+        }
         $cat = trim($category);
 
         // direct replacements for common variants
@@ -79,11 +82,14 @@ class ResepController extends Controller
             'Snack' => 'Snack',
         ];
 
-        if (isset($map[$cat])) return $map[$cat];
+        if (isset($map[$cat])) {
+            return $map[$cat];
+        }
 
         // fallback: replace & with 'dan' and trim
         $cat2 = str_replace('&', 'dan', $cat);
         $cat2 = preg_replace('/\s+/', ' ', $cat2);
+
         return $cat2;
     }
 
@@ -141,7 +147,7 @@ class ResepController extends Controller
                 $idBahan = null;
                 if ($name) {
                     $bahan = \App\Models\BahanBaku::where('nama', $name)->first();
-                    if (!$bahan) {
+                    if (! $bahan) {
                         $bahan = \App\Models\BahanBaku::create([
                             'nama' => $name,
                             'stok' => 0,
@@ -154,7 +160,7 @@ class ResepController extends Controller
                     $idBahan = $bahan->id;
                 }
 
-                $r = new \App\Models\RincianResep();
+                $r = new \App\Models\RincianResep;
                 $r->id_resep = $resep->id;
                 if ($hasIdBahan && $idBahan) {
                     $r->id_bahan = $idBahan;
@@ -176,6 +182,7 @@ class ResepController extends Controller
             $foodCost = $resep->rincianResep->reduce(function ($carry, $ir) {
                 $qty = (int) ($ir->qty ?? 0);
                 $price = (int) ($ir->harga ?? 0);
+
                 return $carry + ($qty * $price);
             }, 0);
 
@@ -197,6 +204,7 @@ class ResepController extends Controller
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
             }
+
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
@@ -208,17 +216,18 @@ class ResepController extends Controller
     {
         $r = \App\Models\Resep::with('rincianResep.bahanBaku')->findOrFail($id);
 
-            $ingredients = $r->rincianResep->map(function ($ir) {
-                $qty = (int) ($ir->qty ?? 0);
-                $price = (int) ($ir->harga ?? 0);
-                return [
-                    'name' => optional($ir->bahanBaku)->nama ?? ($ir->nama_bahan ?? ''),
-                    'quantity' => $qty,
-                    'unit' => $ir->hitungan ?? '',
-                    'price' => $price,
-                    'subtotal' => $qty * $price,
-                ];
-            })->toArray();
+        $ingredients = $r->rincianResep->map(function ($ir) {
+            $qty = (int) ($ir->qty ?? 0);
+            $price = (int) ($ir->harga ?? 0);
+
+            return [
+                'name' => optional($ir->bahanBaku)->nama ?? ($ir->nama_bahan ?? ''),
+                'quantity' => $qty,
+                'unit' => $ir->hitungan ?? '',
+                'price' => $price,
+                'subtotal' => $qty * $price,
+            ];
+        })->toArray();
 
         $foodCost = array_sum(array_column($ingredients, 'subtotal'));
 
@@ -227,7 +236,7 @@ class ResepController extends Controller
             'name' => $r->nama,
             'category' => $r->kategori,
             'yield' => $r->porsi,
-            'duration' => $r->waktu_pembuatan ? ($r->waktu_pembuatan . ' menit') : null,
+            'duration' => $r->waktu_pembuatan ? ($r->waktu_pembuatan.' menit') : null,
             'foodCost' => $foodCost,
             'sellingPrice' => $r->harga_jual ?? 0,
             'margin' => $r->margin ?? 0,
@@ -299,7 +308,7 @@ class ResepController extends Controller
                 $idBahan = null;
                 if ($name) {
                     $bahan = \App\Models\BahanBaku::where('nama', $name)->first();
-                    if (!$bahan) {
+                    if (! $bahan) {
                         $bahan = \App\Models\BahanBaku::create([
                             'nama' => $name,
                             'stok' => 0,
@@ -312,7 +321,7 @@ class ResepController extends Controller
                     $idBahan = $bahan->id;
                 }
 
-                $r = new \App\Models\RincianResep();
+                $r = new \App\Models\RincianResep;
                 $r->id_resep = $resep->id;
                 if ($hasIdBahan && $idBahan) {
                     $r->id_bahan = $idBahan;
@@ -333,6 +342,7 @@ class ResepController extends Controller
             $foodCost = $resep->rincianResep->reduce(function ($carry, $ir) {
                 $qty = (int) ($ir->qty ?? 0);
                 $price = (int) ($ir->harga ?? 0);
+
                 return $carry + ($qty * $price);
             }, 0);
 
@@ -354,6 +364,7 @@ class ResepController extends Controller
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
             }
+
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
@@ -384,6 +395,7 @@ class ResepController extends Controller
             if (request()->wantsJson() || request()->ajax()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
             }
+
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
