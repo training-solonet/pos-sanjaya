@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('konversi', function (Blueprint $table) {
+        //tabel data_customer
+         Schema::create('data_customer', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_satuan')->constrained('satuan')->onDelete('cascade');
-            $table->integer('jumlah');
-            $table->integer('satuan_asal');
-            $table->integer('satuan_tujuan');
-            $table->dateTime('tgl');
+            $table->string('nama');
+            $table->integer('telepon');
+            $table->string('email')->default('no-reply@example.com');
             $table->timestamps();
         });
     }
@@ -27,6 +26,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('konversi');
+        //
+        Schema::dropIfExists('data_customer');
     }
 };

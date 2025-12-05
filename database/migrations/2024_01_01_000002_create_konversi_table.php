@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('satuan', function (Blueprint $table) {
+        Schema::create('konversi', function (Blueprint $table) {
             $table->id();
-            $table->string('nama',100);
+            $table->integer('jumlah');
+            $table->integer('nilai');
+            $table->foreignId('satuan_besar')->constrained('satuan')->onDelete('cascade');
+            $table->foreignId('satuan_kecil')->constrained('satuan')->onDelete('cascade');
+            $table->dateTime('tgl')->nullable();
             $table->timestamps();
         });
     }
@@ -23,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('satuan');
+        Schema::dropIfExists('konversi');
     }
 };
