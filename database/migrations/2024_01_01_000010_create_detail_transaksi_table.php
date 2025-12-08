@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_transaksi')->constrained('transaksi')->onDelete('cascade');
             $table->foreignId('id_produk')->constrained('produk')->onDelete('cascade');
-            $table->integer('qty')->default(0);
+            $table->integer('jumlah')->default(0);
             $table->integer('harga')->default(0);
             $table->timestamps();
         });

@@ -17,8 +17,18 @@ class Satuan extends Model
 
     ];
 
-    public function konversi()
+    public function bahanBaku()
     {
-        return $this->hasMany(Konversi::class, 'id_satuan');
+        return $this->hasMany(BahanBaku::class, 'id_satuan');
+    }
+
+    public function konversiBesar()
+    {
+        return $this->hasMany(Konversi::class, 'satuan_besar');
+    }
+
+    public function konversiKecil()
+    {
+        return $this->hasMany(Konversi::class, 'satuan_kecil');
     }
 }
