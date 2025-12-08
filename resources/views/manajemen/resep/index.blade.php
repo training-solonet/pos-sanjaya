@@ -191,11 +191,11 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nama Resep</label>
                         <div class="flex gap-2">
                             <select id="productSelect" onchange="onProductSelected(this)" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
-                                <option value="">Pilih Produk (opsional)</option>
+                                <option value="">Pilih Produk </option>
                             </select>
                             <input type="hidden" id="recipeNameHidden">
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">Pilih produk untuk mengisi nama & harga otomatis. Kolom nama manual telah dihilangkan.</p>
+                        <p class="text-xs text-gray-400 mt-1">Pilih produk untuk mengisi nama & harga.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
