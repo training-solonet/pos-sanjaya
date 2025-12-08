@@ -33,20 +33,20 @@ class KonversiController extends Controller
             $jumlah = $request->input('jumlah');
             $satuan_kecil = $request->input('satuan_kecil') ?? $request->input('satuan_dasar');
 
-            if (!$name || !$jumlah) {
+            if (! $name || ! $jumlah) {
                 return response()->json(['success' => false, 'message' => 'Nama satuan dan jumlah wajib.'], 422);
             }
 
             // Cari Satuan berdasarkan nama (case-insensitive). Jika sudah ada, gunakan.
             $s = Satuan::whereRaw('LOWER(nama) = ?', [mb_strtolower($name)])->first();
-            if (!$s) {
-                $s = Satuan::create([ 'nama' => $name ]);
+            if (! $s) {
+                $s = Satuan::create(['nama' => $name]);
             }
 
             // Cek apakah Konversi untuk pasangan satuan besar/kecil sudah ada (hindari duplikat)
             $existingKonv = Konversi::where('satuan_besar', $s->id)
                 ->where('satuan_kecil', $satuan_kecil)
-                ->where('jumlah', (int)$jumlah)
+                ->where('jumlah', (int) $jumlah)
                 ->first();
 
             if ($existingKonv) {
@@ -56,8 +56,8 @@ class KonversiController extends Controller
             // create Konversi record
             $konv = Konversi::create([
                 'satuan_besar' => $s->id,
-                'satuan_kecil' => (int)$satuan_kecil,
-                'jumlah' => (int)$jumlah,
+                'satuan_kecil' => (int) $satuan_kecil,
+                'jumlah' => (int) $jumlah,
                 'nilai' => $request->input('nilai') ?? null,
                 'tgl' => $request->input('tgl') ?? now()->toDateString(),
             ]);
@@ -92,6 +92,7 @@ class KonversiController extends Controller
         if ($request->wantsJson() || $request->ajax()) {
             $konversi = Konversi::findOrFail($id);
             $konversi->update($request->all());
+
             return response()->json(['success' => true, 'konversi' => $konversi]);
         }
 
@@ -113,7 +114,7 @@ class KonversiController extends Controller
     {
         $deleted = Konversi::destroy($id);
         if (request()->wantsJson() || request()->ajax()) {
-            return response()->json(['success' => (bool)$deleted]);
+            return response()->json(['success' => (bool) $deleted]);
         }
 
         return redirect()->route('management.konversi.index')
