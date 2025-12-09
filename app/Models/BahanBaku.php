@@ -64,6 +64,7 @@ class BahanBaku extends Model
         if ($this->konversi && $this->konversi->jumlah > 0) {
             return $this->stok / $this->konversi->jumlah;
         }
+
         return $this->stok;
     }
 
@@ -73,23 +74,23 @@ class BahanBaku extends Model
         if ($this->konversi && $this->konversi->jumlah > 0) {
             $stokBesar = floor($this->stok / $this->konversi->jumlah);
             $sisaStok = $this->stok % $this->konversi->jumlah;
-            
+
             if ($sisaStok > 0) {
                 return [
-                    'besar' => number_format($stokBesar, 0) . ' ' . $this->satuan_besar . ' + ' . $sisaStok . ' ' . $this->satuan_kecil,
-                    'kecil' => number_format($this->stok, 0) . ' ' . $this->satuan_kecil,
+                    'besar' => number_format($stokBesar, 0).' '.$this->satuan_besar.' + '.$sisaStok.' '.$this->satuan_kecil,
+                    'kecil' => number_format($this->stok, 0).' '.$this->satuan_kecil,
                 ];
             } else {
                 return [
-                    'besar' => number_format($stokBesar, 0) . ' ' . $this->satuan_besar,
-                    'kecil' => number_format($this->stok, 0) . ' ' . $this->satuan_kecil,
+                    'besar' => number_format($stokBesar, 0).' '.$this->satuan_besar,
+                    'kecil' => number_format($this->stok, 0).' '.$this->satuan_kecil,
                 ];
             }
         }
-        
+
         return [
-            'besar' => number_format($this->stok, 0) . ' ' . $this->satuan_besar,
-            'kecil' => number_format($this->stok, 0) . ' ' . $this->satuan_kecil,
+            'besar' => number_format($this->stok, 0).' '.$this->satuan_besar,
+            'kecil' => number_format($this->stok, 0).' '.$this->satuan_kecil,
         ];
     }
 
@@ -99,11 +100,11 @@ class BahanBaku extends Model
         if ($satuan === 'besar' && $this->konversi) {
             $jumlah = $jumlah * $this->konversi->jumlah;
         }
-        
+
         $this->stok += $jumlah;
         $this->tglupdate = now();
         $this->save();
-        
+
         return $this;
     }
 
@@ -113,11 +114,11 @@ class BahanBaku extends Model
         if ($satuan === 'besar' && $this->konversi) {
             $jumlah = $jumlah * $this->konversi->jumlah;
         }
-        
+
         $this->stok -= $jumlah;
         $this->tglupdate = now();
         $this->save();
-        
+
         return $this;
     }
 
@@ -127,7 +128,7 @@ class BahanBaku extends Model
         if ($satuan === 'besar' && $this->konversi) {
             $jumlah = $jumlah * $this->konversi->jumlah;
         }
-        
+
         return $this->stok >= $jumlah;
     }
 
@@ -145,39 +146,39 @@ class BahanBaku extends Model
     {
         return $this->hasMany(Opname::class, 'id_bahan');
     }
+
     public static function getDefaultBahanBaku()
-{
-    // Coba ambil bahan baku pertama
-    $bahanBaku = self::first();
-    
-    if (!$bahanBaku) {
-        // Buat bahan baku default jika tidak ada
-        $konversi = Konversi::first();
-        
-        if (!$konversi) {
-            // Buat konversi default jika tidak ada
-            $konversi = Konversi::create([
-                'id_satuan' => 1,
-                'satuan_besar' => 'Karung',
-                'nilai' => 1,
-                'satuan_kecil' => 'kg',
-                'jumlah' => 25,
-                'tgl' => now(),
+    {
+        // Coba ambil bahan baku pertama
+        $bahanBaku = self::first();
+
+        if (! $bahanBaku) {
+            // Buat bahan baku default jika tidak ada
+            $konversi = Konversi::first();
+
+            if (! $konversi) {
+                // Buat konversi default jika tidak ada
+                $konversi = Konversi::create([
+                    'id_satuan' => 1,
+                    'satuan_besar' => 'Karung',
+                    'nilai' => 1,
+                    'satuan_kecil' => 'kg',
+                    'jumlah' => 25,
+                    'tgl' => now(),
+                ]);
+            }
+
+            $bahanBaku = self::create([
+                'nama' => 'Bahan Baku Umum',
+                'stok' => 0,
+                'min_stok' => 0,
+                'kategori' => 'Bahan Utama',
+                'harga_satuan' => 0,
+                'id_konversi' => $konversi->id,
+                'tglupdate' => now(),
             ]);
         }
-        
-        $bahanBaku = self::create([
-            'nama' => 'Bahan Baku Umum',
-            'stok' => 0,
-            'min_stok' => 0,
-            'kategori' => 'Bahan Utama',
-            'harga_satuan' => 0,
-            'id_konversi' => $konversi->id,
-            'tglupdate' => now(),
-        ]);
-    }
-    
-    return $bahanBaku;
-}
-}
 
+        return $bahanBaku;
+    }
+}

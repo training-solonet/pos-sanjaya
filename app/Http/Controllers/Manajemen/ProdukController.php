@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Manajemen;
 
 use App\Http\Controllers\Controller;
-use App\Models\Produk;
 use App\Models\BahanBaku;
+use App\Models\Produk;
 use App\Models\UpdateStokProduk;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -118,8 +118,8 @@ class ProdukController extends Controller
             DB::transaction(function () use ($request) {
                 // Cari bahan baku pertama yang tersedia
                 $bahanBaku = BahanBaku::first();
-                
-                if (!$bahanBaku) {
+
+                if (! $bahanBaku) {
                     // Buat bahan baku default jika tidak ada
                     $bahanBaku = BahanBaku::create([
                         'nama' => 'Bahan Baku Umum',
@@ -316,10 +316,10 @@ class ProdukController extends Controller
 
         try {
             $produk = Produk::findOrFail($id);
-            
+
             $stokBaru = $request->tambah_stok;
             $kadaluarsaBaru = $request->kadaluarsa_baru ?: $produk->kadaluarsa;
-            
+
             // Update stok produk
             $produk->update([
                 'stok' => $produk->stok + $stokBaru,
