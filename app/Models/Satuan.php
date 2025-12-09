@@ -14,6 +14,7 @@ class Satuan extends Model
 
     protected $fillable = [
         'nama',
+        'kode',
 
     ];
 

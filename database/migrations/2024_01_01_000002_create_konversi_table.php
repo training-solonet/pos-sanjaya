@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('konversi', function (Blueprint $table) {
             $table->id();
-            $table->integer('jumlah');
+            $table->foreignId('id_satuan')->constrained('satuan')->onDelete('cascade');
+            $table->string('satuan_besar');
             $table->integer('nilai');
-            $table->foreignId('satuan_besar')->constrained('satuan')->onDelete('cascade');
-            $table->foreignId('satuan_kecil')->constrained('satuan')->onDelete('cascade');
+            $table->string('satuan_kecil');
+            $table->integer('jumlah');
             $table->dateTime('tgl')->nullable();
             $table->timestamps();
         });

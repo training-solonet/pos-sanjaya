@@ -10,20 +10,16 @@ class Konversi extends Model
     protected $table = 'konversi';
 
     protected $fillable = [
+        'id_satuan',
         'satuan_besar',
-        'satuan_kecil',
         'jumlah',
+        'satuan_kecil',
         'nilai',
         'tgl',
     ];
 
-    public function satuanBesar()
+    public function satuan()
     {
-        return $this->belongsTo(Satuan::class, 'satuan_besar');
-    }
-
-    public function satuanKecil()
-    {
-        return $this->belongsTo(Satuan::class, 'satuan_kecil');
+        return $this->belongsTo(Satuan::class, 'id_satuan');
     }
 }

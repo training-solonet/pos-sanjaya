@@ -209,16 +209,13 @@
                             @forelse ($konversi as $item)
                                 <div class="p-4 border rounded-lg bg-gray-50">
                                     <p class="text-sm text-gray-700">
-                                        <span class="font-semibold">Jumlah:</span> {{ $item->jumlah }}
+                                        <span class="font-semibold">Satuan Awal:</span> {{ $item->nilai ?? 1 }} {{ $item->satuan_besar }}
                                     </p>
                                     <p class="text-sm text-gray-700">
-                                        <span class="font-semibold">Satuan Asal:</span> {{ $item->satuan_asal }}
-                                    </p>
-                                    <p class="text-sm text-gray-700">
-                                        <span class="font-semibold">Satuan Tujuan:</span> {{ $item->satuan_tujuan }}
+                                        <span class="font-semibold">Satuan Akhir:</span> {{ $item->jumlah }} {{ $item->satuan_kecil }}
                                     </p>
                                     <p class="text-xs text-gray-500 mt-2">
-                                        {{ $item->tgl }}
+                                        {{ \Carbon\Carbon::parse($item->tgl)->format('Y-m-d H:i') }}
                                     </p>
                                 </div>
                             @empty
@@ -749,8 +746,8 @@
                                 <i class="fas fa-cube text-blue-600"></i>
                             </div>
                             <div>
-                                <h4 class="font-medium text-gray-900">${item.satuan_besar || item.nama || 'Custom'}</h4>
-                                <p class="text-sm text-gray-500">1 ${item.satuan_besar || item.nama} = ${item.jumlah} ${item.satuan_kecil}</p>
+                                <h4 class="font-medium text-gray-900">${(item && item.satuan && item.satuan.nama) ? item.satuan.nama : (item.nama || 'Custom')}</h4>
+                                <p class="text-sm text-gray-500">${item.nilai || 1} ${item.satuan_besar || ''} = ${item.jumlah} ${item.satuan_kecil}</p>
                             </div>
                         </div>
                     </div>
