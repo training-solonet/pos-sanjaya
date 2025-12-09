@@ -21,6 +21,7 @@ class KonversiController extends Controller
     public function create()
     {
         $satuan_kecil = ['pcs', 'kg', 'l', 'gram', 'sdt', 'sdm'];
+
         return view('manajemen.konversi.create', compact('satuan_kecil'));
     }
 
@@ -67,10 +68,10 @@ class KonversiController extends Controller
 
         // non-AJAX form submission
         $request->validate([
-            'nama_satuan'   => 'required|string|max:100',
-            'kode_besar'    => 'required|string|max:20',
-            'jumlah'        => 'required|integer|min:1',
-            'satuan_kecil'  => 'required|string',
+            'nama_satuan' => 'required|string|max:100',
+            'kode_besar' => 'required|string|max:20',
+            'jumlah' => 'required|integer|min:1',
+            'satuan_kecil' => 'required|string',
         ]);
 
         $satuan = Satuan::create(['nama' => $request->nama_satuan]);
@@ -86,7 +87,6 @@ class KonversiController extends Controller
 
         return back()->with('success', 'Konversi berhasil ditambahkan.');
     }
-
 
     public function edit($id)
     {
@@ -131,9 +131,9 @@ class KonversiController extends Controller
 
         // non-AJAX update
         $request->validate([
-            'satuan_besar'  => 'required|string|max:50',
-            'jumlah'        => 'required|integer|min:1',
-            'satuan_kecil'  => 'required|string',
+            'satuan_besar' => 'required|string|max:50',
+            'jumlah' => 'required|integer|min:1',
+            'satuan_kecil' => 'required|string',
         ]);
 
         $konv = Konversi::findOrFail($id);

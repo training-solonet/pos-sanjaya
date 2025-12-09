@@ -22,5 +22,4 @@ class Konversi extends Model
     {
         return $this->belongsTo(Satuan::class, 'id_satuan');
     }
-
 }
