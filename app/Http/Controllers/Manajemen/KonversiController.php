@@ -12,7 +12,8 @@ class KonversiController extends Controller
     public function index()
     {
         // eager-load the related Satuan (big unit) so view can show its name
-        $konversi = Konversi::with('satuan')->get();
+        // Order by newest first
+        $konversi = Konversi::with('satuan')->orderBy('tgl', 'desc')->orderBy('id', 'desc')->get();
         $satuan = Satuan::all();
 
         return view('manajemen.konversi.index', compact('konversi', 'satuan'));
@@ -60,7 +61,7 @@ class KonversiController extends Controller
                 'jumlah' => (int) $jumlah,
                 'satuan_kecil' => $satuan_kecil,
                 'nilai' => 1,
-                'tgl' => $request->input('tgl') ?? now(),
+                'tgl' => now(), // Always use current timestamp
             ]);
 
             return response()->json(['success' => true, 'konversi' => $konv, 'satuan' => $satuan]);
