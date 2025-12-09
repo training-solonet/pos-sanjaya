@@ -118,12 +118,11 @@
                                                         <div>
                                                             <label class="block text-sm text-gray-600 mb-2">Satuan</label>
                                                             <select id="newUnitBase"
-                                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors">
-                                                                <option value="pcs">pcs (buah/pieces)</option>
-                                                                <option value="kg">kg (kilogram)</option>
-                                                                <option value="L">L (liter)</option>
-                                                                <option value="m">m (meter)</option>
-                                                            </select>
+                                                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors">
+                                                                    @foreach($satuan as $s)
+                                                                        <option value="{{ $s->id }}">{{ $s->nama }}</option>
+                                                                    @endforeach
+                                                                </select>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -286,7 +285,11 @@
         overlay.classList.toggle('hidden');
     }
 
-    // Data konversi satuan
+    // Data konversi dari server (di-inject oleh controller)
+    const serverKonversi = @json($konversi ?? []);
+    const serverSatuan = @json($satuan ?? []);
+
+    // Data lokal/fallback
     const units = {
         custom: {
             pcs: {
@@ -601,7 +604,17 @@
         document.getElementById('newUnitName').value = '';
         document.getElementById('newUnitCode').value = '';
         document.getElementById('newUnitFactor').value = '';
-        document.getElementById('newUnitBase').value = 'pcs';
+        // Set default base unit to first server-provided satuan if available
+        try {
+            const baseEl = document.getElementById('newUnitBase');
+            if (baseEl && typeof serverSatuan !== 'undefined' && serverSatuan.length > 0) {
+                baseEl.value = serverSatuan[0].id;
+            } else if (baseEl) {
+                baseEl.value = baseEl.options[0]?.value || '';
+            }
+        } catch (e) {
+            // ignore
+        }
 
         // Reset displays
         updateSimpleDisplay();
@@ -612,10 +625,21 @@
         const factor = document.getElementById('newUnitFactor').value;
         const base = document.getElementById('newUnitBase').value;
 
+        // Map base id to human-readable name when serverSatuan is available
+        let baseLabel = base;
+        try {
+            if (typeof serverSatuan !== 'undefined' && serverSatuan.length > 0) {
+                const found = serverSatuan.find(s => String(s.id) === String(base));
+                if (found) baseLabel = found.nama;
+            }
+        } catch (e) {
+            // ignore
+        }
+
         // Update display elements
         document.getElementById('unitNameDisplay').textContent = name || 'Kemasan';
         document.getElementById('factorDisplay').textContent = factor || '?';
-        document.getElementById('baseUnitDisplay').textContent = base;
+        document.getElementById('baseUnitDisplay').textContent = baseLabel;
     }
 
     // Simplified real-time updates
@@ -677,44 +701,73 @@
             return;
         }
 
-        // Check if code already exists
-        if (units.custom[code.toLowerCase()]) {
-            alert('Kode satuan sudah digunakan! Gunakan kode yang berbeda.');
-            document.getElementById('newUnitCode').focus();
-            return;
-        }
+        // Jika code sudah ada di lokal, kita tidak memblokirnya di sisi client.
+        // Duplikasi atau penggunaan kode singkat akan ditangani di server agar tidak
+        // mengganggu data lain (server akan mencari/menggunakan Satuan yang sudah ada).
 
         // Add to custom units
-        const newUnit = {
-            name: name,
-            code: code.toLowerCase(),
-            factor: factor,
-            baseUnit: baseUnit,
-            id: Date.now()
-        };
-
-        customUnits.push(newUnit);
-        units.custom[code.toLowerCase()] = {
-            name: name,
-            factor: factor,
-            baseUnit: baseUnit
-        };
-
-        // Save to localStorage
-        localStorage.setItem('customUnits', JSON.stringify(customUnits));
-
-        // Update UI
-        loadCustomUnitsList();
-        populateUnits();
-        hideAddUnitForm();
-
-        // Show success message
-        alert(`Satuan "${name}" berhasil ditambahkan!`);
+        // If server endpoint available, POST to create konversi + satuan
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        fetch('/management/konversi', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrf
+            },
+            body: JSON.stringify({
+                new_satuan_name: name,
+                new_satuan_code: code,
+                jumlah: factor,
+                satuan_kecil: baseUnit,
+                tgl: new Date().toISOString().slice(0, 10)
+            })
+        }).then(res => res.json())
+        .then(data => {
+            if (data && data.success) {
+                // reload page to reflect DB data
+                location.reload();
+            } else {
+                throw new Error((data && data.message) || 'Gagal menyimpan satuan ke server');
+            }
+        }).catch(err => {
+            console.error(err);
+            alert(err.message || 'Terjadi kesalahan saat menyimpan satuan');
+        });
     }
 
     function loadCustomUnitsList() {
         const listContainer = document.getElementById('customUnitsList');
 
+        // If server provided konversi data, render that as authoritative list
+        if (serverKonversi && serverKonversi.length > 0) {
+            listContainer.innerHTML = serverKonversi.map(item => `
+                <div class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-cube text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900">${item.satuan_besar || item.nama || 'Custom'}</h4>
+                                <p class="text-sm text-gray-500">1 ${item.satuan_besar || item.nama} = ${item.jumlah} ${item.satuan_kecil}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="editCustomUnitServer(${item.id})" class="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteKonversi(${item.id})" class="p-2 text-gray-400 hover:text-red-600 transition-colors">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            return;
+        }
+
+        // Fallback to localStorage-based customUnits if server has none
         if (customUnits.length === 0) {
             listContainer.innerHTML = `
                     <div class="text-center text-gray-500 py-4">
@@ -723,7 +776,6 @@
                         <p class="text-xs">Klik "Tambah Satuan" untuk menambah satuan baru</p>
                     </div>
                 `;
-
             return;
         }
 
@@ -753,22 +805,34 @@
     }
 
     function deleteCustomUnit(code) {
+        // If server data exists we should delete by konversi id via API
         if (confirm('Hapus satuan kustom ini?')) {
-            // Remove from customUnits array
+            // Fallback: remove from localStorage if present
             customUnits = customUnits.filter(unit => unit.code !== code);
-
-            // Remove from units object
             delete units.custom[code];
-
-            // Save to localStorage
             localStorage.setItem('customUnits', JSON.stringify(customUnits));
-
-            // Update UI
             loadCustomUnitsList();
             populateUnits();
-
             showToast('Satuan kustom berhasil dihapus!', 'success');
         }
+    }
+
+    // Delete konversi entry on server by id
+    function deleteKonversi(id) {
+        if (!confirm('Hapus entri konversi ini dari database?')) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        fetch(`/management/konversi/${id}`, { method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf } })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.success) {
+                    location.reload();
+                } else {
+                    throw new Error((data && data.message) || 'Gagal menghapus entri');
+                }
+            }).catch(err => {
+                console.error(err);
+                alert(err.message || 'Terjadi kesalahan saat menghapus entri');
+            });
     }
 
     function editCustomUnit(code) {

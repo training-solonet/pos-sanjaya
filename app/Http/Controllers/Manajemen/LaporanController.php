@@ -22,12 +22,12 @@ class LaporanController extends Controller
         $avgPerTransaction = $totalTransactions ? round($totalSales / $totalTransactions) : 0;
 
         // Total produk terjual (semua qty)
-        $totalProductsSold = DB::table('detail_transaksi')->sum('qty') ?? 0;
+        $totalProductsSold = DB::table('detail_transaksi')->sum('jumlah') ?? 0;
 
         // Top products (qty and revenue)
         $topProducts = DB::table('detail_transaksi')
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
-            ->select('produk.id', 'produk.nama', DB::raw('SUM(detail_transaksi.qty) as total_qty'), DB::raw('SUM(detail_transaksi.qty * detail_transaksi.harga) as revenue'))
+            ->select('produk.id', 'produk.nama', DB::raw('SUM(detail_transaksi.jumlah) as total_qty'), DB::raw('SUM(detail_transaksi.jumlah * detail_transaksi.harga) as revenue'))
             ->groupBy('produk.id', 'produk.nama')
             ->orderByDesc('total_qty')
             ->limit(6)
@@ -41,7 +41,7 @@ class LaporanController extends Controller
         // Determine highest revenue product (may be outside the top-qty list)
         $highestRevenueRow = DB::table('detail_transaksi')
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
-            ->select('produk.nama', DB::raw('SUM(detail_transaksi.qty * detail_transaksi.harga) as revenue'))
+            ->select('produk.nama', DB::raw('SUM(detail_transaksi.jumlah * detail_transaksi.harga) as revenue'))
             ->groupBy('produk.nama')
             ->orderByDesc('revenue')
             ->first();

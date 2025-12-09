@@ -11,14 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bahan_baku', function (Blueprint $table) {
+        // tabel data_customer
+        Schema::create('data_customer', function (Blueprint $table) {
             $table->id();
-            $table->dateTime('tglupdate');
             $table->string('nama');
-            $table->integer('stok')->default(0);
-            $table->enum('kategori', ['Bahan Utama', 'Bahan Pembantu'])->nullable();
-            $table->integer('min_stok')->default(0);
-            $table->integer('harga_satuan')->default(0);
+            $table->integer('telepon');
+            $table->string('email')->default('no-reply@example.com');
             $table->timestamps();
         });
     }
@@ -28,6 +26,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bahan_baku');
+        //
+        Schema::dropIfExists('data_customer');
     }
 };

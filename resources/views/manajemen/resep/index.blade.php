@@ -191,11 +191,11 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nama Resep</label>
                         <div class="flex gap-2">
                             <select id="productSelect" onchange="onProductSelected(this)" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
-                                <option value="">Pilih Produk (opsional)</option>
+                                <option value="">Pilih Produk </option>
                             </select>
                             <input type="hidden" id="recipeNameHidden">
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">Pilih produk untuk mengisi nama & harga otomatis. Kolom nama manual telah dihilangkan.</p>
+                        <p class="text-xs text-gray-400 mt-1">Pilih produk untuk mengisi nama & harga.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
@@ -308,10 +308,14 @@
     </div>
 </div>
 <script>
-    // Produk list (to autofill recipe name & price). Provided by controller.
+    // Daftar produk (digunakan untuk mengisi otomatis nama resep & harga).
+    // Variabel ini di-inject dari controller sebagai JSON.
     let produkList = @json($produks ?? []);
 
-    // populate product select in modal
+    // Isi `select` produk pada modal.
+    // - Membaca `produkList` yang disediakan controller
+    // - Menampilkan hanya nama produk sebagai teks opsi
+    // - Menyimpan `harga` produk di atribut `data-harga` agar saat dipilih bisa mengisi `targetPrice`
     function populateProductSelect() {
         try {
             const sel = document.getElementById('productSelect');
@@ -323,7 +327,10 @@
         }
     }
 
-    // when product selected, autofill recipe name (hidden) and target price
+    // Handler saat produk dipilih dari `productSelect`.
+    // - Menyimpan nama produk terpilih ke field tersembunyi `recipeNameHidden`
+    // - Mengisi `targetPrice` dengan harga produk jika tersedia
+    // - Memanggil `calculateMargin()` agar tampilan margin terupdate
     function onProductSelected(sel) {
         try {
             const id = sel.value;
@@ -343,12 +350,16 @@
             console.error('onProductSelected error', e);
         }
     }
-    // Resep dimuat dari database (disiapkan di controller)
+    // --- Data yang di-inject dari server ---
+    // `recipes`: array objek resep yang disiapkan controller
+    // `bahans`: daftar bahan baku (id, nama, stok) untuk dipakai di select bahan
     let recipes = @json($recipes ?? []);
     // Bahan baku list (id, nama, stok)
     let bahanList = @json($bahans ?? []);
 
-    // Render datalist untuk nama bahan
+    // Render sebuah `<datalist>` tersembunyi berisi semua nama bahan
+    // - Berguna sebagai fallback untuk input yang perlu lookup nama bahan
+    // - Datalist disembunyikan dari layout tapi tersedia untuk input bila diperlukan
     (function renderBahanDatalist() {
         try {
             const container = document.createElement('div');
@@ -369,7 +380,9 @@
         }
     })();
 
-    // Buat tag option untuk select bahan (digunakan pada baris bahan)
+    // Buat string HTML `<option>` untuk setiap bahan
+    // - Mengembalikan gabungan option yang akan disisipkan ke <select>
+    // - Dipakai saat membuat baris bahan secara dinamis
     function createBahanOptions() {
         try {
             return (bahanList || []).map(b => `<option value="${b.id}" data-stok="${b.stok}">${b.nama}</option>`).join('');
@@ -408,18 +421,21 @@
         }
     }
 
-    // Inisialisasi saat halaman dimuat
+    // Inisialisasi ketika halaman selesai dimuat
     window.addEventListener('DOMContentLoaded', function() {
         // populate product select if produk provided
         populateProductSelect();
         updateDateTime();
         setInterval(updateDateTime, 60000); // Perbarui setiap menit
-        renderTableView(); // Show all recipes by default
+        renderTableView(); 
         updateStats();
         // sinkronkan dengan DB setiap 60 detik
         setInterval(refreshRecipes, 60000);
     });
 
+    // Toggle antara tampilan 'table' dan 'grid'
+    // - Mengubah kelas DOM untuk menampilkan view yang sesuai
+    // - Merender ulang konten berdasarkan array `recipes`
     function toggleView(view) {
         currentView = view;
         const tableView = document.getElementById('tableView');
@@ -442,6 +458,9 @@
         }
     }
 
+    // Render daftar resep sebagai tabel HTML
+    // - Menerima parameter opsional `recipesToRender` untuk hasil yang sudah difilter
+    // - Menggunakan helper kecil untuk warna, ikon, dan format angka
     function renderTableView(recipesToRender = recipes) {
         const tbody = document.getElementById('recipeTableBody');
 
@@ -490,6 +509,8 @@
             `).join('');
     }
 
+    // Render resep dalam bentuk kartu responsif (grid view)
+    // - Isi sama seperti tabel tetapi ditampilkan dalam layout kartu untuk browsing visual
     function renderGridView(recipesToRender = recipes) {
         const grid = document.getElementById('recipeGrid');
 
@@ -592,6 +613,7 @@
         return 'bg-red-100 text-red-800';
     }
 
+    // Format teks durasi (menit)
     function formatDuration(d) {
         if (!d && d !== 0) return '';
         const s = String(d).trim();
@@ -600,6 +622,7 @@
         return s + ' menit';
     }
 
+    // Filter resep berdasarkan kata kunci, kategori, status, dan rentang biaya
     function filterRecipes() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const categoryFilter = document.getElementById('categoryFilter').value;
@@ -637,6 +660,9 @@
         }
     }
 
+    // Buka modal 'Buat / Edit Resep'
+    // - Mereset form, membersihkan state sementara, lalu menampilkan modal
+    // - Menggunakan `editingRecipeId` untuk membedakan create vs update saat menyimpan
     function openAddRecipeModal() {
         // reset form and ingredient rows before showing
         const form = document.getElementById('recipeForm');
@@ -655,6 +681,8 @@
         if (modal && modal.classList) modal.classList.remove('hidden');
     }
 
+    // Tutup modal resep dan bersihkan state sementara
+    // - Menyembunyikan modal, mereset form, dan mengosongkan nama tersembunyi
     function closeAddRecipeModal() {
         const modal = document.getElementById('addRecipeModal');
         if (modal && modal.classList) modal.classList.add('hidden');
@@ -671,6 +699,9 @@
         editingRecipeId = null;
     }
 
+    // Reset daftar bahan menjadi satu baris kosong
+    // - Membangun markup baris bahan awal menggunakan `createBahanOptions()`
+    // - Menjamin state disabled pada opsi bahan dikembalikan semula
     function resetIngredientsForm() {
         document.getElementById('ingredientsList').innerHTML = `
                 <div class="ingredient-item grid grid-cols-1 md:grid-cols-12 gap-6 p-3 bg-white rounded-lg border">
@@ -704,7 +735,10 @@
             refreshBahanOptionsDisable();
     }
 
-    // --- CRUD helpers ---
+    // --- Helper CRUD ---
+    // Isi baris bahan berdasarkan data bahan yang tersimpan pada resep
+    // - Membuat node DOM untuk setiap bahan dan mengisi nilai-nilainya
+    // - Memanggil `onBahanSelected()` agar stok dan batas diterapkan pada baris
     function populateIngredientsFromRecipe(recipe) {
         const list = document.getElementById('ingredientsList');
         list.innerHTML = '';
@@ -757,6 +791,9 @@
         refreshBahanOptionsDisable();
     }
 
+    // Buka modal dalam mode Edit dan isi field sesuai resep yang dipilih
+    // - Menetapkan `editingRecipeId` ke id resep
+    // - Mencocokkan nama resep dengan `Produk` untuk pre-select; bila tidak cocok, simpan nama ke field tersembunyi
     function editRecipe(id) {
         const recipe = recipes.find(r => parseInt(r.id) === parseInt(id));
         if (!recipe) return alert('Resep tidak ditemukan');
@@ -800,6 +837,8 @@
         if (modal && modal.classList) modal.classList.remove('hidden');
     }
 
+    // Duplikat resep ke form baru (copy)
+    // - Tidak langsung menyimpan; membuka modal dengan nilai disalin dan `editingRecipeId = null`
     function duplicateRecipe(id) {
         const recipe = recipes.find(r => parseInt(r.id) === parseInt(id));
         if (!recipe) return alert('Resep tidak ditemukan');
@@ -840,6 +879,8 @@
         if (modal && modal.classList) modal.classList.remove('hidden');
     }
 
+    // Navigasi ke halaman detail resep yang disajikan server
+    // - Menggunakan `window.location.href` ke route `/management/resep/{id}`
     function viewRecipe(id) {
         // redirect to the server-side show page for the recipe
         // route: /management/resep/{id}
@@ -848,6 +889,8 @@
         window.location.href = base + '/' + encodeURIComponent(id);
     }
 
+    // Hapus resep melalui AJAX
+    // - Menanyakan konfirmasi pengguna, mengirim request DELETE, lalu refresh list jika sukses
     function deleteRecipe(id) {
         if (!confirm('Yakin ingin menghapus resep ini?')) return;
         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -855,6 +898,7 @@
             .then(res => res.json())
             .then(data => {
                 if (data && data.success) {
+                    // Refresh list to reflect deletion
                     refreshRecipes();
                     alert('Resep berhasil dihapus.');
                 } else {
@@ -863,7 +907,9 @@
             }).catch(err => { console.error(err); alert(err.message || 'Terjadi kesalahan saat menghapus resep'); });
     }
 
-    // Saat bahan dipilih pada input nama, set max qty dan tampilkan stok
+    // Ketika bahan dipilih pada baris bahan:
+    // - Set atribut max/placeholder pada input qty menurut stok
+    // - Menampilkan informasi stok dan menyimpan id/stok bahan pada atribut baris
     function onBahanSelected(input) {
         const row = input.closest('.ingredient-item');
         if (!row) return;
@@ -906,7 +952,8 @@
         refreshBahanOptionsDisable();
     }
 
-    // Disable already-selected bahan options in other selects to prevent duplicates
+    // Nonaktifkan opsi bahan yang sudah dipilih di select lain untuk mencegah duplikasi
+    // - Melindungi agar user tidak memilih bahan yang sama lebih dari sekali
     function refreshBahanOptionsDisable() {
         try {
             const selects = Array.from(document.querySelectorAll('.ingredient-name'));
@@ -934,7 +981,8 @@
         }
     }
 
-    // Show suggestions dropdown for bahan as user types
+    // Tampilkan dropdown saran bahan saat pengguna mengetik
+    // - Memfilter `bahanList` dan menampilkan daftar saran yang dapat diklik
     function onBahanInput(input) {
         const val = (input.value || '').toLowerCase();
         const row = input.closest('.ingredient-item');
@@ -970,6 +1018,7 @@
         input.addEventListener('blur', function () { setTimeout(() => { if (box && box.classList) box.classList.add('hidden'); }, 150); }, { once: true });
     }
 
+    // Reset semua tampilan terkait perhitungan biaya ke nilai default
     function resetCostCalculation() {
         document.getElementById('totalFoodCost').textContent = 'Rp 0';
         document.getElementById('costPerPortion').textContent = 'Rp 0';
@@ -978,6 +1027,8 @@
         document.getElementById('profitMargin').className = 'text-lg font-bold text-gray-900';
     }
 
+    // Tambah satu baris bahan kosong ke form
+    // - Menggunakan markup yang sama dengan `resetIngredientsForm` agar konsisten
     function addIngredient() {
         const ingredientsList = document.getElementById('ingredientsList');
         const newIngredient = document.createElement('div');
@@ -1014,6 +1065,7 @@
         refreshBahanOptionsDisable();
     }
 
+    // Hapus baris bahan dan hitung ulang total biaya
     function removeIngredient(button) {
         button.parentElement.remove();
         calculateTotalCost();
@@ -1021,6 +1073,7 @@
         refreshBahanOptionsDisable();
     }
 
+    // Hitung subtotal untuk satu baris bahan berdasarkan qty * harga
     function calculateIngredientCost(input) {
         const row = input.closest('.ingredient-item');
         const quantity = parseFloat(row.querySelector('.ingredient-quantity').value) || 0;
@@ -1043,6 +1096,7 @@
         calculateTotalCost();
     }
 
+    // Hitung total biaya semua bahan dan cost per porsi
     function calculateTotalCost() {
         const subtotals = document.querySelectorAll('.ingredient-subtotal');
         let total = 0;
@@ -1060,6 +1114,7 @@
         calculateMargin();
     }
 
+    // Hitung margin profit berdasarkan target price dan total food cost
     function calculateMargin() {
         const totalCost = parseFloat(document.getElementById('totalFoodCost').textContent.replace(/[^0-9]/g, '')) || 0;
         const targetPrice = parseFloat(document.getElementById('targetPrice').value) || 0;
@@ -1082,7 +1137,7 @@
         }
     }
 
-    // Set profit margin display using value from database (overrides calculated value)
+    // Tampilkan margin profit berdasarkan nilai dari database (menimpa perhitungan client)
     function setProfitMarginDisplay(margin) {
         const el = document.getElementById('profitMargin');
         if (!el) return;
@@ -1097,7 +1152,7 @@
         }
     }
 
-    // update header stats from current recipes array
+    // Perbarui statistik header berdasarkan array `recipes` saat ini
     function updateStats() {
         const total = recipes.length;
         const active = recipes.filter(r => (r.status || '').toLowerCase() === 'aktif').length;
@@ -1110,7 +1165,7 @@
         if (percentEl) percentEl.textContent = percent + '%';
     }
 
-    // fetch latest recipes from server and refresh UI
+    // Ambil daftar resep terbaru dari server (JSON) dan refresh UI
     function refreshRecipes() {
         fetch('/management/resep', { headers: { 'Accept': 'application/json' } })
             .then(res => res.ok ? res.json() : null)
@@ -1136,6 +1191,10 @@
             }).catch(err => console.error('refreshRecipes error', err));
     }
 
+    // Simpan resep (create/update)
+    // - Validasi form dan bahan
+    // - Mengumpulkan payload sesuai format server
+    // - Mengirim request POST/PUT dan menampilkan hasil
     function saveRecipe() {
         const form = document.getElementById('recipeForm');
         if (!form.checkValidity()) {
