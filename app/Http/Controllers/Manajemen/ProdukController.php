@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Manajemen;
 
 use App\Http\Controllers\Controller;
 use App\Models\Produk;
+use App\Models\BahanBaku;
 use App\Models\UpdateStokProduk;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -106,7 +107,7 @@ class ProdukController extends Controller
         Log::info('Store Product Request:', $request->all());
 
         $request->validate([
-            'nama' => 'required|string|max:255',
+            'nama' => 'required|string|max:255|unique:produk,nama',
             'stok' => 'required|integer|min:0',
             'min_stok' => 'required|integer|min:0',
             'harga' => 'required|integer|min:0',
@@ -115,10 +116,26 @@ class ProdukController extends Controller
 
         try {
             DB::transaction(function () use ($request) {
-                // Create product
+                // Cari bahan baku pertama yang tersedia
+                $bahanBaku = BahanBaku::first();
+                
+                if (!$bahanBaku) {
+                    // Buat bahan baku default jika tidak ada
+                    $bahanBaku = BahanBaku::create([
+                        'nama' => 'Bahan Baku Umum',
+                        'stok' => 0,
+                        'min_stok' => 0,
+                        'kategori' => 'Bahan Utama',
+                        'harga_satuan' => 0,
+                        'id_konversi' => 1, // Pastikan ada konversi dengan id=1
+                        'tglupdate' => now(),
+                    ]);
+                }
+
+                // Create product dengan bahan baku yang valid
                 $produk = Produk::create([
                     'nama' => $request->nama,
-                    'id_bahan_baku' => 1, // Default bahan baku
+                    'id_bahan_baku' => $bahanBaku->id,
                     'stok' => $request->stok,
                     'min_stok' => $request->min_stok,
                     'harga' => $request->harga,
@@ -201,7 +218,7 @@ class ProdukController extends Controller
         Log::info('Update Product Request:', ['id' => $id, 'data' => $request->all()]);
 
         $request->validate([
-            'nama' => 'required|string|max:255',
+            'nama' => 'required|string|max:255|unique:produk,nama,'.$id,
             'stok' => 'required|integer|min:0',
             'min_stok' => 'required|integer|min:0',
             'harga' => 'required|integer|min:0',
@@ -232,7 +249,7 @@ class ProdukController extends Controller
                     ]);
                 }
 
-                // Update product
+                // Update product - TIDAK mengupdate id_bahan_baku
                 $produk->update([
                     'nama' => $request->nama,
                     'stok' => $request->stok,
@@ -282,6 +299,55 @@ class ProdukController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus produk: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Tambah stok produk (untuk fitur tambah stok terpisah)
+     */
+    public function tambahStok(Request $request, string $id)
+    {
+        $request->validate([
+            'tambah_stok' => 'required|integer|min:1',
+            'kadaluarsa_baru' => 'nullable|date|after_or_equal:today',
+            'keterangan' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $produk = Produk::findOrFail($id);
+            
+            $stokBaru = $request->tambah_stok;
+            $kadaluarsaBaru = $request->kadaluarsa_baru ?: $produk->kadaluarsa;
+            
+            // Update stok produk
+            $produk->update([
+                'stok' => $produk->stok + $stokBaru,
+                'kadaluarsa' => $kadaluarsaBaru,
+            ]);
+
+            // Buat history stok
+            UpdateStokProduk::create([
+                'id_produk' => $id,
+                'stok_awal' => $produk->stok - $stokBaru,
+                'stok_baru' => $stokBaru,
+                'total_stok' => $produk->stok,
+                'kadaluarsa' => $kadaluarsaBaru,
+                'tanggal_update' => now(),
+                'keterangan' => $request->keterangan ?? 'Penambahan stok manual',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Stok berhasil ditambahkan',
+                'stok_baru' => $produk->stok,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Tambah Stok Product Error: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambah stok: '.$e->getMessage(),
             ], 500);
         }
     }

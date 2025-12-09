@@ -68,6 +68,26 @@
         <div id="stockGrid" class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           @foreach($bahan_baku as $item)
             @php
+              // Hitung perhitungan konversi
+              $stokDalamSatuanKecil = $item->stok; // Nilai yang disimpan di database (dalam satuan kecil)
+              $satuanKecil = $item->satuan_kecil; // Satuan kecil (misal: kg)
+              $satuanBesar = $item->satuan_besar; // Satuan besar (misal: Karung)
+              $jumlahKonversi = $item->jumlah_konversi; // Jumlah konversi (misal: 25)
+              
+              // Hitung stok dalam satuan besar
+              $stokDalamSatuanBesar = floor($stokDalamSatuanKecil / $jumlahKonversi);
+              $sisaStok = $stokDalamSatuanKecil % $jumlahKonversi;
+              
+              // Format tampilan
+              if ($sisaStok > 0) {
+                $displayStok = number_format($stokDalamSatuanKecil) . ' ' . $satuanKecil;
+                $displayKonversi = number_format($stokDalamSatuanBesar) . ' ' . $satuanBesar . ' + ' . $sisaStok . ' ' . $satuanKecil;
+              } else {
+                $displayStok = number_format($stokDalamSatuanKecil) . ' ' . $satuanKecil;
+                $displayKonversi = number_format($stokDalamSatuanBesar) . ' ' . $satuanBesar;
+              }
+              
+              // Status stok
               $status = 'Cukup';
               if ($item->stok == 0) {
                 $status = 'Habis';
@@ -94,14 +114,24 @@
               <div class="space-y-2 sm:space-y-2">
                 <div class="flex justify-between items-center">
                   <span class="text-xs sm:text-sm text-gray-500">Stok Saat Ini</span>
-                  <span class="font-medium text-xs sm:text-sm {{ $status != 'Cukup' ? 'text-red-600' : '' }}">{{ $item->stok }} kg</span>
+                  <div class="text-right">
+                    <span class="font-medium text-xs sm:text-sm {{ $status != 'Cukup' ? 'text-red-600' : '' }}">
+                      {{ $displayStok }}
+                    </span>
+                    <br>
+                    <small class="text-gray-500 text-xs">
+                      ({{ $displayKonversi }})
+                    </small>
+                  </div>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-xs sm:text-sm text-gray-500">Min. Stok</span>
-                  <span class="font-medium text-xs sm:text-sm">{{ $item->min_stok }} kg</span>
+                  <span class="font-medium text-xs sm:text-sm">
+                    {{ number_format($item->min_stok) }} {{ $satuanKecil }}
+                  </span>
                 </div>
                 <div class="flex justify-between items-center">
-                  <span class="text-xs sm:text-sm text-gray-500">Harga/kg</span>
+                  <span class="text-xs sm:text-sm text-gray-500">Harga/{{ $satuanBesar }}</span>
                   <span class="font-medium text-xs sm:text-sm">Rp {{ number_format($item->harga_satuan, 0, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between items-center">
@@ -109,11 +139,22 @@
                   <span class="font-medium text-xs sm:text-sm">{{ $item->kategori }}</span>
                 </div>
                 <div class="flex justify-between items-center">
+                  <span class="text-xs sm:text-sm text-gray-500">Konversi</span>
+                  <span class="font-medium text-xs sm:text-sm">
+                    1 {{ $satuanBesar }} = {{ $jumlahKonversi }} {{ $satuanKecil }}
+                  </span>
+                </div>
+                <div class="flex justify-between items-center">
                   <span class="text-xs sm:text-sm text-gray-500">Terakhir Update</span>
                   <span class="font-medium text-xs text-gray-500">{{ \Carbon\Carbon::parse($item->tglupdate)->format('d M Y H:i') }}</span>
                 </div>
               </div>
               <div class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 flex flex-wrap gap-2">
+                <button onclick="showDetail({{ $item->id }})" 
+                        class="flex-1 min-w-[70px] px-2 py-1.5 sm:px-3 sm:py-2 bg-purple-100 text-purple-600 rounded-lg text-xs sm:text-sm hover:bg-purple-200 transition-colors flex items-center justify-center">
+                  <i class="fas fa-eye mr-1 sm:mr-2 text-xs"></i>
+                  <span>Detail</span>
+                </button>
                 <button onclick="openEditBahanModal({{ $item->id }})" 
                         class="flex-1 min-w-[70px] px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-100 text-blue-600 rounded-lg text-xs sm:text-sm hover:bg-blue-200 transition-colors flex items-center justify-center">
                   <i class="fas fa-edit mr-1 sm:mr-2 text-xs"></i>
@@ -175,23 +216,69 @@
               <option value="Bahan Pembantu">Bahan Pembantu</option>
             </select>
           </div>
+          <div>
+            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Satuan</label>
+            <select name="id_konversi" id="add_id_konversi" required 
+                    class="w-full px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm sm:text-base"
+                    onchange="updateAddKonversiInfo()">
+              <option value="">Pilih Satuan</option>
+              @foreach($konversi as $konv)
+              <option value="{{ $konv->id }}" 
+                      data-jumlah="{{ $konv->jumlah }}" 
+                      data-satuan-kecil="{{ $konv->satuan_kecil }}"
+                      data-satuan-besar="{{ $konv->satuan_besar }}">
+                {{ $konv->satuan_besar }} ({{ $konv->jumlah }} {{ $konv->satuan_kecil }})
+              </option>
+              @endforeach
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Pilih Satuan Input</label>
+            <div class="flex space-x-4 mb-4">
+              <label class="inline-flex items-center">
+                <input type="radio" name="satuan_input" value="kecil" checked 
+                       class="form-radio text-green-500 focus:ring-green-500"
+                       onchange="updateAddInputLabels()">
+                <span class="ml-2">Satuan Kecil</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="radio" name="satuan_input" value="besar" 
+                       class="form-radio text-green-500 focus:ring-green-500"
+                       onchange="updateAddInputLabels()">
+                <span class="ml-2">Satuan Besar</span>
+              </label>
+            </div>
+          </div>
+          
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Stok Awal (kg)</label>
-              <input type="number" name="stok" value="0" min="0" 
+              <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2" id="add_stok_label">Stok Awal</label>
+              <input type="number" name="stok" id="add_stok" value="0" min="0" step="1" required 
                      class="w-full px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm sm:text-base">
             </div>
             <div>
-              <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Min. Stok (kg)</label>
-              <input type="number" name="min_stok" value="0" min="0" 
+              <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2" id="add_min_stok_label">Min. Stok</label>
+              <input type="number" name="min_stok" id="add_min_stok" value="0" min="0" step="1" required 
                      class="w-full px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm sm:text-base">
             </div>
           </div>
+          
           <div>
-            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Harga Satuan (per kg)</label>
-            <input type="number" name="harga_satuan" value="0" min="0" 
+            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Harga Satuan (per <span id="add_harga_satuan_unit">Satuan Besar</span>)</label>
+            <input type="number" name="harga_satuan" value="0" min="0" required 
                    class="w-full px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm sm:text-base">
           </div>
+          
+          <div id="addKonversiInfo" class="bg-blue-50 p-3 rounded-lg hidden">
+            <p class="text-xs text-blue-700">
+              <i class="fas fa-info-circle mr-1"></i>
+              <span id="addKonversiText">Konversi: 1 Satuan Besar = X Satuan Kecil</span>
+              <br>
+              <span id="addInputInfo">Input dalam: Satuan Kecil</span>
+            </p>
+          </div>
+          
           <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
             <button type="button" onclick="closeAddModal()" 
                     class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base">
@@ -235,20 +322,34 @@
               <option value="Bahan Pembantu">Bahan Pembantu</option>
             </select>
           </div>
+          <div>
+            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Satuan</label>
+            <select name="id_konversi" id="edit_id_konversi" required 
+                    class="w-full px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm sm:text-base">
+              <option value="">Pilih Satuan</option>
+              @foreach($konversi as $konv)
+              <option value="{{ $konv->id }}" 
+                      data-jumlah="{{ $konv->jumlah }}" 
+                      data-satuan-kecil="{{ $konv->satuan_kecil }}">
+                {{ $konv->satuan_besar }} ({{ $konv->jumlah }} {{ $konv->satuan_kecil }})
+              </option>
+              @endforeach
+            </select>
+          </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Stok (kg)</label>
-              <input type="number" name="stok" id="edit_stok" min="0" 
+              <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Stok (dalam satuan kecil)</label>
+              <input type="number" name="stok" id="edit_stok" min="0" step="1" 
                      class="w-full px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm sm:text-base">
             </div>
             <div>
-              <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Min. Stok (kg)</label>
-              <input type="number" name="min_stok" id="edit_min_stok" min="0" 
+              <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Min. Stok (dalam satuan kecil)</label>
+              <input type="number" name="min_stok" id="edit_min_stok" min="0" step="1" 
                      class="w-full px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm sm:text-base">
             </div>
           </div>
           <div>
-            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Harga Satuan (per kg)</label>
+            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Harga Satuan (per satuan besar)</label>
             <input type="number" name="harga_satuan" id="edit_harga_satuan" min="0" 
                    class="w-full px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm sm:text-base">
           </div>
@@ -285,11 +386,45 @@
             <input type="text" id="tambah_stok_nama" readonly 
                    class="w-full px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-sm sm:text-base">
           </div>
+          
           <div>
-            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Jumlah Stok Tambahan (kg)</label>
-            <input type="number" name="tambah_stok" id="tambah_stok_jumlah" min="1" required 
+            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Konversi Satuan</label>
+            <p class="text-sm text-gray-900" id="tambah_stok_konversi"></p>
+          </div>
+          
+          <div>
+            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Pilih Satuan Input</label>
+            <div class="flex space-x-4 mb-4">
+              <label class="inline-flex items-center">
+                <input type="radio" name="satuan_input" value="kecil" checked 
+                       class="form-radio text-green-500 focus:ring-green-500"
+                       onchange="updateTambahInputLabel()">
+                <span class="ml-2">Satuan Kecil</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="radio" name="satuan_input" value="besar" 
+                       class="form-radio text-green-500 focus:ring-green-500"
+                       onchange="updateTambahInputLabel()">
+                <span class="ml-2">Satuan Besar</span>
+              </label>
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2" id="tambah_stok_label">Jumlah Stok Tambahan</label>
+            <input type="number" name="tambah_stok" id="tambah_stok_jumlah" min="1" step="1" required 
                    class="w-full px-3 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm sm:text-base">
           </div>
+          
+          <div id="tambahKonversiInfo" class="bg-blue-50 p-3 rounded-lg">
+            <p class="text-xs text-blue-700">
+              <i class="fas fa-info-circle mr-1"></i>
+              <span id="tambahKonversiText">Konversi: 1 Satuan Besar = X Satuan Kecil</span>
+              <br>
+              <span id="tambahInputInfo">Input dalam: Satuan Kecil</span>
+            </p>
+          </div>
+          
           <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
             <button type="button" onclick="closeTambahStokModal()" 
                     class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base">
@@ -304,474 +439,774 @@
       </div>
     </div>
   </div>
+
+  <!-- Detail Bahan Baku Modal -->
+  <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto">
+    <div class="flex items-start justify-center min-h-screen p-3 sm:p-4">
+      <div class="bg-white rounded-lg w-full max-w-md mx-auto my-8">
+        <div class="flex items-center justify-between p-4 sm:p-6 border-b">
+          <h3 class="text-lg sm:text-xl font-semibold">Detail Bahan Baku</h3>
+          <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-4 sm:p-6 space-y-4">
+          <div>
+            <label class="block text-sm sm:text-base font-medium text-gray-700 mb-2">Nama Bahan Baku</label>
+            <p id="detail_nama" class="text-gray-900 text-lg font-medium"></p>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+              <p id="detail_kategori" class="text-gray-900"></p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <span id="detail_status" class="px-2 py-1 text-xs font-medium rounded-full"></span>
+            </div>
+          </div>
+
+          <div class="border-t pt-4">
+            <h4 class="text-sm font-semibold text-gray-900 mb-3">Informasi Stok</h4>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Stok Saat Ini</span>
+                <div class="text-right">
+                  <p id="detail_stok_kecil" class="font-medium text-gray-900"></p>
+                  <p id="detail_stok_besar" class="text-xs text-gray-500"></p>
+                </div>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Min. Stok</span>
+                <p id="detail_min_stok" class="font-medium text-gray-900"></p>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Harga Satuan</span>
+                <p id="detail_harga_satuan" class="font-medium text-gray-900"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t pt-4">
+            <h4 class="text-sm font-semibold text-gray-900 mb-3">Informasi Konversi</h4>
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Satuan Besar</span>
+                <p id="detail_satuan_besar" class="font-medium text-gray-900"></p>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Satuan Kecil</span>
+                <p id="detail_satuan_kecil" class="font-medium text-gray-900"></p>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Konversi</span>
+                <p id="detail_konversi" class="font-medium text-gray-900"></p>
+              </div>
+              <div class="bg-blue-50 p-3 rounded-lg">
+                <p id="detail_konversi_info" class="text-xs text-blue-700"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t pt-4">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Terakhir Update</span>
+              <p id="detail_tglupdate" class="font-medium text-gray-900 text-sm"></p>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 p-4 sm:p-6 pt-0">
+          <button type="button" onclick="closeDetailModal()" 
+                  class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base">
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 @endsection
 
 @section('js')
 <script>
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     let isSubmitting = false;
+    let currentSatuanData = {
+        besar: '',
+        kecil: '',
+        jumlah: 1
+    };
 
-    // Toggle sidebar
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('sidebarOverlay');
-      
-      sidebarOpen = !sidebarOpen;
-      
-      if (sidebarOpen) {
-        sidebar.classList.remove('-translate-x-full');
-        overlay.classList.remove('hidden');
-      } else {
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
-      }
+    // Fungsi untuk update info konversi di modal tambah
+    function updateAddKonversiInfo() {
+        const selectElement = document.getElementById('add_id_konversi');
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        
+        if (selectedOption && selectedOption.value) {
+            const satuanBesar = selectedOption.text.split(' (')[0];
+            const jumlah = selectedOption.getAttribute('data-jumlah');
+            const satuanKecil = selectedOption.getAttribute('data-satuan-kecil');
+            
+            // Simpan data satuan
+            currentSatuanData = {
+                besar: satuanBesar,
+                kecil: satuanKecil,
+                jumlah: parseInt(jumlah) || 1
+            };
+            
+            // Update info konversi
+            document.getElementById('addKonversiText').textContent = 
+                `Konversi: 1 ${satuanBesar} = ${jumlah} ${satuanKecil}`;
+            document.getElementById('add_harga_satuan_unit').textContent = satuanBesar;
+            
+            // Update label input berdasarkan pilihan satuan
+            updateAddInputLabels();
+            
+            document.getElementById('addKonversiInfo').classList.remove('hidden');
+        } else {
+            document.getElementById('addKonversiInfo').classList.add('hidden');
+        }
+    }
+
+    // Fungsi untuk update label input di modal tambah
+    function updateAddInputLabels() {
+        const satuanInput = document.querySelector('input[name="satuan_input"]:checked');
+        if (!satuanInput) return;
+        
+        const satuanValue = satuanInput.value;
+        
+        if (satuanValue === 'kecil') {
+            document.getElementById('add_stok_label').textContent = `Stok Awal (${currentSatuanData.kecil})`;
+            document.getElementById('add_min_stok_label').textContent = `Min. Stok (${currentSatuanData.kecil})`;
+            document.getElementById('addInputInfo').textContent = `Input dalam: ${currentSatuanData.kecil}`;
+        } else {
+            document.getElementById('add_stok_label').textContent = `Stok Awal (${currentSatuanData.besar})`;
+            document.getElementById('add_min_stok_label').textContent = `Min. Stok (${currentSatuanData.besar})`;
+            document.getElementById('addInputInfo').textContent = `Input dalam: ${currentSatuanData.besar}`;
+        }
+    }
+
+    // Fungsi untuk update label input di modal tambah stok
+    function updateTambahInputLabel() {
+        const satuanInput = document.querySelector('#tambahStokModal input[name="satuan_input"]:checked');
+        if (!satuanInput) return;
+        
+        const satuanValue = satuanInput.value;
+        
+        if (satuanValue === 'kecil') {
+            document.getElementById('tambah_stok_label').textContent = `Jumlah Stok Tambahan (${currentSatuanData.kecil})`;
+            document.getElementById('tambahInputInfo').textContent = `Input dalam: ${currentSatuanData.kecil}`;
+        } else {
+            document.getElementById('tambah_stok_label').textContent = `Jumlah Stok Tambahan (${currentSatuanData.besar})`;
+            document.getElementById('tambahInputInfo').textContent = `Input dalam: ${currentSatuanData.besar}`;
+        }
     }
 
     // Modal functions
     function openAddBahanModal() {
-      document.getElementById('addModal').classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
+        document.getElementById('addModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Reset form
+        document.getElementById('addBahanForm').reset();
+        
+        // Set default radio button
+        document.querySelector('#addModal input[name="satuan_input"][value="kecil"]').checked = true;
+        
+        // Update konversi info
+        updateAddKonversiInfo();
     }
 
     function closeAddModal() {
-      document.getElementById('addModal').classList.add('hidden');
-      document.body.style.overflow = 'auto';
-      document.getElementById('addBahanForm').reset();
+        document.getElementById('addModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
     }
 
     function openEditBahanModal(bahanId) {
-      showLoading('Memuat data bahan baku...');
-      
-      fetch(`/management/bahanbaku/${bahanId}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Bahan baku tidak ditemukan');
-          }
-          return response.json();
-        })
-        .then(data => {
-          hideLoading();
-          if (data.error) {
-            throw new Error(data.error);
-          }
-          
-          document.getElementById('edit_id').value = data.id;
-          document.getElementById('edit_nama').value = data.nama;
-          document.getElementById('edit_stok').value = data.stok;
-          document.getElementById('edit_min_stok').value = data.min_stok;
-          document.getElementById('edit_harga_satuan').value = data.harga_satuan;
-          document.getElementById('edit_kategori').value = data.kategori;
-          
-          document.getElementById('editModal').classList.remove('hidden');
-          document.body.style.overflow = 'hidden';
-        })
-        .catch(error => {
-          hideLoading();
-          console.error('Error:', error);
-          showError(error.message || 'Gagal memuat data bahan baku');
-        });
+        showLoading('Memuat data bahan baku...');
+        
+        fetch(`/management/bahanbaku/${bahanId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Bahan baku tidak ditemukan');
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                document.getElementById('edit_id').value = data.id;
+                document.getElementById('edit_nama').value = data.nama;
+                document.getElementById('edit_stok').value = data.stok;
+                document.getElementById('edit_min_stok').value = data.min_stok;
+                document.getElementById('edit_harga_satuan').value = data.harga_satuan;
+                document.getElementById('edit_kategori').value = data.kategori;
+                document.getElementById('edit_id_konversi').value = data.id_konversi;
+                
+                document.getElementById('editModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                showError(error.message || 'Gagal memuat data bahan baku');
+            });
     }
 
     function closeEditModal() {
-      document.getElementById('editModal').classList.add('hidden');
-      document.body.style.overflow = 'auto';
+        document.getElementById('editModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    function showDetail(bahanId) {
+        showLoading('Memuat detail bahan baku...');
+        
+        fetch(`/management/bahanbaku/${bahanId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Bahan baku tidak ditemukan');
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Hitung perhitungan konversi
+                const stokKecil = data.stok;
+                const satuanKecil = data.konversi ? data.konversi.satuan_kecil : 'kg';
+                const satuanBesar = data.konversi ? data.konversi.satuan_besar : 'kg';
+                const jumlahKonversi = data.konversi ? data.konversi.jumlah : 1;
+                
+                // Hitung stok dalam satuan besar
+                const stokBesar = Math.floor(stokKecil / jumlahKonversi);
+                const sisaStok = stokKecil % jumlahKonversi;
+                
+                let displayStokBesar = '';
+                if (sisaStok > 0) {
+                    displayStokBesar = `${stokBesar} ${satuanBesar} + ${sisaStok} ${satuanKecil}`;
+                } else {
+                    displayStokBesar = `${stokBesar} ${satuanBesar}`;
+                }
+                
+                // Hitung status
+                let status = 'Cukup';
+                let statusClass = 'bg-green-100 text-green-600';
+                if (data.stok == 0) {
+                    status = 'Habis';
+                    statusClass = 'bg-red-200 text-red-700';
+                } else if (data.stok <= data.min_stok) {
+                    status = 'Rendah';
+                    statusClass = 'bg-red-100 text-red-600';
+                }
+                
+                // Isi data ke modal detail
+                document.getElementById('detail_nama').textContent = data.nama;
+                document.getElementById('detail_kategori').textContent = data.kategori;
+                document.getElementById('detail_status').textContent = status;
+                document.getElementById('detail_status').className = `px-2 py-1 text-xs font-medium rounded-full ${statusClass}`;
+                
+                document.getElementById('detail_stok_kecil').textContent = `${stokKecil} ${satuanKecil}`;
+                document.getElementById('detail_stok_besar').textContent = `(${displayStokBesar})`;
+                document.getElementById('detail_min_stok').textContent = `${data.min_stok} ${satuanKecil}`;
+                document.getElementById('detail_harga_satuan').textContent = `Rp ${formatRupiah(data.harga_satuan)}`;
+                
+                document.getElementById('detail_satuan_besar').textContent = satuanBesar;
+                document.getElementById('detail_satuan_kecil').textContent = satuanKecil;
+                document.getElementById('detail_konversi').textContent = `1 ${satuanBesar} = ${jumlahKonversi} ${satuanKecil}`;
+                document.getElementById('detail_konversi_info').textContent = `1 ${satuanBesar} = ${jumlahKonversi} ${satuanKecil}`;
+                
+                document.getElementById('detail_tglupdate').textContent = new Date(data.tglupdate).toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                document.getElementById('detailModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                showError(error.message || 'Gagal memuat detail bahan baku');
+            });
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detailModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
     }
 
     function tambahStok(bahanId) {
-      showLoading('Memuat data bahan baku...');
-      
-      fetch(`/management/bahanbaku/${bahanId}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Bahan baku tidak ditemukan');
-          }
-          return response.json();
-        })
-        .then(data => {
-          hideLoading();
-          if (data.error) {
-            throw new Error(data.error);
-          }
-          
-          document.getElementById('tambah_stok_id').value = data.id;
-          document.getElementById('tambah_stok_nama').value = data.nama;
-          document.getElementById('tambah_stok_jumlah').value = '';
-          document.getElementById('tambahStokModal').classList.remove('hidden');
-          document.body.style.overflow = 'hidden';
-          
-          setTimeout(() => {
-            document.getElementById('tambah_stok_jumlah').focus();
-          }, 100);
-        })
-        .catch(error => {
-          hideLoading();
-          console.error('Error:', error);
-          showError(error.message || 'Gagal memuat data bahan baku');
-        });
+        showLoading('Memuat data bahan baku...');
+        
+        fetch(`/management/bahanbaku/${bahanId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Bahan baku tidak ditemukan');
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                document.getElementById('tambah_stok_id').value = data.id;
+                document.getElementById('tambah_stok_nama').value = data.nama;
+                
+                const satuanKecil = data.konversi ? data.konversi.satuan_kecil : 'kg';
+                const satuanBesar = data.konversi ? data.konversi.satuan_besar : 'kg';
+                const jumlahKonversi = data.konversi ? data.konversi.jumlah : 1;
+                
+                // Simpan data satuan untuk modal tambah stok
+                currentSatuanData = {
+                    besar: satuanBesar,
+                    kecil: satuanKecil,
+                    jumlah: parseInt(jumlahKonversi) || 1
+                };
+                
+                // Update info konversi
+                document.getElementById('tambah_stok_konversi').textContent = 
+                    `1 ${satuanBesar} = ${jumlahKonversi} ${satuanKecil}`;
+                document.getElementById('tambahKonversiText').textContent = 
+                    `Konversi: 1 ${satuanBesar} = ${jumlahKonversi} ${satuanKecil}`;
+                
+                // Reset radio button ke kecil
+                const radioKecil = document.querySelector('#tambahStokModal input[name="satuan_input"][value="kecil"]');
+                const radioBesar = document.querySelector('#tambahStokModal input[name="satuan_input"][value="besar"]');
+                if (radioKecil) radioKecil.checked = true;
+                if (radioBesar) radioBesar.checked = false;
+                
+                // Update label
+                updateTambahInputLabel();
+                
+                // Reset input value
+                document.getElementById('tambah_stok_jumlah').value = '';
+                
+                // Tampilkan modal
+                document.getElementById('tambahStokModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                
+                // Fokus ke input
+                setTimeout(() => {
+                    document.getElementById('tambah_stok_jumlah').focus();
+                }, 100);
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                showError(error.message || 'Gagal memuat data bahan baku');
+            });
     }
 
     function closeTambahStokModal() {
-      document.getElementById('tambahStokModal').classList.add('hidden');
-      document.body.style.overflow = 'auto';
+        document.getElementById('tambahStokModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
     }
 
     // Delete bahan baku
     function deleteBahan(bahanId) {
-      Swal.fire({
-        title: 'Apakah Anda yakin?',
-        text: "Bahan baku yang dihapus tidak dapat dikembalikan!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#EF4444',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Ya, hapus!',
-        cancelButtonText: 'Batal'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          showLoading('Menghapus bahan baku...');
-          
-          fetch(`/management/bahanbaku/${bahanId}`, {
-            method: 'DELETE',
-            headers: {
-              'X-CSRF-TOKEN': csrfToken,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Bahan baku yang dihapus tidak dapat dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Ya, hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showLoading('Menghapus bahan baku...');
+                
+                fetch(`/management/bahanbaku/${bahanId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    hideLoading();
+                    if (data.success) {
+                        Swal.fire('Terhapus!', data.message || 'Bahan baku berhasil dihapus.', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.message || 'Gagal menghapus bahan baku', 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error:', error);
+                    Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+                });
             }
-          })
-          .then(response => {
-            if (!response.ok) {
-              return response.json().then(err => { throw new Error(err.message || 'Network error'); });
-            }
-            return response.json();
-          })
-          .then(data => {
-            hideLoading();
-            if (data.success) {
-              Swal.fire('Terhapus!', data.message || 'Bahan baku berhasil dihapus.', 'success');
-              location.reload();
-            } else {
-              Swal.fire('Error', data.message || 'Gagal menghapus bahan baku', 'error');
-            }
-          })
-          .catch(error => {
-            hideLoading();
-            console.error('Error:', error);
-            Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
-          });
-        }
-      });
+        });
     }
 
     // Form submission handlers
     document.getElementById('addBahanForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      if (isSubmitting) return;
-      isSubmitting = true;
-      
-      const formData = new FormData(this);
-      const data = Object.fromEntries(formData.entries());
-      
-      data.stok = parseInt(data.stok);
-      data.min_stok = parseInt(data.min_stok);
-      data.harga_satuan = parseInt(data.harga_satuan);
-      
-      showLoading('Menyimpan bahan baku...');
-      
-      fetch('/management/bahanbaku', {
-        method: 'POST',
-        headers: {
-          'X-CSRF-TOKEN': csrfToken,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(data)
-      })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
-        }
-        return response.json();
-      })
-      .then(data => {
-        hideLoading();
-        isSubmitting = false;
-        if (data.success) {
-          Swal.fire('Sukses', data.message || 'Bahan baku berhasil ditambahkan', 'success');
-          closeAddModal();
-          location.reload();
-        } else {
-          Swal.fire('Error', data.message || 'Gagal menambahkan bahan baku', 'error');
-        }
-      })
-      .catch(error => {
-        hideLoading();
-        isSubmitting = false;
-        console.error('Error:', error);
-        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
-      });
+        e.preventDefault();
+        if (isSubmitting) return;
+        isSubmitting = true;
+        
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        data.stok = parseInt(data.stok) || 0;
+        data.min_stok = parseInt(data.min_stok) || 0;
+        data.harga_satuan = parseInt(data.harga_satuan) || 0;
+        data.id_konversi = parseInt(data.id_konversi);
+        // satuan_input sudah ada dari radio button
+        
+        showLoading('Menyimpan bahan baku...');
+        
+        fetch('/management/bahanbaku', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoading();
+            isSubmitting = false;
+            if (data.success) {
+                Swal.fire({
+                    title: 'Sukses!',
+                    text: data.message || 'Bahan baku berhasil ditambahkan',
+                    icon: 'success',
+                    confirmButtonColor: '#10B981',
+                    confirmButtonText: 'OK'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        closeAddModal();
+                        location.reload();
+                    }
+                });
+            } else {
+                Swal.fire('Error', data.message || 'Gagal menambahkan bahan baku', 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            isSubmitting = false;
+            console.error('Error:', error);
+            Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+        });
     });
 
     document.getElementById('editBahanForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      if (isSubmitting) return;
-      isSubmitting = true;
-      
-      const bahanId = document.getElementById('edit_id').value;
-      const formData = new FormData(this);
-      const data = Object.fromEntries(formData.entries());
-      
-      delete data._token;
-      delete data._method;
-      
-      data.stok = parseInt(data.stok);
-      data.min_stok = parseInt(data.min_stok);
-      data.harga_satuan = parseInt(data.harga_satuan);
-      
-      showLoading('Mengupdate bahan baku...');
-      
-      fetch(`/management/bahanbaku/${bahanId}`, {
-        method: 'POST',
-        headers: {
-          'X-CSRF-TOKEN': csrfToken,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-HTTP-Method-Override': 'PUT'
-        },
-        body: JSON.stringify(data)
-      })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
-        }
-        return response.json();
-      })
-      .then(data => {
-        hideLoading();
-        isSubmitting = false;
-        if (data.success) {
-          Swal.fire('Sukses', data.message || 'Bahan baku berhasil diupdate', 'success');
-          closeEditModal();
-          location.reload();
-        } else {
-          Swal.fire('Error', data.message || 'Gagal mengupdate bahan baku', 'error');
-        }
-      })
-      .catch(error => {
-        hideLoading();
-        isSubmitting = false;
-        console.error('Error:', error);
-        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
-      });
+        e.preventDefault();
+        if (isSubmitting) return;
+        isSubmitting = true;
+        
+        const bahanId = document.getElementById('edit_id').value;
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        delete data._token;
+        delete data._method;
+        
+        data.stok = parseInt(data.stok) || 0;
+        data.min_stok = parseInt(data.min_stok) || 0;
+        data.harga_satuan = parseInt(data.harga_satuan) || 0;
+        data.id_konversi = parseInt(data.id_konversi);
+        
+        showLoading('Mengupdate bahan baku...');
+        
+        fetch(`/management/bahanbaku/${bahanId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-HTTP-Method-Override': 'PUT'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoading();
+            isSubmitting = false;
+            if (data.success) {
+                Swal.fire('Sukses', data.message || 'Bahan baku berhasil diupdate', 'success');
+                closeEditModal();
+                location.reload();
+            } else {
+                Swal.fire('Error', data.message || 'Gagal mengupdate bahan baku', 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            isSubmitting = false;
+            console.error('Error:', error);
+            Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+        });
     });
 
     // Form tambah stok
     document.getElementById('tambahStokForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      if (isSubmitting) return;
-      isSubmitting = true;
-      
-      const bahanId = document.getElementById('tambah_stok_id').value;
-      const tambahStok = parseInt(document.getElementById('tambah_stok_jumlah').value);
-      
-      showLoading('Menambahkan stok...');
-      
-      fetch(`/management/bahanbaku/${bahanId}`, {
-        method: 'POST',
-        headers: {
-          'X-CSRF-TOKEN': csrfToken,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-HTTP-Method-Override': 'PUT'
-        },
-        body: JSON.stringify({ 
-          tambah_stok: tambahStok 
+        e.preventDefault();
+        if (isSubmitting) return;
+        isSubmitting = true;
+        
+        const bahanId = document.getElementById('tambah_stok_id').value;
+        const tambahStokValue = parseInt(document.getElementById('tambah_stok_jumlah').value) || 0;
+        const satuanInput = document.querySelector('#tambahStokModal input[name="satuan_input"]:checked').value;
+        
+        if (tambahStokValue <= 0) {
+            showError('Jumlah stok tambahan harus lebih dari 0');
+            isSubmitting = false;
+            return;
+        }
+        
+        showLoading('Menambahkan stok...');
+        
+        fetch(`/management/bahanbaku/${bahanId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-HTTP-Method-Override': 'PUT'
+            },
+            body: JSON.stringify({ 
+                tambah_stok: tambahStokValue,
+                satuan_input: satuanInput
+            })
         })
-      })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(err => { throw new Error(err.message || 'Network error'); });
-        }
-        return response.json();
-      })
-      .then(data => {
-        hideLoading();
-        isSubmitting = false;
-        if (data.success) {
-          Swal.fire('Sukses', data.message || 'Stok berhasil ditambahkan', 'success');
-          closeTambahStokModal();
-          location.reload();
-        } else {
-          Swal.fire('Error', data.message || 'Gagal menambah stok', 'error');
-        }
-      })
-      .catch(error => {
-        hideLoading();
-        isSubmitting = false;
-        console.error('Error:', error);
-        Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
-      });
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || 'Network error'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoading();
+            isSubmitting = false;
+            if (data.success) {
+                Swal.fire({
+                    title: 'Sukses!',
+                    text: data.message || 'Stok berhasil ditambahkan',
+                    icon: 'success',
+                    confirmButtonColor: '#10B981',
+                    confirmButtonText: 'OK'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        closeTambahStokModal();
+                        location.reload();
+                    }
+                });
+            } else {
+                Swal.fire('Error', data.message || 'Gagal menambah stok', 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            isSubmitting = false;
+            console.error('Error:', error);
+            Swal.fire('Error', error.message || 'Terjadi kesalahan', 'error');
+        });
     });
 
     // Filter data function dengan debounce
     let filterTimeout;
     function filterData() {
-      clearTimeout(filterTimeout);
-      filterTimeout = setTimeout(() => {
-        performFilter();
-      }, 300);
+        clearTimeout(filterTimeout);
+        filterTimeout = setTimeout(() => {
+            performFilter();
+        }, 300);
     }
 
     function performFilter() {
-      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-      const categoryFilter = document.getElementById('categoryFilter').value;
-      const statusFilter = document.getElementById('statusFilter').value;
-      const items = document.querySelectorAll('.bahan-item');
-      let visibleCount = 0;
-      let lowStockCount = 0;
-      
-      items.forEach(item => {
-        const nama = item.getAttribute('data-nama');
-        const kategori = item.getAttribute('data-kategori');
-        const status = item.getAttribute('data-status');
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const categoryFilter = document.getElementById('categoryFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+        const items = document.querySelectorAll('.bahan-item');
+        let visibleCount = 0;
+        let lowStockCount = 0;
         
-        const matchesSearch = nama.includes(searchTerm);
-        const matchesCategory = !categoryFilter || kategori === categoryFilter;
-        const matchesStatus = !statusFilter || status === statusFilter;
+        items.forEach(item => {
+            const nama = item.getAttribute('data-nama');
+            const kategori = item.getAttribute('data-kategori');
+            const status = item.getAttribute('data-status');
+            
+            const matchesSearch = nama.includes(searchTerm);
+            const matchesCategory = !categoryFilter || kategori === categoryFilter;
+            const matchesStatus = !statusFilter || status === statusFilter;
+            
+            if (matchesSearch && matchesCategory && matchesStatus) {
+                item.style.display = 'block';
+                visibleCount++;
+                if (status === 'Rendah' || status === 'Habis') {
+                    lowStockCount++;
+                }
+            } else {
+                item.style.display = 'none';
+            }
+        });
         
-        if (matchesSearch && matchesCategory && matchesStatus) {
-          item.style.display = 'block';
-          visibleCount++;
-          if (status === 'Rendah' || status === 'Habis') {
-            lowStockCount++;
-          }
+        // Show/hide no data message
+        const noDataMessage = document.getElementById('noDataMessage');
+        if (visibleCount === 0) {
+            noDataMessage.classList.remove('hidden');
         } else {
-          item.style.display = 'none';
+            noDataMessage.classList.add('hidden');
         }
-      });
-      
-      // Show/hide no data message
-      const noDataMessage = document.getElementById('noDataMessage');
-      if (visibleCount === 0) {
-        noDataMessage.classList.remove('hidden');
-      } else {
-        noDataMessage.classList.add('hidden');
-      }
-      
-      // Update low stock alert
-      updateLowStockAlert(lowStockCount);
+        
+        // Update low stock alert
+        updateLowStockAlert(lowStockCount);
     }
 
     // Update low stock alert
     function updateLowStockAlert(lowStockCount) {
-      const alertElement = document.getElementById('lowStockAlert');
-      const alertText = document.getElementById('alertText');
-      
-      if (lowStockCount > 0) {
-        alertText.textContent = `Peringatan: ${lowStockCount} bahan baku memiliki stok rendah atau habis!`;
-        alertElement.classList.remove('hidden');
-      } else {
-        alertElement.classList.add('hidden');
-      }
+        const alertElement = document.getElementById('lowStockAlert');
+        const alertText = document.getElementById('alertText');
+        
+        if (lowStockCount > 0) {
+            alertText.textContent = `Peringatan: ${lowStockCount} bahan baku memiliki stok rendah atau habis!`;
+            alertElement.classList.remove('hidden');
+        } else {
+            alertElement.classList.add('hidden');
+        }
     }
 
     // Utility functions
     function showLoading(message = 'Memuat...') {
-      Swal.fire({
-        title: message,
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        didOpen: () => {
-          Swal.showLoading();
-        }
-      });
+        Swal.fire({
+            title: message,
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
     }
 
     function hideLoading() {
-      Swal.close();
+        Swal.close();
     }
 
     function showError(message) {
-      Swal.fire({
-        title: 'Error!',
-        text: message,
-        icon: 'error',
-        confirmButtonColor: '#EF4444',
-        confirmButtonText: 'OK'
-      });
+        Swal.fire({
+            title: 'Error!',
+            text: message,
+            icon: 'error',
+            confirmButtonColor: '#EF4444',
+            confirmButtonText: 'OK'
+        });
     }
 
-    // Initialize low stock alert on page load
+    function formatRupiah(angka) {
+        if (!angka) return '0';
+        return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
-      let initialLowStockCount = 0;
-      document.querySelectorAll('.bahan-item').forEach(item => {
-        const status = item.getAttribute('data-status');
-        if (status === 'Rendah' || status === 'Habis') {
-          initialLowStockCount++;
-        }
-      });
-      updateLowStockAlert(initialLowStockCount);
-      
-      // Tambahkan event listener untuk ESC key
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-          closeAddModal();
-          closeEditModal();
-          closeTambahStokModal();
-        }
-      });
-      
-      // Close modal when clicking outside
-      window.addEventListener('click', function(e) {
-        const addModal = document.getElementById('addModal');
-        const editModal = document.getElementById('editModal');
-        const tambahStokModal = document.getElementById('tambahStokModal');
+        let initialLowStockCount = 0;
+        document.querySelectorAll('.bahan-item').forEach(item => {
+            const status = item.getAttribute('data-status');
+            if (status === 'Rendah' || status === 'Habis') {
+                initialLowStockCount++;
+            }
+        });
+        updateLowStockAlert(initialLowStockCount);
         
-        if (e.target === addModal) closeAddModal();
-        if (e.target === editModal) closeEditModal();
-        if (e.target === tambahStokModal) closeTambahStokModal();
-      });
-      
-      // Handle window resize untuk responsif
-      function handleResize() {
-        if (window.innerWidth >= 1024) {
-          const sidebar = document.getElementById('sidebar');
-          const overlay = document.getElementById('sidebarOverlay');
-          sidebar.classList.add('-translate-x-full');
-          overlay.classList.add('hidden');
-          sidebarOpen = false;
+        // Tambahkan event listener untuk ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeAddModal();
+                closeEditModal();
+                closeTambahStokModal();
+                closeDetailModal();
+            }
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const addModal = document.getElementById('addModal');
+            const editModal = document.getElementById('editModal');
+            const tambahStokModal = document.getElementById('tambahStokModal');
+            const detailModal = document.getElementById('detailModal');
+            
+            if (e.target === addModal) closeAddModal();
+            if (e.target === editModal) closeEditModal();
+            if (e.target === tambahStokModal) closeTambahStokModal();
+            if (e.target === detailModal) closeDetailModal();
+        });
+        
+        // Handle window resize untuk responsif
+        function handleResize() {
+            if (window.innerWidth >= 1024) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                sidebarOpen = false;
+            }
         }
-      }
-      
-      // Initial check
-      handleResize();
-      window.addEventListener('resize', handleResize);
+        
+        // Initial check
+        handleResize();
+        window.addEventListener('resize', handleResize);
     });
 </script>
 
 <style>
-  /* Custom styles untuk responsifitas tambahan */
-  @media (max-width: 640px) {
-    .xs\:grid-cols-2 {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* Custom styles untuk responsifitas tambahan */
+    @media (max-width: 640px) {
+        .xs\:grid-cols-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
-  }
-  
-  @media (max-width: 480px) {
-    .xs\:grid-cols-2 {
-      grid-template-columns: repeat(1, minmax(0, 1fr));
+    
+    @media (max-width: 480px) {
+        .xs\:grid-cols-2 {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
     }
-  }
-  
-  /* Mencegah overflow pada mobile */
-  .truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  
-  /* Better modal scrolling on mobile */
-  .overflow-y-auto {
-    -webkit-overflow-scrolling: touch;
-  }
+    
+    /* Mencegah overflow pada mobile */
+    .truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Better modal scrolling on mobile */
+    .overflow-y-auto {
+        -webkit-overflow-scrolling: touch;
+    }
 </style>
 @endsection

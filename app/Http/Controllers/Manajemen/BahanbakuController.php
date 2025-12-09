@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Manajemen;
 
 use App\Http\Controllers\Controller;
 use App\Models\BahanBaku;
+use App\Models\Konversi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -14,9 +15,10 @@ class BahanbakuController extends Controller
      */
     public function index()
     {
-        $bahan_baku = BahanBaku::all();
+        $bahan_baku = BahanBaku::with('konversi')->get();
+        $konversi = Konversi::all();
 
-        return view('manajemen.bahanbaku.index', compact('bahan_baku'));
+        return view('manajemen.bahanbaku.index', compact('bahan_baku', 'konversi'));
     }
 
     /**
@@ -39,22 +41,57 @@ class BahanbakuController extends Controller
             'min_stok' => 'required|integer|min:0',
             'kategori' => 'required|in:Bahan Utama,Bahan Pembantu',
             'harga_satuan' => 'required|integer|min:0',
+            'id_konversi' => 'required|exists:konversi,id',
+            'satuan_input' => 'required|in:kecil,besar',
         ]);
 
         try {
-            // Create dengan fillable
+            // Ambil data konversi
+            $konversi = Konversi::find($validated['id_konversi']);
+            
+            if (!$konversi) {
+                throw new \Exception('Data konversi tidak ditemukan');
+            }
+            
+            // Konversi stok berdasarkan pilihan satuan input
+            if ($validated['satuan_input'] == 'besar') {
+                // Jika input dalam satuan besar, konversi ke satuan kecil
+                $stokDalamSatuanKecil = $validated['stok'] * $konversi->jumlah;
+                $minStokDalamSatuanKecil = $validated['min_stok'] * $konversi->jumlah;
+                
+                Log::info('Create Bahan - Input besar: ' . 
+                    "Stok: {$validated['stok']} {$konversi->satuan_besar} = " .
+                    "{$stokDalamSatuanKecil} {$konversi->satuan_kecil}");
+            } else {
+                // Jika input dalam satuan kecil, simpan langsung
+                $stokDalamSatuanKecil = $validated['stok'];
+                $minStokDalamSatuanKecil = $validated['min_stok'];
+                
+                Log::info('Create Bahan - Input kecil: ' . 
+                    "Stok: {$validated['stok']} {$konversi->satuan_kecil}");
+            }
+
+            // Create bahan baku
             BahanBaku::create([
                 'nama' => $validated['nama'],
-                'stok' => $validated['stok'],
-                'min_stok' => $validated['min_stok'],
+                'stok' => $stokDalamSatuanKecil, // Simpan dalam satuan kecil
+                'min_stok' => $minStokDalamSatuanKecil, // Simpan dalam satuan kecil
                 'kategori' => $validated['kategori'],
-                'harga_satuan' => $validated['harga_satuan'],
+                'harga_satuan' => $validated['harga_satuan'], // Harga per satuan besar
+                'id_konversi' => $validated['id_konversi'],
                 'tglupdate' => now(),
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Bahan baku berhasil ditambahkan',
+                'data' => [
+                    'stok_kecil' => $stokDalamSatuanKecil,
+                    'stok_besar' => $validated['satuan_input'] == 'besar' ? $validated['stok'] : floor($stokDalamSatuanKecil / $konversi->jumlah),
+                    'satuan_kecil' => $konversi->satuan_kecil,
+                    'satuan_besar' => $konversi->satuan_besar,
+                    'konversi' => $konversi->jumlah
+                ]
             ], 201);
 
         } catch (\Exception $e) {
@@ -73,7 +110,7 @@ class BahanbakuController extends Controller
     public function show($id)
     {
         try {
-            $bahan_baku = BahanBaku::findOrFail($id);
+            $bahan_baku = BahanBaku::with('konversi')->findOrFail($id);
 
             return response()->json($bahan_baku);
         } catch (\Exception $e) {
@@ -110,17 +147,20 @@ class BahanbakuController extends Controller
             'min_stok' => 'required|integer|min:0',
             'kategori' => 'required|in:Bahan Utama,Bahan Pembantu',
             'harga_satuan' => 'required|integer|min:0',
+            'id_konversi' => 'required|exists:konversi,id',
         ]);
 
         try {
             $bahan_baku = BahanBaku::findOrFail($id);
-
+            
+            // Update dengan nilai stok asli (dalam satuan kecil)
             $bahan_baku->update([
                 'nama' => $validated['nama'],
-                'stok' => $validated['stok'],
-                'min_stok' => $validated['min_stok'],
+                'stok' => $validated['stok'], // Simpan dalam satuan kecil yang diinput user
+                'min_stok' => $validated['min_stok'], // Simpan dalam satuan kecil yang diinput user
                 'kategori' => $validated['kategori'],
                 'harga_satuan' => $validated['harga_satuan'],
+                'id_konversi' => $validated['id_konversi'],
                 'tglupdate' => now(),
             ]);
 
@@ -178,7 +218,7 @@ class BahanbakuController extends Controller
     public function apiBahanBaku()
     {
         try {
-            $bahan_baku = BahanBaku::select('id', 'nama')->get();
+            $bahan_baku = BahanBaku::with('konversi')->select('id', 'nama', 'id_konversi')->get();
 
             return response()->json($bahan_baku);
         } catch (\Exception $e) {
@@ -197,19 +237,61 @@ class BahanbakuController extends Controller
     {
         $validated = $request->validate([
             'tambah_stok' => 'required|integer|min:1',
+            'satuan_input' => 'required|in:kecil,besar',
         ]);
 
         try {
             $bahan_baku = BahanBaku::findOrFail($id);
+            $konversi = Konversi::find($bahan_baku->id_konversi);
 
+            if (!$konversi) {
+                throw new \Exception('Data konversi tidak ditemukan');
+            }
+
+            // Konversi stok tambahan berdasarkan pilihan satuan input
+            $tambahStokDalamSatuanKecil = 0;
+            if ($validated['satuan_input'] == 'besar') {
+                // Jika input dalam satuan besar, konversi ke satuan kecil
+                $tambahStokDalamSatuanKecil = $validated['tambah_stok'] * $konversi->jumlah;
+                $logInfo = "Menambahkan {$validated['tambah_stok']} {$konversi->satuan_besar} = " . 
+                          "{$tambahStokDalamSatuanKecil} {$konversi->satuan_kecil}";
+            } else {
+                // Jika input dalam satuan kecil, langsung tambahkan
+                $tambahStokDalamSatuanKecil = $validated['tambah_stok'];
+                $logInfo = "Menambahkan {$validated['tambah_stok']} {$konversi->satuan_kecil}";
+            }
+
+            Log::info('Tambah Stok: ' . $logInfo . ' untuk bahan ' . $bahan_baku->nama);
+
+            // Hitung stok baru
+            $stokBaru = $bahan_baku->stok + $tambahStokDalamSatuanKecil;
+            
             $bahan_baku->update([
-                'stok' => $bahan_baku->stok + $validated['tambah_stok'],
+                'stok' => $stokBaru,
                 'tglupdate' => now(),
             ]);
 
+            // Hitung perhitungan untuk response
+            $stokDalamSatuanBesar = floor($stokBaru / $konversi->jumlah);
+            $sisaStok = $stokBaru % $konversi->jumlah;
+
+            $displayStok = "{$stokBaru} {$konversi->satuan_kecil}";
+            if ($sisaStok > 0) {
+                $displayKonversi = "{$stokDalamSatuanBesar} {$konversi->satuan_besar} + {$sisaStok} {$konversi->satuan_kecil}";
+            } else {
+                $displayKonversi = "{$stokDalamSatuanBesar} {$konversi->satuan_besar}";
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Stok berhasil ditambahkan',
+                'message' => "Stok berhasil ditambahkan. Stok sekarang: {$displayStok} ({$displayKonversi})",
+                'data' => [
+                    'stok_baru' => $stokBaru,
+                    'stok_display' => $displayStok,
+                    'konversi_display' => $displayKonversi,
+                    'tambahan_kecil' => $tambahStokDalamSatuanKecil,
+                    'tambahan_besar' => $validated['satuan_input'] == 'besar' ? $validated['tambah_stok'] : round($tambahStokDalamSatuanKecil / $konversi->jumlah, 2)
+                ]
             ]);
 
         } catch (\Exception $e) {
