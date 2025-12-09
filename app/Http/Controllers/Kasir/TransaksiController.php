@@ -39,10 +39,10 @@ class TransaksiController extends Controller
     {
         try {
             // Cek apakah user sudah login
-            if (!Auth::check()) {
+            if (! Auth::check()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'User belum login. Silakan login terlebih dahulu.'
+                    'message' => 'User belum login. Silakan login terlebih dahulu.',
                 ], 401);
             }
 
@@ -86,7 +86,7 @@ class TransaksiController extends Controller
             foreach ($validated['items'] as $item) {
                 // Cek stok produk
                 $produk = Produk::findOrFail($item['id']);
-                
+
                 if ($produk->stok < $item['quantity']) {
                     throw new \Exception("Stok {$produk->nama} tidak mencukupi. Stok tersedia: {$produk->stok}");
                 }
@@ -107,7 +107,7 @@ class TransaksiController extends Controller
             Jurnal::create([
                 'tgl' => now(),
                 'jenis' => 'pemasukan',
-                'keterangan' => 'Penjualan - Transaksi #' . str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
+                'keterangan' => 'Penjualan - Transaksi #'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
                 'nominal' => $total,
                 'kategori' => 'Penjualan',
                 'role' => 'admin',
@@ -119,25 +119,27 @@ class TransaksiController extends Controller
                 'success' => true,
                 'message' => 'Transaksi berhasil disimpan',
                 'data' => [
-                    'invoice' => 'INV-' . str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
+                    'invoice' => 'INV-'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
                     'transaksi_id' => $transaksi->id,
                     'total' => $total,
                     'kembalian' => $validated['kembalian'] ?? 0,
-                ]
+                ],
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Transaksi;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class LaporanController extends Controller
 {
@@ -39,8 +38,8 @@ class LaporanController extends Controller
         }
 
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('id', 'like', '%' . $search . '%');
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', '%'.$search.'%');
             });
         }
 
@@ -50,29 +49,30 @@ class LaporanController extends Controller
         $kasirList = User::where('role', 'kasir')->get();
 
         // Transform data untuk view
-        $transactions = $transaksi->map(function($t) {
+        $transactions = $transaksi->map(function ($t) {
             $details = $t->detailTransaksi;
             $totalQty = $details->sum('qty');
-            
+
             // Format produk list
-            $produkList = $details->map(function($detail) {
+            $produkList = $details->map(function ($detail) {
                 $nama = optional($detail->produk)->nama ?? 'Produk Tidak Ditemukan';
-                return $nama . ' x' . $detail->qty;
+
+                return $nama.' x'.$detail->qty;
             })->join(', ');
 
             // Calculate total
-            $total = $details->sum(function($detail) {
+            $total = $details->sum(function ($detail) {
                 return $detail->qty * $detail->harga;
             });
 
             return [
-                'invoice' => 'INV-' . str_pad($t->id, 5, '0', STR_PAD_LEFT),
+                'invoice' => 'INV-'.str_pad($t->id, 5, '0', STR_PAD_LEFT),
                 'time' => \Carbon\Carbon::parse($t->tgl)->format('H:i'),
                 'products' => $produkList ?: 'Tidak ada produk',
                 'quantity' => $totalQty,
                 'total' => $total,
                 'payment' => ucfirst($t->metode),
-                'cashier' => optional($t->user)->name ?? 'Unknown'
+                'cashier' => optional($t->user)->name ?? 'Unknown',
             ];
         });
 
