@@ -20,26 +20,26 @@
     <!-- NAV MENU -->
     <nav class="flex-1 px-3 py-4 space-y-1">
         <a href="{{ route('kasir.dashboard.index') }}"
-            class="nav-item group flex items-center px-3 py-3 text-sm font-medium {{ request()->routeIs('kasir.dashboard*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg">
-            <i class="fas fa-tachometer-alt {{ request()->routeIs('kasir.dashboard*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3"></i>
+            class="nav-item group flex items-center px-4 py-3.5 text-sm font-medium {{ request()->routeIs('kasir.dashboard*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg">
+            <i class="fas fa-tachometer-alt {{ request()->routeIs('kasir.dashboard*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 text-lg"></i>
             Dashboard Kasir
         </a>
 
         <a href="{{ route('kasir.transaksi.index') }}"
-            class="nav-item group flex items-center px-3 py-3 text-sm font-medium {{ request()->routeIs('kasir.transaksi*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg">
-            <i class="fas fa-cash-register {{ request()->routeIs('kasir.transaksi*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3"></i>
+            class="nav-item group flex items-center px-4 py-3.5 text-sm font-medium {{ request()->routeIs('kasir.transaksi*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg">
+            <i class="fas fa-cash-register {{ request()->routeIs('kasir.transaksi*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 text-lg"></i>
             Transaksi Penjualan
         </a>
 
         <a href="{{ route('kasir.laporan.index') }}"
-            class="nav-item group flex items-center px-3 py-3 text-sm font-medium {{ request()->routeIs('kasir.laporan*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg">
-            <i class="fas fa-file-alt {{ request()->routeIs('kasir.laporan*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3"></i>
+            class="nav-item group flex items-center px-4 py-3.5 text-sm font-medium {{ request()->routeIs('kasir.laporan*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg">
+            <i class="fas fa-file-alt {{ request()->routeIs('kasir.laporan*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 text-lg"></i>
             Laporan Penjualan
         </a>
 
         <a href="{{ route('kasir.jurnal.index') }}"
-            class="nav-item group flex items-center px-3 py-3 text-sm font-medium {{ request()->routeIs('kasir.jurnal*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg">
-            <i class="fas fa-book {{ request()->routeIs('kasir.jurnal*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3"></i>
+            class="nav-item group flex items-center px-4 py-3.5 text-sm font-medium {{ request()->routeIs('kasir.jurnal*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg">
+            <i class="fas fa-book {{ request()->routeIs('kasir.jurnal*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 text-lg"></i>
             Jurnal Harian
         </a>
     </nav>

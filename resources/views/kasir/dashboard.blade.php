@@ -67,8 +67,8 @@
         </header>
 
         <!-- Page Content -->
-        <main class="p-4 sm:p-6 lg:p-8">
-            <div class="space-y-6">
+        <main class="px-4 sm:px-6 lg:px-8 pb-4">
+            <div class="space-y-4">
                 <!-- Welcome Section -->
                 <div class="bg-gradient-to-r from-green-400 to-green-700 rounded-lg p-6 text-white">
                     <div class="flex items-center justify-between">
@@ -149,7 +149,7 @@
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <!-- Transaksi Penjualan -->
-                        <a href="transaksi.html" class="group relative bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4 hover:from-green-100 hover:to-green-200 transition-all duration-300 hover:shadow-md hover:scale-102">
+                        <a href="{{ route('kasir.transaksi.index') }}" class="group relative bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4 hover:from-green-100 hover:to-green-200 transition-all duration-300 hover:shadow-md hover:scale-102">
                             <div class="flex flex-col items-center text-center">
                                 <div class="w-12 h-12 bg-gradient-to-r from-green-400 to-green-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 shadow-md">
                                     <i class="fas fa-cash-register text-white text-lg"></i>
@@ -164,7 +164,7 @@
                         </a>
 
                         <!-- Jurnal Harian -->
-                        <a href="jurnal.html" class="group relative bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4 hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover:shadow-md hover:scale-102">
+                        <a href="{{ route('kasir.jurnal.index') }}" class="group relative bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4 hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover:shadow-md hover:scale-102">
                             <div class="flex flex-col items-center text-center">
                                 <div class="w-12 h-12 bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 shadow-md">
                                     <i class="fas fa-book text-white text-lg"></i>

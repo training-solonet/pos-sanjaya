@@ -11,38 +11,6 @@
 <!-- Mobile Overlay -->
 <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
 
-<!-- Main Content -->
-<main class="flex-1 w-full lg:w-auto overflow-x-hidden">
-        <!-- Top Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-            <div class="px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <!-- Date Info -->
-                    <div class="flex items-center space-x-4 px-4 py-2 bg-gray-50 rounded-xl">
-                        <div>
-                            <p class="text-sm font-semibold text-gray-900">Laporan Penjualan</p>
-                            <p class="text-xs text-gray-500" id="currentDate"></p>
-                        </div>
-                    </div>
-                    
-                    <!-- Quick Actions -->
-                    <div class="flex items-center space-x-2">
-                        <button onclick="printReport()" class="px-4 py-2 bg-blue-100 text-blue-600 rounded-xl flex items-center gap-2 hover:bg-blue-200 transition-colors" title="Cetak Laporan">
-                            <i class="fas fa-print text-sm"></i>
-                            <span class="hidden sm:inline text-sm font-medium">Print</span>
-                        </button>
-                        <button onclick="exportToExcel()" class="px-4 py-2 bg-green-100 text-green-600 rounded-xl flex items-center gap-2 hover:bg-green-200 transition-colors" title="Export Excel">
-                            <i class="fas fa-file-excel text-sm"></i>
-                            <span class="hidden sm:inline text-sm font-medium">Excel</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Page Content -->
-        <div class="p-4 lg:p-8">
-
             <!-- Filter Section -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
                 <div class="px-4 lg:px-6 py-4">
@@ -64,9 +32,10 @@
                             <select id="filterPayment" 
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                                 <option value="">Semua Metode</option>
-                                <option value="Tunai">Tunai</option>
-                                <option value="EDC">EDC</option>
-                                <option value="QRIS">QRIS</option>
+                                <option value="tunai">Tunai</option>
+                                <option value="kartu">Kartu</option>
+                                <option value="transfer">Transfer</option>
+                                <option value="qris">QRIS</option>
                             </select>
                         </div>
 
@@ -78,9 +47,9 @@
                             <select id="filterCashier" 
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                                 <option value="">Semua Kasir</option>
-                                <option value="Kasir 1">Kasir 1</option>
-                                <option value="Kasir 2">Kasir 2</option>
-                                <option value="Admin">Admin</option>
+                                @foreach($kasirList as $kasir)
+                                <option value="{{ $kasir->id }}">{{ $kasir->name }}</option>
+                                @endforeach
                             </select>
                         </div>
 
@@ -154,22 +123,9 @@
     </script>
 
     <script>
-        // Sample data - in production, this would come from a database
+        // Data from backend
         const salesData = {
-            transactions: [
-                { invoice: 'INV-001', time: '08:15', products: 'Roti Tawar x2, Teh Botol x1', quantity: 3, total: 22000, payment: 'Tunai', cashier: 'Kasir 1' },
-                { invoice: 'INV-002', time: '08:45', products: 'Croissant x3', quantity: 3, total: 45000, payment: 'QRIS', cashier: 'Kasir 1' },
-                { invoice: 'INV-003', time: '09:20', products: 'Roti Coklat x2, Air Mineral x2', quantity: 4, total: 30000, payment: 'Tunai', cashier: 'Kasir 1' },
-                { invoice: 'INV-004', time: '10:05', products: 'Donat Coklat x5', quantity: 5, total: 35000, payment: 'EDC', cashier: 'Kasir 1' },
-                { invoice: 'INV-005', time: '10:30', products: 'Pain au Chocolat x2, Teh Botol x2', quantity: 4, total: 44000, payment: 'Tunai', cashier: 'Kasir 1' },
-                { invoice: 'INV-006', time: '11:15', products: 'Roti Tawar x3, Jus Botol x1', quantity: 4, total: 35000, payment: 'QRIS', cashier: 'Kasir 1' },
-                { invoice: 'INV-007', time: '11:45', products: 'Bagel x2, Soda Kaleng x2', quantity: 4, total: 36000, payment: 'Tunai', cashier: 'Kasir 1' },
-                { invoice: 'INV-008', time: '12:30', products: 'Brioche x1, Croissant x2, Teh Botol x3', quantity: 6, total: 66000, payment: 'EDC', cashier: 'Kasir 1' },
-                { invoice: 'INV-009', time: '13:10', products: 'Donat Isi x4, Air Mineral x2', quantity: 6, total: 42000, payment: 'Tunai', cashier: 'Kasir 1' },
-                { invoice: 'INV-010', time: '14:00', products: 'Roti Coklat x3, Teh Botol x3', quantity: 6, total: 54000, payment: 'QRIS', cashier: 'Kasir 1' },
-                { invoice: 'INV-011', time: '14:45', products: 'Croissant x2, Jus Botol x1', quantity: 3, total: 41000, payment: 'Tunai', cashier: 'Kasir 1' },
-                { invoice: 'INV-012', time: '15:20', products: 'Roti Tawar x4, Air Mineral x4', quantity: 8, total: 44000, payment: 'EDC', cashier: 'Kasir 1' },
-            ]
+            transactions: @json($transactions)
         };
 
         // Filter state
@@ -186,7 +142,21 @@
             setTodayDate();
             renderTransactions();
             setupSearch();
+            restoreFilters();
         });
+
+        // Restore filter values from URL
+        function restoreFilters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            const tanggal = urlParams.get('tanggal');
+            const metode = urlParams.get('metode');
+            const kasir = urlParams.get('kasir');
+            
+            if (tanggal) document.getElementById('filterDate').value = tanggal;
+            if (metode) document.getElementById('filterPayment').value = metode;
+            if (kasir) document.getElementById('filterCashier').value = kasir;
+        }
 
         // Set today's date in filter
         function setTodayDate() {
@@ -212,25 +182,23 @@
 
         // Apply filters
         function applyFilters() {
-            currentFilters.date = document.getElementById('filterDate').value;
-            currentFilters.payment = document.getElementById('filterPayment').value;
-            currentFilters.cashier = document.getElementById('filterCashier').value;
-            renderTransactions();
+            const tanggal = document.getElementById('filterDate').value;
+            const metode = document.getElementById('filterPayment').value;
+            const kasir = document.getElementById('filterCashier').value;
+            
+            // Build URL with query parameters
+            const params = new URLSearchParams();
+            if (tanggal) params.append('tanggal', tanggal);
+            if (metode) params.append('metode', metode);
+            if (kasir) params.append('kasir', kasir);
+            
+            // Reload page with filters
+            window.location.href = '{{ route("kasir.laporan.index") }}?' + params.toString();
         }
 
         // Reset filters
         function resetFilters() {
-            document.getElementById('filterDate').value = '';
-            document.getElementById('filterPayment').value = '';
-            document.getElementById('filterCashier').value = '';
-            currentFilters = {
-                search: currentFilters.search,
-                date: '',
-                payment: '',
-                cashier: ''
-            };
-            setTodayDate();
-            renderTransactions();
+            window.location.href = '{{ route("kasir.laporan.index") }}';
         }
 
         // Render transactions table
@@ -238,22 +206,12 @@
             const tbody = document.getElementById('transactionTableBody');
             let transactions = salesData.transactions;
 
-            // Apply search filter
+            // Apply search filter (client-side)
             if (currentFilters.search) {
                 transactions = transactions.filter(t => 
                     t.invoice.toLowerCase().includes(currentFilters.search.toLowerCase()) ||
                     t.products.toLowerCase().includes(currentFilters.search.toLowerCase())
                 );
-            }
-
-            // Apply payment filter
-            if (currentFilters.payment) {
-                transactions = transactions.filter(t => t.payment === currentFilters.payment);
-            }
-
-            // Apply cashier filter
-            if (currentFilters.cashier) {
-                transactions = transactions.filter(t => t.cashier === currentFilters.cashier);
             }
 
             tbody.innerHTML = transactions.map(t => `
@@ -305,6 +263,9 @@
         function getPaymentBadgeClass(payment) {
             const classes = {
                 'Tunai': 'bg-green-100 text-green-800',
+                'Kartu': 'bg-blue-100 text-blue-800',
+                'Transfer': 'bg-purple-100 text-purple-800',
+                'Qris': 'bg-orange-100 text-orange-800',
                 'EDC': 'bg-blue-100 text-blue-800',
                 'QRIS': 'bg-purple-100 text-purple-800'
             };
