@@ -47,16 +47,26 @@ jobs:
     needs: code-quality
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    
+
     steps:
-    - name: executing remote ssh commands using password
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        password: ${{ secrets.PASSWORD }}
-        port: ${{ secrets.PORT }}
-        script: |
-          cd /var/www/pos-sanjaya
-          git pull origin master
-          composer install --no-interaction --prefer-dist --optimize-autoloader
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT || 22 }}
+          script: |
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project directory
+            cd /var/www/pos-sanjaya
+            
+            echo "📦 Pulling latest changes from Git..."
+            git fetch origin
+            git reset --hard origin/${{ github.ref_name }}
+            composer install 
+            echo "✅ Deployment completed successfully!"

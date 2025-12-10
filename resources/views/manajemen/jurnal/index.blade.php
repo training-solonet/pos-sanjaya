@@ -258,6 +258,24 @@
       ]
     };
 
+    // Fungsi untuk format mata uang Rupiah dengan titik dan dua desimal
+    function formatCurrency(amount) {
+        // Pastikan amount adalah number
+        const num = parseFloat(amount) || 0;
+        
+        // Format dengan Intl.NumberFormat untuk konsistensi
+        return new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+            useGrouping: true
+        }).format(num);
+    }
+
+    // Fungsi untuk menampilkan Rupiah dengan format yang benar
+    function formatRupiah(amount) {
+        return `Rp ${formatCurrency(amount)}`;
+    }
+
     let currentEditId = null;
     let sidebarOpen = false;
     let allTransactions = [];
@@ -463,7 +481,7 @@
           <td class="px-6 py-4 text-sm text-gray-900">${transaction.kategori}</td>
           <td class="px-6 py-4 text-sm text-gray-900">${transaction.keterangan}</td>
           <td class="px-6 py-4 text-sm font-medium ${amountClass}">
-            ${amountPrefix} Rp ${parseInt(transaction.nominal).toLocaleString('id-ID')}
+            ${amountPrefix} ${formatRupiah(transaction.nominal)}
           </td>
           <td class="px-6 py-4">
             <button onclick="editTransaction(${transaction.id})" class="text-green-600 hover:text-green-800 mr-2">
@@ -492,26 +510,26 @@
         
         const data = await response.json();
         
-        // Update summary cards
+        // Update summary cards dengan format baru
         document.getElementById('summaryTotalRevenue').textContent = 
-          `Rp ${data.total_revenue.toLocaleString('id-ID')}`;
+          formatRupiah(data.total_revenue);
         document.getElementById('summaryTotalExpense').textContent = 
-          `Rp ${data.total_expense.toLocaleString('id-ID')}`;
+          formatRupiah(data.total_expense);
         document.getElementById('summaryNetBalance').textContent = 
-          `Rp ${data.net_balance.toLocaleString('id-ID')}`;
+          formatRupiah(data.net_balance);
         
         document.getElementById('revenueCountText').textContent = 
           `${data.revenue_count} transaksi hari ini`;
         document.getElementById('expenseCountText').textContent = 
           `${data.expense_count} transaksi hari ini`;
         
-        // Update footer
+        // Update footer dengan format baru
         document.getElementById('footerTotalRevenue').textContent = 
-          `Rp ${data.total_revenue.toLocaleString('id-ID')}`;
+          formatRupiah(data.total_revenue);
         document.getElementById('footerTotalExpense').textContent = 
-          `Rp ${data.total_expense.toLocaleString('id-ID')}`;
+          formatRupiah(data.total_expense);
         document.getElementById('footerNetBalance').textContent = 
-          `Rp ${data.net_balance.toLocaleString('id-ID')}`;
+          formatRupiah(data.net_balance);
         
         // Update net balance color
         const netBalanceElements = [

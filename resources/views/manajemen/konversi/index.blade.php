@@ -121,12 +121,10 @@
                                                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors">
                                                                     <option value="" selected>Silakan Pilih Satuan</option>
                                                                     <option value="kg">kg</option>
-                                                                    <option value="l">l (liter)</option>
+                                                                    <option value="l">L (liter)</option>
                                                                     <option value="gram">gram</option>  
                                                                     <option value="pcs">pcs</option>
-                                                                    <option value="sdm">sdm</option>
-                                                                    <option value="sdt">sdt</option>
-                                                                    <option value="ml">ml (mili liter)</option>
+                                                                    <option value="ml">mL (mililiter)</option>
                                                                 </select>
                                                         </div>
                                                     </div>
@@ -1050,8 +1048,6 @@
                                         <option value="l" ${item.satuan_kecil === 'l' ? 'selected' : ''}>l (liter)</option>
                                         <option value="gram" ${item.satuan_kecil === 'gram' ? 'selected' : ''}>gram</option>
                                         <option value="pcs" ${item.satuan_kecil === 'pcs' ? 'selected' : ''}>pcs</option>
-                                        <option value="sdm" ${item.satuan_kecil === 'sdm' ? 'selected' : ''}>sdm</option>
-                                        <option value="sdt" ${item.satuan_kecil === 'sdt' ? 'selected' : ''}>sdt</option>
                                         <option value="ml" ${item.satuan_kecil === 'ml' ? 'selected' : ''}>ml (mili liter)</option>
                                     </select>
                                 </div>

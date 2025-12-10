@@ -11,7 +11,6 @@ class Produk extends Model
     protected $table = 'produk';
 
     protected $fillable = [
-        'id_bahan_baku',
         'nama',
         'stok',
         'min_stok',
@@ -32,7 +31,7 @@ class Produk extends Model
     }
 
     // Relasi ke bahan baku
-    public function bahan_baku()
+    public function bahanBaku()
     {
         return $this->belongsTo(BahanBaku::class, 'id_bahan_baku');
     }
@@ -134,5 +133,11 @@ class Produk extends Model
         return Attribute::make(
             get: fn () => $this->getDaysUntilExpired(),
         );
+    }
+
+    // Helper untuk mendapatkan data bahan baku dengan fallback
+    public function getBahanBakuSafe()
+    {
+        return $this->bahanBaku ?: BahanBaku::first();
     }
 }

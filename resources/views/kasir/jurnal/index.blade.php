@@ -1,55 +1,6 @@
 @extends('layouts.kasir.index')
 
 @section('content')
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>POS Sanjaya - Jurnal Harian</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3B82F6',
-                        secondary: '#1E40AF',
-                        accent: '#F59E0B',
-                        success: '#10B981',
-                        danger: '#EF4444',
-                        dark: '#1F2937',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        
-        /* Responsive sidebar styles */
-        @media (max-width: 1023px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .sidebar:not(.-translate-x-full) {
-                transform: translateX(0);
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .sidebar {
-                transform: translateX(0) !important;
-            }
-        }
-    </style>
-</head>
-<body class="bg-gray-50 min-h-screen lg:flex">
     <!-- Mobile Overlay -->
     <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
 
@@ -57,7 +8,7 @@
     <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()"></div>
 
     <!-- Main Content -->
-    <div class="content flex-1 lg:flex-1">
+    <div class="content flex-1 lg:flex-1">                    
 
                     <!-- Header Actions -->
                     <div class="flex items-center space-x-4">
@@ -151,20 +102,15 @@
                                 <p class="text-sm text-gray-500 mt-1">Catatan pemasukan dan pengeluaran</p>
                             </div>
                             <div class="flex flex-wrap gap-2">
-                                <button onclick="openTransactionModal('pemasukan')" 
-                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                <button onclick="openTransactionModal()" 
+                                    class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 transition-colors flex items-center gap-2">
                                     <i class="fas fa-plus"></i>
-                                    Tambah Pemasukan
-                                </button>
-                                <button onclick="openTransactionModal('pengeluaran')" 
-                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
-                                    <i class="fas fa-minus"></i>
-                                    Tambah Pengeluaran
+                                    Tambah Transaksi
                                 </button>
                             </div>
                         </div>
                     </div>
-
+    
                     <!-- Filter Section -->
                     <div class="p-6 border-b bg-gray-50">
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -182,10 +128,7 @@
                                     <option value="semua">Semua Kategori</option>
                                     <option value="penjualan">Penjualan</option>
                                     <option value="operasional">Operasional</option>
-                                    <option value="utilitas">Utilitas</option>
-                                    <option value="bahan baku">Bahan Baku</option>
                                     <option value="transportasi">Transportasi</option>
-                                    <option value="lainnya">Lainnya</option>
                                 </select>
                             </div>
                             <div>
@@ -290,8 +233,8 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Transaksi</label>
-                        <select id="transactionTypeSelect" disabled
-                                class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400 bg-gray-100">
+                        <select id="transactionTypeSelect" onchange="updateTransactionType()"
+                                class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400">
                             <option value="pemasukan">Pemasukan</option>
                             <option value="pengeluaran">Pengeluaran</option>
                         </select>
@@ -310,7 +253,6 @@
                         <textarea id="transactionDescription" rows="3" placeholder="Contoh: Penjualan roti coklat dan donat" 
                                class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400"></textarea>
                     </div>
-                    
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Nominal (Rp)</label>
                         <input type="number" id="transactionAmount" placeholder="0" 
@@ -401,12 +343,11 @@
         }
 
         // Open transaction modal
-        function openTransactionModal(type) {
+        function openTransactionModal(type = 'pemasukan') {
             const modal = document.getElementById('transactionModal');
             const modalTitle = document.getElementById('modalTitle');
             const typeSelect = document.getElementById('transactionTypeSelect');
             const typeInput = document.getElementById('transactionType');
-            const submitButton = document.getElementById('submitButton');
             
             editingId = null;
             
@@ -414,20 +355,21 @@
             typeInput.value = type;
             typeSelect.value = type;
             
-            // Update modal title and button
-            if (type === 'pemasukan') {
-                modalTitle.textContent = 'Tambah Pemasukan';
-                submitButton.className = 'flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700';
-            } else {
-                modalTitle.textContent = 'Tambah Pengeluaran';
-                submitButton.className = 'flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700';
-            }
+            // Update modal title
+            modalTitle.textContent = 'Tambah Transaksi';
             
             // Populate categories
             populateCategories(type);
             
             modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
+        }
+
+        // Update transaction type and refresh categories
+        function updateTransactionType() {
+            const type = document.getElementById('transactionTypeSelect').value;
+            document.getElementById('transactionType').value = type;
+            populateCategories(type);
         }
 
         // Close transaction modal

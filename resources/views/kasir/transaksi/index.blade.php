@@ -1,133 +1,9 @@
 @extends('layouts.kasir.index')
 
-@section('content')
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Sanjaya - Transaksi Penjualan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3B82F6',
-                        secondary: '#1E40AF',
-                        accent: '#F59E0B',
-                        success: '#10B981',
-                        danger: '#EF4444',
-                        dark: '#1F2937',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        
-        /* Auto-hide sidebar styles */
-        .sidebar {
-            transform: translateX(-100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .sidebar.show {
-            transform: translateX(0);
-        }
-        
-        /* Hamburger menu animation */
-        .hamburger {
-            transition: all 0.3s ease;
-        }
-        
-        .hamburger.active {
-            background-color: rgba(34, 197, 94, 0.1);
-            transform: scale(0.95);
-        }
-        
-        /* Main content full width */
-        .main-content {
-            width: 100%;
-            margin-left: 0;
-        }
-        
-        /* Floating hamburger button */
-        .floating-menu {
-            position: fixed;
-            top: 16px;
-            left: 16px;
-            z-index: 60;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(34, 197, 94, 0.2);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .floating-menu.active {
-            background: #16a34a;
-            transform: scale(0.95);
-            border-color: #16a34a;
-        }
-        
-        .floating-menu.active i {
-            color: white !important;
-            transform: rotate(90deg);
-        }
-        
-        /* Hamburger animation */
-        .hamburger i {
-            transition: all 0.3s ease;
-        }
-        
-        /* Custom Scrollbar */
-        .scrollbar-thin::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .scrollbar-thin::-webkit-scrollbar-track {
-            background: #f3f4f6;
-            border-radius: 3px;
-        }
-        
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-            background: #d1d5db;
-            border-radius: 3px;
-        }
-        
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af;
-        }
-        
-        /* Overlay for sidebar */
-        .sidebar-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 40;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .sidebar-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-    </style>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Floating Hamburger Menu -->
-    <button id="hamburgerBtn" onclick="toggleSidebar()" class="floating-menu hamburger w-12 h-12 rounded-xl flex items-center justify-center hover:bg-green-50 transition-all">
-        <i class="fas fa-bars text-green-600 text-lg"></i>
-    </button>
+@section('page-title', 'Transaksi Penjualan')
+@section('page-description', 'Sistem kasir dan penjualan')
 
+@section('content')
     <!-- Main Content -->
     <div class="main-content min-h-screen flex flex-col">
         <!-- Page Content -->
@@ -194,7 +70,7 @@
                                             <i class="fas fa-th text-sm"></i>
                                         </button>
                                         <button class="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
-                                            <i class="fas fa-list text-sm"></i>
+                                            <i class="fas fa-list text b-sm"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -207,7 +83,7 @@
                                 @forelse($produks as $produk)
                                 <!-- Product Card: {{ $produk->nama }} -->
                                 <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart('{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg')">
+                                     onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg')">
                                     <div class="relative">
                                         <div class="aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
                                             <i class="fas fa-bread-slice text-green-500 text-2xl group-hover:scale-110 transition-transform"></i>
@@ -572,13 +448,14 @@
         }
 
         // Add product to cart
-        function addToCart(name, price, image) {
-            const existingItem = cart.find(item => item.name === name);
+        function addToCart(id, name, price, image) {
+            const existingItem = cart.find(item => item.id === id);
             
             if (existingItem) {
                 existingItem.quantity += 1;
             } else {
                 cart.push({
+                    id: id,
                     name: name,
                     price: price,
                     image: image,
@@ -880,23 +757,119 @@
         }
 
         // Process payment
-        function processPayment() {
-            if (cart.length === 0) return;
+        async function processPayment() {
+            if (cart.length === 0) {
+                alert('Keranjang masih kosong!');
+                return;
+            }
             
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const tax = total * 0.1;
-            const finalTotal = Math.round(total + tax);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const ppn = Math.round(subtotal * 0.1);
+            const finalTotal = subtotal + ppn;
+            
+            // Get payment method
+            const paymentMethod = document.querySelector('.payment-method.active').dataset.method;
+            
+            // Get payment amount for cash
+            let bayar = finalTotal;
+            let kembalian = 0;
+            
+            if (paymentMethod === 'cash') {
+                const cashInput = document.getElementById('cashAmount');
+                const cashValue = cashInput.value.replace(/[^0-9]/g, '');
+                
+                if (!cashValue || parseInt(cashValue) < finalTotal) {
+                    alert('Uang yang diterima tidak mencukupi!');
+                    return;
+                }
+                
+                bayar = parseInt(cashValue);
+                kembalian = bayar - finalTotal;
+            }
             
             // Show confirmation
-            if (confirm(`Konfirmasi pembayaran sebesar Rp ${finalTotal.toLocaleString('id-ID')}?`)) {
-                // Process payment logic here
-                alert('Pembayaran berhasil! Terima kasih.');
-                clearCart();
+            if (!confirm(`Konfirmasi pembayaran sebesar Rp ${finalTotal.toLocaleString('id-ID')}?`)) {
+                return;
+            }
+            
+            // Prepare data
+            const transactionData = {
+                metode: paymentMethod,
+                items: cart.map(item => ({
+                    id: item.id,
+                    quantity: item.quantity,
+                    price: item.price
+                })),
+                ppn: ppn,
+                diskon: 0,
+                bayar: bayar,
+                kembalian: kembalian
+            };
+            
+            try {
+                // Show loading
+                const payButton = document.getElementById('checkoutBtn');
+                const originalText = payButton.innerHTML;
+                payButton.innerHTML = `
+                    <div class="flex items-center justify-center space-x-2">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Memproses...</span>
+                    </div>
+                `;
+                payButton.disabled = true;
                 
-                // Close mobile cart if open
-                if (isMobileCartOpen) {
-                    toggleMobileCart();
+                // Send to backend
+                const response = await fetch('{{ route("kasir.transaksi.store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(transactionData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Success
+                    alert(`Pembayaran berhasil!\n\nInvoice: ${result.data.invoice}\nTotal: Rp ${result.data.total.toLocaleString('id-ID')}\nKembalian: Rp ${result.data.kembalian.toLocaleString('id-ID')}\n\nTerima kasih!`);
+                    
+                    // Clear cart
+                    cart = [];
+                    updateCartDisplay();
+                    
+                    // Reset cash input
+                    document.getElementById('cashAmount').value = '';
+                    document.getElementById('changeInfo').classList.add('hidden');
+                    
+                    // Close mobile cart if open
+                    if (isMobileCartOpen) {
+                        toggleMobileCart();
+                    }
+                    
+                    // Reload page to update product stock display
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                    
+                } else {
+                    // Error
+                    alert('Gagal memproses transaksi: ' + result.message);
                 }
+                
+                // Reset button
+                payButton.innerHTML = originalText;
+                payButton.disabled = false;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat memproses pembayaran: ' + error.message);
+                
+                // Reset button
+                const payButton = document.getElementById('checkoutBtn');
+                payButton.innerHTML = '<i class="fas fa-check mr-2"></i>Bayar';
+                payButton.disabled = false;
             }
         }
 
@@ -1249,15 +1222,56 @@
 
         // Process payment with print
         async function processPaymentWithPrint() {
-            if (cart.length === 0) return;
+            if (cart.length === 0) {
+                alert('Keranjang masih kosong!');
+                return;
+            }
             
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const tax = total * 0.1;
-            const finalTotal = Math.round(total + tax);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const ppn = Math.round(subtotal * 0.1);
+            const finalTotal = subtotal + ppn;
+            
+            // Get payment method
+            const paymentMethod = document.querySelector('.payment-method.active').dataset.method;
+            
+            // Get payment amount for cash
+            let bayar = finalTotal;
+            let kembalian = 0;
+            
+            if (paymentMethod === 'cash') {
+                const cashInput = document.getElementById('cashAmount');
+                const cashValue = cashInput.value.replace(/[^0-9]/g, '');
+                
+                if (!cashValue || parseInt(cashValue) < finalTotal) {
+                    alert('Uang yang diterima tidak mencukupi!');
+                    return;
+                }
+                
+                bayar = parseInt(cashValue);
+                kembalian = bayar - finalTotal;
+            }
             
             // Show confirmation
-            if (confirm(`Konfirmasi pembayaran sebesar Rp ${finalTotal.toLocaleString('id-ID')}?`)) {
-                // Show processing
+            if (!confirm(`Konfirmasi pembayaran sebesar Rp ${finalTotal.toLocaleString('id-ID')}?`)) {
+                return;
+            }
+            
+            // Prepare data
+            const transactionData = {
+                metode: paymentMethod,
+                items: cart.map(item => ({
+                    id: item.id,
+                    quantity: item.quantity,
+                    price: item.price
+                })),
+                ppn: ppn,
+                diskon: 0,
+                bayar: bayar,
+                kembalian: kembalian
+            };
+            
+            try {
+                // Show loading
                 const payButton = document.getElementById('checkoutBtn');
                 const originalText = payButton.innerHTML;
                 payButton.innerHTML = `
@@ -1268,10 +1282,20 @@
                 `;
                 payButton.disabled = true;
                 
-                try {
-                    // Process payment
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    
+                // Send to backend
+                const response = await fetch('{{ route("kasir.transaksi.store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(transactionData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
                     // Try to print receipt
                     let printSuccess = false;
                     if (isBluetoothSupported()) {
@@ -1286,27 +1310,46 @@
                     
                     // Success message
                     if (printSuccess) {
-                        alert('Pembayaran berhasil! Struk telah dicetak. Terima kasih.');
+                        alert(`Pembayaran berhasil! Struk telah dicetak.\n\nInvoice: ${result.data.invoice}\nTotal: Rp ${result.data.total.toLocaleString('id-ID')}\nKembalian: Rp ${result.data.kembalian.toLocaleString('id-ID')}\n\nTerima kasih!`);
                     } else {
-                        alert('Pembayaran berhasil! (Struk gagal dicetak)');
+                        alert(`Pembayaran berhasil! (Struk gagal dicetak)\n\nInvoice: ${result.data.invoice}\nTotal: Rp ${result.data.total.toLocaleString('id-ID')}\nKembalian: Rp ${result.data.kembalian.toLocaleString('id-ID')}\n\nTerima kasih!`);
                     }
                     
-                    // Clear cart and reset
-                    clearCart();
+                    // Clear cart
+                    cart = [];
+                    updateCartDisplay();
+                    
+                    // Reset cash input
+                    document.getElementById('cashAmount').value = '';
+                    document.getElementById('changeInfo').classList.add('hidden');
                     
                     // Close mobile cart if open
                     if (isMobileCartOpen) {
                         toggleMobileCart();
                     }
                     
-                } catch (error) {
-                    console.error('Payment processing error:', error);
-                    alert('Terjadi kesalahan saat memproses pembayaran.');
-                } finally {
-                    // Reset button
-                    payButton.innerHTML = originalText;
-                    payButton.disabled = cart.length === 0;
+                    // Reload page to update product stock display
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                    
+                } else {
+                    // Error
+                    alert('Gagal memproses transaksi: ' + result.message);
                 }
+                
+                // Reset button
+                payButton.innerHTML = originalText;
+                payButton.disabled = false;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat memproses pembayaran: ' + error.message);
+                
+                // Reset button
+                const payButton = document.getElementById('checkoutBtn');
+                payButton.innerHTML = '<i class="fas fa-check mr-2"></i>Bayar';
+                payButton.disabled = false;
             }
         }
 
