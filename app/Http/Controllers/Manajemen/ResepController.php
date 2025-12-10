@@ -80,12 +80,12 @@ class ResepController extends Controller
             'kg' => ['gram' => 1000, 'g' => 1000],
             'gram' => ['kg' => 0.001, 'g' => 1],
             'g' => ['kg' => 0.001, 'gram' => 1],
-            
+
             // Volume
             'l' => ['ml' => 1000, 'liter' => 1],
             'liter' => ['ml' => 1000, 'l' => 1],
             'ml' => ['l' => 0.001, 'liter' => 0.001],
-            
+
             // Sendok
             'sdm' => ['ml' => 15, 'gram' => 15, 'g' => 15, 'sdt' => 3],
             'sdt' => ['ml' => 5, 'gram' => 5, 'g' => 5, 'sdm' => 0.333],
@@ -109,16 +109,17 @@ class ResepController extends Controller
     {
         if ($bahan->konversi) {
             $satuanKecil = strtolower($bahan->konversi->satuan_kecil ?? 'gram');
-            
+
             // Konversi ke satuan terkecil untuk menghindari desimal
             $mapToSmallest = [
                 'kg' => 'gram',
                 'l' => 'ml',
                 'liter' => 'ml',
             ];
-            
+
             return $mapToSmallest[$satuanKecil] ?? $satuanKecil;
         }
+
         return 'gram';
     }
 
@@ -168,8 +169,8 @@ class ResepController extends Controller
      */
     public function store(Request $request)
     {
-        \Illuminate\Support\Facades\Log::info("=== STORE RESEP START ===", ['request' => $request->all()]);
-        
+        \Illuminate\Support\Facades\Log::info('=== STORE RESEP START ===', ['request' => $request->all()]);
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'category' => 'nullable|string|max:100',
@@ -191,7 +192,7 @@ class ResepController extends Controller
 
             // Cari atau buat produk berdasarkan nama resep
             $produk = \App\Models\Produk::where('nama', $data['name'])->first();
-            if (!$produk) {
+            if (! $produk) {
                 $produk = \App\Models\Produk::create([
                     'nama' => $data['name'],
                     'harga' => $data['sellingPrice'] ?? 0,
@@ -204,7 +205,7 @@ class ResepController extends Controller
             // Ambil bahan pertama dari ingredients sebagai id_bahan_baku
             $firstIngredient = $ingredients[0] ?? null;
             $idBahanBaku = 1; // default
-            
+
             if ($firstIngredient && isset($firstIngredient['name'])) {
                 $bahanBaku = \App\Models\BahanBaku::where('nama', $firstIngredient['name'])->first();
                 if ($bahanBaku) {
@@ -229,40 +230,41 @@ class ResepController extends Controller
             $stokErrors = [];
             // STOK BAHAN BAKU DIKURANGI SAAT TRANSAKSI, BUKAN SAAT BUAT RESEP
             $reduceStock = false;
-            
+
             \Illuminate\Support\Facades\Log::info("CREATE RESEP '{$resep->nama}': Status = '{$resep->status}', ReduceStock = FALSE (stok dikurangi saat transaksi)");
 
             foreach ($ingredients as $ing) {
                 $name = trim($ing['name'] ?? '');
                 $qty = isset($ing['quantity']) ? (float) $ing['quantity'] : 0;
-                $unit = !empty($ing['unit']) ? trim($ing['unit']) : null;
+                $unit = ! empty($ing['unit']) ? trim($ing['unit']) : null;
                 $price = isset($ing['price']) ? (int) $ing['price'] : 0;
-                
+
                 // Validasi unit tidak boleh kosong
                 if (empty($unit)) {
                     $stokErrors[] = "Satuan untuk bahan '{$name}' tidak boleh kosong. Pilih satuan (gram, kg, pcs, dll).";
+
                     continue;
                 }
 
                 $idBahan = null;
                 $bahan = null;
-                
+
                 if ($name) {
                     $bahan = \App\Models\BahanBaku::with('konversi')->where('nama', $name)->first();
                     if (! $bahan) {
                         // Cari konversi berdasarkan satuan_kecil yang sesuai dengan unit resep
                         $unitNormalized = strtolower(trim($unit ?? 'gram'));
-                        
+
                         $konversiDefault = \App\Models\Konversi::where('satuan_kecil', $unitNormalized)->first();
-                        
+
                         // Jika tidak ada, cari konversi default gram atau yang pertama
-                        if (!$konversiDefault) {
+                        if (! $konversiDefault) {
                             $konversiDefault = \App\Models\Konversi::where('satuan_kecil', 'gram')
                                 ->orWhere('satuan_kecil', 'kg')
                                 ->orWhere('satuan_kecil', 'pcs')
                                 ->first();
                         }
-                        
+
                         $bahan = \App\Models\BahanBaku::create([
                             'nama' => $name,
                             'stok' => 0,
@@ -275,29 +277,29 @@ class ResepController extends Controller
                         $bahan->load('konversi');
                     }
                     $idBahan = $bahan->id;
-                    
+
                     // Kurangi stok jika status bukan draft
                     if ($reduceStock && $qty > 0) {
                         $resepSatuan = strtolower(trim($unit ?? 'gram'));
                         $bahanSatuan = $this->getBahanSatuan($bahan);
-                        
+
                         \Illuminate\Support\Facades\Log::info("DEBUG: Bahan '{$name}' - Stok: {$bahan->stok} {$bahanSatuan}, Resep butuh: {$qty} {$resepSatuan}");
-                        
+
                         // Konversi qty resep ke satuan stok bahan
                         $convertedQty = $this->convertUnit($qty, $resepSatuan, $bahanSatuan);
-                        
-                        \Illuminate\Support\Facades\Log::info("DEBUG: Hasil konversi {$qty} {$resepSatuan} → {$bahanSatuan} = " . ($convertedQty === null ? 'NULL' : $convertedQty));
-                        
+
+                        \Illuminate\Support\Facades\Log::info("DEBUG: Hasil konversi {$qty} {$resepSatuan} → {$bahanSatuan} = ".($convertedQty === null ? 'NULL' : $convertedQty));
+
                         if ($convertedQty === null) {
                             $stokErrors[] = "Tidak dapat mengkonversi {$qty} {$resepSatuan} ke {$bahanSatuan} untuk '{$name}'. Tambahkan konversi di menu Konversi Satuan.";
                         } elseif ($bahan->stok < $convertedQty) {
-                            $stokErrors[] = "Stok '{$name}' tidak cukup. Tersedia: {$bahan->stok} {$bahanSatuan}, Dibutuhkan: " . number_format($convertedQty, 3) . " {$bahanSatuan} (dari {$qty} {$resepSatuan})";
+                            $stokErrors[] = "Stok '{$name}' tidak cukup. Tersedia: {$bahan->stok} {$bahanSatuan}, Dibutuhkan: ".number_format($convertedQty, 3)." {$bahanSatuan} (dari {$qty} {$resepSatuan})";
                         } else {
                             // Kurangi stok
                             $bahan->stok -= $convertedQty;
                             $bahan->tglupdate = now();
                             $bahan->save();
-                            
+
                             \Illuminate\Support\Facades\Log::info("Resep '{$resep->nama}': Stok '{$name}' berkurang {$qty} {$resepSatuan} = {$convertedQty} {$bahanSatuan}. Sisa: {$bahan->stok} {$bahanSatuan}");
                         }
                     }
@@ -316,20 +318,21 @@ class ResepController extends Controller
             }
 
             // Jika ada error stok, rollback
-            if (!empty($stokErrors)) {
+            if (! empty($stokErrors)) {
                 \Illuminate\Support\Facades\DB::rollBack();
-                
-                $errorMessage = count($stokErrors) === 1 
-                    ? $stokErrors[0] 
-                    : "Gagal membuat resep:\n" . implode("\n", $stokErrors);
-                
+
+                $errorMessage = count($stokErrors) === 1
+                    ? $stokErrors[0]
+                    : "Gagal membuat resep:\n".implode("\n", $stokErrors);
+
                 if ($request->wantsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => false,
                         'message' => $errorMessage,
-                        'errors' => $stokErrors
+                        'errors' => $stokErrors,
                     ], 422);
                 }
+
                 return redirect()->back()->withErrors(['error' => $errorMessage])->withInput();
             }
 
@@ -423,7 +426,7 @@ class ResepController extends Controller
     public function update(Request $request, string $id)
     {
         \Illuminate\Support\Facades\Log::info("=== UPDATE RESEP #{$id} - STOK TIDAK DIKURANGI DI RESEP (dikurangi saat transaksi) ===");
-        
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'category' => 'nullable|string|max:100',
@@ -442,35 +445,39 @@ class ResepController extends Controller
             \Illuminate\Support\Facades\DB::beginTransaction();
 
             $resep = \App\Models\Resep::findOrFail($id);
-            
+
             // STOK BAHAN BAKU DIKURANGI SAAT TRANSAKSI, BUKAN SAAT UPDATE RESEP
             // STEP 1: Tidak perlu kembalikan stok lama
             $oldStatus = $resep->status;
             $restoreStock = false;
-            
+
             if ($restoreStock) {
                 $oldRincian = \App\Models\RincianResep::where('id_resep', $resep->id)->get();
-                
+
                 foreach ($oldRincian as $old) {
                     $name = trim($old->nama_bahan ?? '');
-                    if (empty($name)) continue;
-                    
+                    if (empty($name)) {
+                        continue;
+                    }
+
                     $bahan = \App\Models\BahanBaku::with('konversi')->where('nama', $name)->first();
-                    if (!$bahan) continue;
-                    
+                    if (! $bahan) {
+                        continue;
+                    }
+
                     $oldQty = (float) ($old->qty ?? 0);
                     $oldUnit = strtolower(trim($old->hitungan ?? ''));
                     $bahanSatuan = $this->getBahanSatuan($bahan);
-                    
+
                     // Konversi qty resep lama ke satuan bahan
                     $convertedQty = $this->convertUnit($oldQty, $oldUnit, $bahanSatuan);
-                    
+
                     if ($convertedQty !== null && $convertedQty > 0) {
                         // Kembalikan stok
                         $bahan->stok += $convertedQty;
                         $bahan->tglupdate = now();
                         $bahan->save();
-                        
+
                         \Illuminate\Support\Facades\Log::info("Update Resep '{$resep->nama}': Stok '{$bahan->nama}' dikembalikan {$oldQty} {$oldUnit} = {$convertedQty} {$bahanSatuan}. Stok sekarang: {$bahan->stok} {$bahanSatuan}");
                     }
                 }
@@ -478,7 +485,7 @@ class ResepController extends Controller
 
             // normalize category to match DB enum values
             $category = $this->normalizeCategory($data['category'] ?? $resep->kategori);
-            
+
             // Get new status
             $newStatus = strtolower(trim($data['status'] ?? $resep->status));
 
@@ -497,7 +504,7 @@ class ResepController extends Controller
             \App\Models\RincianResep::where('id_resep', $resep->id)->delete();
 
             $hasIdBahan = \Illuminate\Support\Facades\Schema::hasColumn('rincian_resep', 'id_bahan');
-            
+
             // STEP 2: Tidak kurangi stok (stok dikurangi saat transaksi)
             $reduceStock = false;
             $stokErrors = [];
@@ -510,23 +517,23 @@ class ResepController extends Controller
 
                 $idBahan = null;
                 $bahan = null;
-                
+
                 if ($name) {
                     $bahan = \App\Models\BahanBaku::with('konversi')->where('nama', $name)->first();
                     if (! $bahan) {
                         // Cari konversi berdasarkan satuan_kecil yang sesuai dengan unit resep
                         $unitNormalized = strtolower(trim($unit ?? 'gram'));
-                        
+
                         $konversiDefault = \App\Models\Konversi::where('satuan_kecil', $unitNormalized)->first();
-                        
+
                         // Jika tidak ada, cari konversi default gram atau yang pertama
-                        if (!$konversiDefault) {
+                        if (! $konversiDefault) {
                             $konversiDefault = \App\Models\Konversi::where('satuan_kecil', 'gram')
                                 ->orWhere('satuan_kecil', 'kg')
                                 ->orWhere('satuan_kecil', 'pcs')
                                 ->first();
                         }
-                        
+
                         $bahan = \App\Models\BahanBaku::create([
                             'nama' => $name,
                             'stok' => 0,
@@ -539,15 +546,15 @@ class ResepController extends Controller
                         $bahan->load('konversi');
                     }
                     $idBahan = $bahan->id;
-                    
+
                     // Kurangi stok jika status bukan draft
                     if ($reduceStock && $qty > 0) {
                         $bahanSatuan = $this->getBahanSatuan($bahan);
                         $resepSatuan = $unit;
-                        
+
                         // Konversi qty resep ke satuan bahan
                         $convertedQty = $this->convertUnit($qty, $resepSatuan, $bahanSatuan);
-                        
+
                         if ($convertedQty === null) {
                             $stokErrors[] = "Tidak dapat mengkonversi {$qty} {$resepSatuan} ke {$bahanSatuan} untuk bahan '{$name}'";
                         } elseif ($bahan->stok < $convertedQty) {
@@ -557,7 +564,7 @@ class ResepController extends Controller
                             $bahan->stok -= $convertedQty;
                             $bahan->tglupdate = now();
                             $bahan->save();
-                            
+
                             \Illuminate\Support\Facades\Log::info("Update Resep '{$resep->nama}': Stok '{$bahan->nama}' berkurang {$qty} {$resepSatuan} = {$convertedQty} {$bahanSatuan}. Sisa: {$bahan->stok} {$bahanSatuan}");
                         }
                     }
@@ -574,21 +581,21 @@ class ResepController extends Controller
                 $r->harga = $price;
                 $r->save();
             }
-            
+
             // Rollback jika ada error stok
-            if (!empty($stokErrors)) {
+            if (! empty($stokErrors)) {
                 \Illuminate\Support\Facades\DB::rollBack();
-                
-                $errorMsg = "Gagal mengupdate resep:\n" . implode("\n", $stokErrors);
-                
+
+                $errorMsg = "Gagal mengupdate resep:\n".implode("\n", $stokErrors);
+
                 if ($request->wantsJson() || $request->ajax()) {
                     return response()->json([
-                        'success' => false, 
+                        'success' => false,
                         'message' => $errorMsg,
-                        'errors' => $stokErrors
+                        'errors' => $stokErrors,
                     ], 422);
                 }
-                
+
                 return redirect()->back()->withErrors(['error' => $errorMsg])->withInput();
             }
 
