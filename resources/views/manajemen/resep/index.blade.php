@@ -718,11 +718,10 @@
                     <select class="ingredient-unit md:col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                         <option value="gram">gram</option>
                         <option value="kg">kg</option>
-                        <option value="ml">ml</option>
+                        <option value="ml">mL</option>
                         <option value="liter">liter</option>
                         <option value="pcs">pcs</option>
-                        <option value="sdm">sdm</option>
-                        <option value="sdt">sdt</option>
+                        <option value="slice">slice</option>
                     </select>
                     <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
                     <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal md:col-span-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
@@ -762,8 +761,7 @@
                     <option value="ml">ml</option>
                     <option value="liter">liter</option>
                     <option value="pcs">pcs</option>
-                    <option value="sdm">sdm</option>
-                    <option value="sdt">sdt</option>
+                    <option value="slice">slice</option>
                 </select>
                 <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" oninput="calculateIngredientCost(this)" value="${ing.price}" required>
                 <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal md:col-span-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly value="${ing.subtotal}">
@@ -1051,8 +1049,7 @@
                     <option value="ml">ml</option>
                     <option value="liter">liter</option>
                     <option value="pcs">pcs</option>
-                    <option value="sdm">sdm</option>
-                    <option value="sdt">sdt</option>
+                    <option value="slice">slice</option>
                 </select>
                 <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
                 <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal md:col-span-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>

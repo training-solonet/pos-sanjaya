@@ -125,6 +125,7 @@
                                                                     <option value="gram">gram</option>  
                                                                     <option value="pcs">pcs</option>
                                                                     <option value="ml">mL (mililiter)</option>
+                                                                    <option value="slice">slice</option>
                                                                 </select>
                                                         </div>
                                                     </div>
@@ -1049,6 +1050,7 @@
                                         <option value="gram" ${item.satuan_kecil === 'gram' ? 'selected' : ''}>gram</option>
                                         <option value="pcs" ${item.satuan_kecil === 'pcs' ? 'selected' : ''}>pcs</option>
                                         <option value="ml" ${item.satuan_kecil === 'ml' ? 'selected' : ''}>ml (mili liter)</option>
+                                        <option value="slice" ${item.satuan_kecil === 'slice' ? 'selected' : ''}>slice</option>
                                     </select>
                                 </div>
                             </div>
