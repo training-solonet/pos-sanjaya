@@ -23,38 +23,38 @@ class DashboardController extends Controller
 
         // 1. Penjualan Hari Ini (Total from bayar field)
         $penjualanHariIni = Transaksi::whereDate('tgl', $today)->sum('bayar');
-        
+
         // Penjualan Kemarin
         $penjualanKemarin = Transaksi::whereDate('tgl', $yesterday)->sum('bayar');
-        
+
         // Hitung persentase perubahan
-        $persenPenjualan = $penjualanKemarin > 0 
+        $persenPenjualan = $penjualanKemarin > 0
             ? round((($penjualanHariIni - $penjualanKemarin) / $penjualanKemarin) * 100, 1)
             : 0;
 
         // 2. Total Transaksi Hari Ini
         $totalTransaksiHariIni = Transaksi::whereDate('tgl', $today)->count();
-        
+
         // Total Transaksi Kemarin
         $totalTransaksiKemarin = Transaksi::whereDate('tgl', $yesterday)->count();
-        
+
         // Hitung persentase perubahan
-        $persenTransaksi = $totalTransaksiKemarin > 0 
+        $persenTransaksi = $totalTransaksiKemarin > 0
             ? round((($totalTransaksiHariIni - $totalTransaksiKemarin) / $totalTransaksiKemarin) * 100, 1)
             : 0;
 
         // 3. Produk Terjual Hari Ini (Total jumlah from detail_transaksi)
-        $produkTerjualHariIni = DetailTransaksi::whereHas('transaksi', function($query) use ($today) {
+        $produkTerjualHariIni = DetailTransaksi::whereHas('transaksi', function ($query) use ($today) {
             $query->whereDate('tgl', $today);
         })->sum('jumlah');
-        
+
         // Produk Terjual Kemarin
-        $produkTerjualKemarin = DetailTransaksi::whereHas('transaksi', function($query) use ($yesterday) {
+        $produkTerjualKemarin = DetailTransaksi::whereHas('transaksi', function ($query) use ($yesterday) {
             $query->whereDate('tgl', $yesterday);
         })->sum('jumlah');
-        
+
         // Hitung persentase perubahan
-        $persenProdukTerjual = $produkTerjualKemarin > 0 
+        $persenProdukTerjual = $produkTerjualKemarin > 0
             ? round((($produkTerjualHariIni - $produkTerjualKemarin) / $produkTerjualKemarin) * 100, 1)
             : 0;
 
@@ -70,7 +70,7 @@ class DashboardController extends Controller
 
         // 6. Produk Terlaris (3 produk dengan penjualan terbanyak hari ini)
         $produkTerlaris = DetailTransaksi::select('id_produk', DB::raw('SUM(jumlah) as total_terjual'))
-            ->whereHas('transaksi', function($query) use ($today) {
+            ->whereHas('transaksi', function ($query) use ($today) {
                 $query->whereDate('tgl', $today);
             })
             ->with('produk')
@@ -84,7 +84,7 @@ class DashboardController extends Controller
         $transaksi7Hari = [];
         $labels7Hari = [];
         $dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-        
+
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $penjualan7Hari[] = Transaksi::whereDate('tgl', $date)->sum('bayar');
