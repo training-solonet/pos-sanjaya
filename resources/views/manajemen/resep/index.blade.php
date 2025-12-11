@@ -704,30 +704,42 @@
     // - Menjamin state disabled pada opsi bahan dikembalikan semula
     function resetIngredientsForm() {
         document.getElementById('ingredientsList').innerHTML = `
-                <div class="ingredient-item grid grid-cols-1 md:grid-cols-12 gap-6 p-3 bg-white rounded-lg border">
-                    <div class="relative md:col-span-5">
+                <div class="ingredient-item grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-white rounded-lg border">
+                    <div class="relative md:col-span-4">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Bahan</label>
                         <select class="ingredient-name w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" onchange="onBahanSelected(this)">
                             <option value="">Pilih bahan...</option>
                             ${createBahanOptions()}
                         </select>
                     </div>
                     <div class="md:col-span-2">
-                        <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
-                        <div class="ingredient-stock text-xs text-gray-500 mt-1">Stok: -</div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Qty</label>
+                        <input type="number" step="0.01" placeholder="0" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
                     </div>
-                    <select class="ingredient-unit md:col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                        <option value="gram">gram</option>
-                        <option value="kg">kg</option>
-                        <option value="ml">mL</option>
-                        <option value="liter">liter</option>
-                        <option value="pcs">pcs</option>
-                        <option value="slice">slice</option>
-                    </select>
-                    <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
-                    <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal md:col-span-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
-                    <button type="button" onclick="removeIngredient(this)" class="md:col-span-1 flex items-center justify-center px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Satuan</label>
+                        <select class="ingredient-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="gram">gram</option>
+                            <option value="kg">kg</option>
+                            <option value="ml">ml</option>
+                            <option value="liter">liter</option>
+                            <option value="pcs">pcs</option>
+                            <option value="slice">slice</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Harga/unit</label>
+                        <input type="number" step="0.01" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Subtotal</label>
+                        <input type="number" step="0.01" placeholder="0" class="ingredient-subtotal w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                    </div>
+                    <div class="md:col-span-1 flex items-end">
+                        <button type="button" onclick="removeIngredient(this)" class="w-full px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 flex items-center justify-center">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             `;
             // ensure options disabled state is reset
@@ -743,43 +755,56 @@
         list.innerHTML = '';
         (recipe.ingredients || []).forEach(ing => {
             const newIngredient = document.createElement('div');
-            newIngredient.className = 'ingredient-item grid grid-cols-1 md:grid-cols-12 gap-6 p-3 bg-white rounded-lg border items-center';
+            newIngredient.className = 'ingredient-item grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-white rounded-lg border items-center';
             newIngredient.innerHTML = `
-                <div class="relative md:col-span-5">
+                <div class="relative md:col-span-4">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Bahan</label>
                     <select class="ingredient-name w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="onBahanSelected(this)">
                         <option value="">Pilih bahan...</option>
                         ${createBahanOptions()}
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg" oninput="calculateIngredientCost(this)" value="${ing.quantity}">
-                    <div class="ingredient-stock text-xs text-gray-500 mt-1">Stok: -</div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Qty</label>
+                    <input type="number" step="0.01" placeholder="0" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg" oninput="calculateIngredientCost(this)" value="${ing.quantity}">
                 </div>
-                <select class="ingredient-unit md:col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="gram">gram</option>
-                    <option value="kg">kg</option>
-                    <option value="ml">ml</option>
-                    <option value="liter">liter</option>
-                    <option value="pcs">pcs</option>
-                    <option value="slice">slice</option>
-                </select>
-                <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" oninput="calculateIngredientCost(this)" value="${ing.price}" required>
-                <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal md:col-span-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly value="${ing.subtotal}">
-                <button type="button" onclick="removeIngredient(this)" class="md:col-span-1 flex items-center justify-center px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Satuan</label>
+                    <select class="ingredient-unit w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="gram">gram</option>
+                        <option value="kg">kg</option>
+                        <option value="ml">ml</option>
+                        <option value="liter">liter</option>
+                        <option value="pcs">pcs</option>
+                        <option value="slice">slice</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Harga/unit</label>
+                    <input type="number" step="0.01" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg" oninput="calculateIngredientCost(this)" value="${ing.price}" required>
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Subtotal</label>
+                    <input type="number" step="0.01" placeholder="0" class="ingredient-subtotal w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly value="${ing.subtotal}">
+                </div>
+                <div class="md:col-span-1 flex items-end">
+                    <button type="button" onclick="removeIngredient(this)" class="w-full px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 flex items-center justify-center">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             `;
-            const sel = newIngredient.querySelector('.ingredient-unit');
-            if (sel) sel.value = ing.unit || 'gram';
-            // set bahan selection and apply stock limits (match by name -> id)
+            // set bahan selection and apply auto-fill satuan & harga (match by name -> id)
             const nameSelect = newIngredient.querySelector('.ingredient-name');
             if (nameSelect) {
                 const found = (bahanList || []).find(b => b.nama === (ing.name || ''));
                 if (found) {
                     nameSelect.value = found.id;
-                    onBahanSelected(nameSelect);
+                    onBahanSelected(nameSelect); // ini akan auto-set satuan & harga
                 } else {
                     nameSelect.value = '';
+                    // jika bahan tidak ditemukan, set manual dari data resep
+                    const sel = newIngredient.querySelector('.ingredient-unit');
+                    if (sel) sel.value = ing.unit || 'gram';
                 }
             }
             list.appendChild(newIngredient);
@@ -906,12 +931,16 @@
     }
 
     // Ketika bahan dipilih pada baris bahan:
-    // - Set atribut max/placeholder pada input qty menurut stok
-    // - Menampilkan informasi stok dan menyimpan id/stok bahan pada atribut baris
+    // - Menyimpan id bahan pada atribut baris untuk referensi saat submit
+    // - Mengatur satuan otomatis sesuai satuan_kecil bahan
+    // - Mengisi harga_satuan otomatis dari database
     function onBahanSelected(input) {
         const row = input.closest('.ingredient-item');
         if (!row) return;
-        const qtyInput = row.querySelector('.ingredient-quantity');
+        
+        const unitSelect = row.querySelector('.ingredient-unit');
+        const priceInput = row.querySelector('.ingredient-price');
+        
         let found = null;
         try {
             if (input.tagName === 'SELECT') {
@@ -926,25 +955,66 @@
         }
 
         if (found) {
-            if (qtyInput) {
-                qtyInput.max = found.stok;
-                qtyInput.placeholder = `Max: ${found.stok}`;
-                if (parseFloat(qtyInput.value) > Number(found.stok)) {
-                    qtyInput.value = found.stok;
-                    calculateIngredientCost(qtyInput);
+            row.setAttribute('data-bahan-id', found.id);
+            
+            // Set satuan otomatis berdasarkan satuan_kecil
+            if (unitSelect && found.satuan_kecil) {
+                const satuan = String(found.satuan_kecil).toLowerCase().trim();
+                
+                // Update options berdasarkan satuan_kecil
+                if (satuan === 'kg') {
+                    // kg bisa diganti gram
+                    unitSelect.innerHTML = `
+                        <option value="kg" selected>kg</option>
+                        <option value="gram">gram</option>
+                    `;
+                } else if (satuan === 'gram' || satuan === 'g') {
+                    // gram hanya gram
+                    unitSelect.innerHTML = `<option value="gram" selected>gram</option>`;
+                } else if (satuan === 'liter' || satuan === 'l') {
+                    // liter bisa diganti ml
+                    unitSelect.innerHTML = `
+                        <option value="liter" selected>liter</option>
+                        <option value="ml">ml</option>
+                    `;
+                } else if (satuan === 'ml') {
+                    // ml hanya ml
+                    unitSelect.innerHTML = `<option value="ml" selected>ml</option>`;
+                } else if (satuan === 'pcs') {
+                    // pcs hanya pcs
+                    unitSelect.innerHTML = `<option value="pcs" selected>pcs</option>`;
+                } else if (satuan === 'slice') {
+                    // slice hanya slice
+                    unitSelect.innerHTML = `<option value="slice" selected>slice</option>`;
+                } else {
+                    // default ke satuan dari database
+                    unitSelect.innerHTML = `<option value="${satuan}" selected>${satuan}</option>`;
                 }
             }
-            const stockEl = row.querySelector('.ingredient-stock');
-            if (stockEl) stockEl.textContent = `Stok: ${found.stok} • Sisa: ${Math.max(0, found.stok - (parseFloat(qtyInput.value) || 0))}`;
-            row.setAttribute('data-bahan-id', found.id);
-            row.setAttribute('data-bahan-stok', found.stok);
-        } else {
-            if (qtyInput) {
-                qtyInput.removeAttribute('max');
-                qtyInput.placeholder = '';
+            
+            // Set harga otomatis dari harga_satuan
+            if (priceInput && found.harga_satuan) {
+                priceInput.value = found.harga_satuan;
+                // Trigger kalkulasi subtotal
+                calculateIngredientCost(priceInput);
             }
+        } else {
             row.removeAttribute('data-bahan-id');
-            row.removeAttribute('data-bahan-stok');
+            
+            // Reset ke pilihan default jika tidak ada bahan
+            if (unitSelect) {
+                unitSelect.innerHTML = `
+                    <option value="gram">gram</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="liter">liter</option>
+                    <option value="pcs">pcs</option>
+                    <option value="slice">slice</option>
+                `;
+            }
+            if (priceInput) {
+                priceInput.value = '';
+            }
         }
         // perbarui status disabled opsi bahan di semua select
         refreshBahanOptionsDisable();
@@ -1030,32 +1100,43 @@
     function addIngredient() {
         const ingredientsList = document.getElementById('ingredientsList');
         const newIngredient = document.createElement('div');
-        newIngredient.className =
-        'ingredient-item grid grid-cols-1 md:grid-cols-12 gap-6 p-3 bg-white rounded-lg border items-center';
+        newIngredient.className = 'ingredient-item grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-white rounded-lg border items-center';
         newIngredient.innerHTML = `
-                <div class="relative md:col-span-5">
-                    <select class="ingredient-name md:col-span-4 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" onchange="onBahanSelected(this)">
+                <div class="relative md:col-span-4">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Bahan</label>
+                    <select class="ingredient-name w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" onchange="onBahanSelected(this)">
                         <option value="">Pilih bahan...</option>
                         ${createBahanOptions()}
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <input type="number" step="0.01" placeholder="Qty" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
-                    <div class="ingredient-stock text-xs text-gray-500 mt-1">Stok: -</div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Qty</label>
+                    <input type="number" step="0.01" placeholder="0" class="ingredient-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)">
                 </div>
-                <select class="ingredient-unit md:col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                    <option value="gram">gram</option>
-                    <option value="kg">kg</option>
-                    <option value="ml">ml</option>
-                    <option value="liter">liter</option>
-                    <option value="pcs">pcs</option>
-                    <option value="slice">slice</option>
-                </select>
-                <input type="number" step="0.01" placeholder="Harga/unit" class="ingredient-price md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
-                <input type="number" step="0.01" placeholder="Subtotal" class="ingredient-subtotal md:col-span-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
-                <button type="button" onclick="removeIngredient(this)" class="md:col-span-1 flex items-center justify-center px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Satuan</label>
+                    <select class="ingredient-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        <option value="gram">gram</option>
+                        <option value="kg">kg</option>
+                        <option value="ml">ml</option>
+                        <option value="liter">liter</option>
+                        <option value="pcs">pcs</option>
+                        <option value="slice">slice</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Harga/unit</label>
+                    <input type="number" step="0.01" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Subtotal</label>
+                    <input type="number" step="0.01" placeholder="0" class="ingredient-subtotal w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                </div>
+                <div class="md:col-span-1 flex items-end">
+                    <button type="button" onclick="removeIngredient(this)" class="w-full px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 flex items-center justify-center">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             `;
         ingredientsList.appendChild(newIngredient);
         // after adding new select, refresh disabled options so existing selections are respected
@@ -1076,18 +1157,6 @@
         const quantity = parseFloat(row.querySelector('.ingredient-quantity').value) || 0;
         const price = parseFloat(row.querySelector('.ingredient-price').value) || 0;
         const subtotal = quantity * price;
-
-        // enforce max if bahan has stok
-        const stokAttr = row.getAttribute('data-bahan-stok');
-        const stok = stokAttr !== null ? Number(stokAttr) : null;
-        if (stok !== null && !isNaN(stok)) {
-            if (quantity > stok) {
-                row.querySelector('.ingredient-quantity').value = stok;
-            }
-            const remaining = stok - (parseFloat(row.querySelector('.ingredient-quantity').value) || 0);
-            const stockEl = row.querySelector('.ingredient-stock');
-            if (stockEl) stockEl.textContent = `Stok: ${stok} • Sisa: ${remaining}`;
-        }
 
         row.querySelector('.ingredient-subtotal').value = subtotal.toFixed(0);
         calculateTotalCost();
@@ -1265,7 +1334,15 @@
             method: method,
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
             body: JSON.stringify(payload)
-        }).then(res => res.json())
+        }).then(res => {
+            // Check if response is not ok (status 422, 500, etc)
+            if (!res.ok) {
+                return res.json().then(errData => {
+                    throw { status: res.status, data: errData };
+                });
+            }
+            return res.json();
+        })
         .then(data => {
             if (data && data.success) {
                 closeAddRecipeModal();
@@ -1278,7 +1355,22 @@
             }
         }).catch(err => {
             console.error(err);
-            alert(err.message || 'Terjadi kesalahan saat menyimpan resep');
+            let errorMessage = 'Terjadi kesalahan saat menyimpan resep';
+            
+            // Handle validation errors (422)
+            if (err.status === 422 && err.data) {
+                if (err.data.message) {
+                    errorMessage = err.data.message;
+                } else if (err.data.errors) {
+                    errorMessage = Array.isArray(err.data.errors) 
+                        ? err.data.errors.join('\n') 
+                        : Object.values(err.data.errors).flat().join('\n');
+                }
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+            
+            alert(errorMessage);
         });
     }
 </script>
