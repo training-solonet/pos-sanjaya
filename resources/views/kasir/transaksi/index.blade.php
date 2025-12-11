@@ -224,7 +224,7 @@
                                         <div id="insufficientWarning" class="p-3 bg-red-50 border border-red-200 rounded-lg text-center hidden">
                                             <div class="flex items-center justify-center space-x-2 text-red-600">
                                                 <i class="fas fa-exclamation-triangle text-sm"></i>
-                                                <span class="text-sm font-medium">Uang tidak mencukupi</span>
+                                                <span class="text-sm                                                                                                                                                                                            font-medium">Uang tidak mencukupi</span>
                                             </div>
                                             <div class="text-xs text-red-500 mt-1">
                                                 Kurang: <span id="shortageAmount">Rp 0</span>
@@ -232,7 +232,7 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Non-cash Payment Info -->
+                                    <!-- Non-cash Payment Info --> 
                                     <div id="nonCashPaymentInfo" class="hidden">
                                         <div class="text-center py-4">
                                             <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -252,11 +252,11 @@
                             <div class="mb-3">
                                 <label class="text-xs font-semibold text-gray-900 mb-2 block">Metode Pembayaran</label>
                                 <div class="grid grid-cols-2 gap-2 mb-2">
-                                    <button class="payment-method active p-2 border-2 border-green-500 bg-green-100 rounded-lg text-center transition-all" data-method="cash">
+                                    <button class="payment-method active p-2 border-2 border-green-500 bg-green-100 rounded-lg text-center transition-all" data-method="tunai">
                                         <i class="fas fa-money-bill text-green-600 mb-1 text-sm"></i>
                                         <p class="text-xs font-medium text-green-600">Tunai</p>
                                     </button>
-                                    <button class="payment-method p-2 border-2 border-gray-200 rounded-lg text-center hover:border-gray-300 transition-all" data-method="card">
+                                    <button class="payment-method p-2 border-2 border-gray-200 rounded-lg text-center hover:border-gray-300 transition-all" data-method="kartu">
                                         <i class="fas fa-credit-card text-gray-500 mb-1 text-sm"></i>
                                         <p class="text-xs font-medium text-gray-600">Kartu</p>
                                     </button>
@@ -581,7 +581,7 @@
         }
 
         // Payment related functions
-        let selectedPaymentMethod = 'cash';
+        let selectedPaymentMethod = 'tunai';
         let currentTotal = 0;
 
         // Handle payment method selection
@@ -616,7 +616,7 @@
             const paymentIcon = document.getElementById('paymentIcon');
             const paymentMethodName = document.getElementById('selectedPaymentMethod');
             
-            if (selectedPaymentMethod === 'cash') {
+            if (selectedPaymentMethod === 'tunai') {
                 cashInput.classList.remove('hidden');
                 nonCashInfo.classList.add('hidden');
             } else {
@@ -625,7 +625,7 @@
                 
                 // Update icon and method name
                 switch (selectedPaymentMethod) {
-                    case 'card':
+                    case 'kartu':
                         paymentIcon.className = 'fas fa-credit-card text-blue-600 text-2xl';
                         paymentMethodName.textContent = 'Kartu Kredit/Debit';
                         break;
@@ -729,7 +729,7 @@
             
             if (cart.length === 0) {
                 isEnabled = false;
-            } else if (selectedPaymentMethod === 'cash') {
+            } else if (selectedPaymentMethod === 'tunai') {
                 const cashValue = parseFloat(document.getElementById('cashAmount').value.replace(/[^0-9]/g, '')) || 0;
                 const total = getCurrentTotal();
                 isEnabled = cashValue >= total;
@@ -774,7 +774,7 @@
             let bayar = finalTotal;
             let kembalian = 0;
             
-            if (paymentMethod === 'cash') {
+            if (paymentMethod === 'tunai') {
                 const cashInput = document.getElementById('cashAmount');
                 const cashValue = cashInput.value.replace(/[^0-9]/g, '');
                 
@@ -1238,7 +1238,7 @@
             let bayar = finalTotal;
             let kembalian = 0;
             
-            if (paymentMethod === 'cash') {
+            if (paymentMethod === 'tunai') {
                 const cashInput = document.getElementById('cashAmount');
                 const cashValue = cashInput.value.replace(/[^0-9]/g, '');
                 
