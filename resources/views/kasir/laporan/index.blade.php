@@ -6,6 +6,48 @@
     body { font-family: 'Inter', sans-serif; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
+    
+    /* Real-time animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+    
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+    
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
 </style>
 
 <!-- Mobile Overlay -->
@@ -14,6 +56,11 @@
             <!-- Filter Section -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
                 <div class="px-4 lg:px-6 py-4">
+                    <div class="mb-3 flex items-center justify-between">
+                        <span class="text-xs text-gray-500 italic">
+                            <i class="fas fa-info-circle mr-1"></i>Filter otomatis diterapkan saat mengubah pilihan
+                        </span>
+                    </div>
                     <div class="flex flex-col lg:flex-row lg:items-end gap-4">
                         <!-- Filter by Date -->
                         <div class="flex-1">
@@ -76,7 +123,11 @@
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900">Detail Transaksi</h3>
-                            <p class="text-sm text-gray-500">Daftar semua transaksi hari ini</p>
+                            <p class="text-sm text-gray-500">
+                                Daftar semua transaksi hari ini
+                                <span id="realTimeIndicator" class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span id="lastUpdateTime" class="ml-2 text-xs text-gray-400"></span>
+                            </p>
                         </div>
                         <div class="flex items-center space-x-3">
                             <input type="text" id="searchTransaction" placeholder="Cari transaksi..." 
@@ -127,6 +178,9 @@
         const salesData = {
             transactions: @json($transactions)
         };
+        
+        // Debug: Log initial data
+        console.log('Initial transactions:', salesData.transactions);
 
         // Filter state
         let currentFilters = {
@@ -136,13 +190,23 @@
             cashier: ''
         };
 
+        // Real-time update settings
+        let autoRefreshEnabled = true;
+        let refreshInterval = null;
+        const REFRESH_INTERVAL_MS = 5000; // 5 seconds
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             displayCurrentDate();
             setTodayDate();
+            currentFilters.date = document.getElementById('filterDate').value;
             renderTransactions();
             setupSearch();
+            setupFilterListeners();
             restoreFilters();
+            updateLastUpdateTime();
+            updateRefreshButton();
+            startAutoRefresh();
         });
 
         // Restore filter values from URL
@@ -153,9 +217,23 @@
             const metode = urlParams.get('metode');
             const kasir = urlParams.get('kasir');
             
-            if (tanggal) document.getElementById('filterDate').value = tanggal;
-            if (metode) document.getElementById('filterPayment').value = metode;
-            if (kasir) document.getElementById('filterCashier').value = kasir;
+            if (tanggal) {
+                document.getElementById('filterDate').value = tanggal;
+                currentFilters.date = tanggal;
+            }
+            if (metode) {
+                document.getElementById('filterPayment').value = metode;
+                currentFilters.payment = metode;
+            }
+            if (kasir) {
+                document.getElementById('filterCashier').value = kasir;
+                currentFilters.cashier = kasir;
+            }
+            
+            // Fetch data with restored filters
+            if (tanggal || metode || kasir) {
+                fetchTransactions();
+            }
         }
 
         // Set today's date in filter
@@ -169,12 +247,15 @@
 
         // Display current date
         function displayCurrentDate() {
-            const today = new Date();
-            const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
-            const timeOptions = { hour: '2-digit', minute: '2-digit' };
-            const dateStr = today.toLocaleDateString('id-ID', dateOptions);
-            const timeStr = today.toLocaleTimeString('id-ID', timeOptions);
-            document.getElementById('currentDate').textContent = `${dateStr}, ${timeStr}`;
+            const currentDateEl = document.getElementById('currentDate');
+            if (currentDateEl) {
+                const today = new Date();
+                const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+                const timeOptions = { hour: '2-digit', minute: '2-digit' };
+                const dateStr = today.toLocaleDateString('id-ID', dateOptions);
+                const timeStr = today.toLocaleTimeString('id-ID', timeOptions);
+                currentDateEl.textContent = `${dateStr}, ${timeStr}`;
+            }
         }
         
         // Update date every minute
@@ -186,23 +267,213 @@
             const metode = document.getElementById('filterPayment').value;
             const kasir = document.getElementById('filterCashier').value;
             
-            // Build URL with query parameters
-            const params = new URLSearchParams();
-            if (tanggal) params.append('tanggal', tanggal);
-            if (metode) params.append('metode', metode);
-            if (kasir) params.append('kasir', kasir);
+            // Update current filters
+            currentFilters.date = tanggal;
+            currentFilters.payment = metode;
+            currentFilters.cashier = kasir;
             
-            // Reload page with filters
-            window.location.href = '{{ route("kasir.laporan.index") }}?' + params.toString();
+            // Fetch new data with filters
+            fetchTransactions();
         }
 
         // Reset filters
         function resetFilters() {
-            window.location.href = '{{ route("kasir.laporan.index") }}';
+            document.getElementById('filterDate').value = '';
+            document.getElementById('filterPayment').value = '';
+            document.getElementById('filterCashier').value = '';
+            document.getElementById('searchTransaction').value = '';
+            
+            currentFilters = {
+                search: '',
+                date: '',
+                payment: '',
+                cashier: ''
+            };
+            
+            setTodayDate();
+            currentFilters.date = document.getElementById('filterDate').value;
+            fetchTransactions();
+        }
+
+        // Fetch transactions from API
+        async function fetchTransactions() {
+            try {
+                // Show loading state
+                showLoadingState();
+                
+                const params = new URLSearchParams();
+                if (currentFilters.date) params.append('tanggal', currentFilters.date);
+                if (currentFilters.payment) params.append('metode', currentFilters.payment);
+                if (currentFilters.cashier) params.append('kasir', currentFilters.cashier);
+                if (currentFilters.search) params.append('search', currentFilters.search);
+                
+                console.log('Fetching from API with filters:', currentFilters);
+                const url = `{{ route('kasir.laporan.api.transactions') }}?${params.toString()}`;
+                console.log('API URL:', url);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log('API Response:', data);
+                
+                if (data.success) {
+                    const oldCount = salesData.transactions.length;
+                    const newCount = data.transactions.length;
+                    
+                    salesData.transactions = data.transactions;
+                    renderTransactions();
+                    updateLastUpdateTime();
+                    
+                    // Hide loading state
+                    hideLoadingState();
+                    
+                    // Flash indicator
+                    flashUpdateIndicator();
+                    
+                    // Show notification if new transactions (only for auto-refresh, not manual filter)
+                    if (newCount > oldCount && oldCount > 0 && autoRefreshEnabled) {
+                        showNewTransactionNotification(newCount - oldCount);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
+                hideLoadingState();
+                showErrorNotification();
+            }
+        }
+        
+        // Show new transaction notification
+        function showNewTransactionNotification(count) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2 animate-fade-in';
+            notification.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>${count} transaksi baru ditambahkan</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 500);
+            }, 3000);
+        }
+        
+        // Show error notification
+        function showErrorNotification() {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2 animate-fade-in';
+            notification.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>Gagal memuat data transaksi</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 500);
+            }, 3000);
+        }
+
+        // Show loading state
+        function showLoadingState() {
+            const tbody = document.getElementById('transactionTableBody');
+            const showingCount = document.getElementById('showingCount');
+            const totalCount = document.getElementById('totalCount');
+            
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="px-4 py-8 text-center">
+                        <div class="flex flex-col items-center justify-center space-y-3">
+                            <i class="fas fa-spinner fa-spin text-3xl text-green-500"></i>
+                            <p class="text-sm text-gray-500">Memuat data transaksi...</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Hide loading state
+        function hideLoadingState() {
+            // Loading state will be replaced by actual data in renderTransactions()
+        }
+
+        // Start auto refresh
+        function startAutoRefresh() {
+            if (autoRefreshEnabled && !refreshInterval) {
+                refreshInterval = setInterval(() => {
+                    fetchTransactions();
+                }, REFRESH_INTERVAL_MS);
+                updateRefreshButton();
+            }
+        }
+
+        // Stop auto refresh
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+                updateRefreshButton();
+            }
+        }
+
+        // Toggle auto refresh
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            
+            if (autoRefreshEnabled) {
+                startAutoRefresh();
+                fetchTransactions(); // Immediate refresh
+            } else {
+                stopAutoRefresh();
+            }
+        }
+
+        // Update refresh button state
+        function updateRefreshButton() {
+            const btn = document.getElementById('autoRefreshBtn');
+            const icon = document.getElementById('refreshIcon');
+            const text = document.getElementById('refreshText');
+            
+            if (autoRefreshEnabled && refreshInterval) {
+                btn.className = 'px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 flex items-center space-x-2 transition-all';
+                icon.className = 'fas fa-sync-alt text-sm animate-spin';
+                text.textContent = 'Auto';
+            } else {
+                btn.className = 'px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center space-x-2 transition-all';
+                icon.className = 'fas fa-sync-alt text-sm';
+                text.textContent = 'Manual';
+            }
+        }
+
+        // Update last update time
+        function updateLastUpdateTime() {
+            const lastUpdateEl = document.getElementById('lastUpdateTime');
+            if (lastUpdateEl) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                lastUpdateEl.textContent = `Update terakhir: ${timeStr}`;
+            }
+        }
+
+        // Flash update indicator
+        function flashUpdateIndicator() {
+            const indicator = document.getElementById('realTimeIndicator');
+            if (indicator) {
+                indicator.classList.add('ring-2', 'ring-green-300');
+                setTimeout(() => {
+                    indicator.classList.remove('ring-2', 'ring-green-300');
+                }, 300);
+            }
         }
 
         // Render transactions table
         function renderTransactions() {
+            console.log('Rendering transactions...', salesData.transactions.length);
             const tbody = document.getElementById('transactionTableBody');
             let transactions = salesData.transactions;
 
@@ -214,44 +485,107 @@
                 );
             }
 
-            tbody.innerHTML = transactions.map(t => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm font-medium text-gray-900">${t.invoice}</span>
-                    </td>
-                    <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900">${t.time}</span>
-                    </td>
-                    <td class="px-4 lg:px-6 py-4">
-                        <span class="text-sm text-gray-900">${t.products}</span>
-                    </td>
-                    <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900">${t.quantity} item</span>
-                    </td>
-                    <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm font-medium text-gray-900">${formatCurrency(t.total)}</span>
-                    </td>
-                    <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPaymentBadgeClass(t.payment)}">
-                            ${t.payment}
-                        </span>
-                    </td>
-                    <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900">${t.cashier}</span>
-                    </td>
-                </tr>
-            `).join('');
+            // Add fade-in animation for new rows
+            const currentCount = tbody.querySelectorAll('tr').length;
+            const newCount = transactions.length;
+            const hasNewData = newCount > currentCount;
+
+            if (transactions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center">
+                            <div class="flex flex-col items-center justify-center space-y-3">
+                                <i class="fas fa-inbox text-4xl text-gray-300"></i>
+                                <p class="text-sm text-gray-500">Tidak ada transaksi ditemukan</p>
+                                <p class="text-xs text-gray-400">Coba ubah filter atau pilih tanggal lain</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = transactions.map((t, index) => `
+                    <tr class="hover:bg-gray-50 transition-all ${hasNewData && index === 0 ? 'animate-fade-in bg-green-50' : ''}">
+                        <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900">${t.invoice}</span>
+                        </td>
+                        <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm text-gray-900">${t.time}</span>
+                        </td>
+                        <td class="px-4 lg:px-6 py-4">
+                            <span class="text-sm text-gray-900">${t.products}</span>
+                        </td>
+                        <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm text-gray-900">${t.quantity} item</span>
+                        </td>
+                        <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900">${formatCurrency(t.total)}</span>
+                        </td>
+                        <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPaymentBadgeClass(t.payment)}">
+                                ${t.payment}
+                            </span>
+                        </td>
+                        <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm text-gray-900">${t.cashier}</span>
+                        </td>
+                    </tr>
+                `).join('');
+            }
 
             document.getElementById('showingCount').textContent = transactions.length;
             document.getElementById('totalCount').textContent = salesData.transactions.length;
+
+            // Remove highlight after animation
+            if (hasNewData) {
+                setTimeout(() => {
+                    const firstRow = tbody.querySelector('tr:first-child');
+                    if (firstRow) {
+                        firstRow.classList.remove('bg-green-50');
+                    }
+                }, 2000);
+            }
         }
 
         // Setup search
         function setupSearch() {
             const searchInput = document.getElementById('searchTransaction');
+            let searchTimeout;
+            
             searchInput.addEventListener('input', (e) => {
                 currentFilters.search = e.target.value;
-                renderTransactions();
+                
+                // Debounce search to avoid too many requests
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    renderTransactions();
+                }, 300);
+            });
+        }
+
+        // Setup filter listeners for real-time changes
+        function setupFilterListeners() {
+            // Date filter change
+            const dateInput = document.getElementById('filterDate');
+            dateInput.addEventListener('change', (e) => {
+                console.log('Date changed to:', e.target.value);
+                currentFilters.date = e.target.value;
+                fetchTransactions();
+            });
+            
+            // Payment method filter change
+            const paymentSelect = document.getElementById('filterPayment');
+            paymentSelect.addEventListener('change', (e) => {
+                console.log('Payment method changed to:', e.target.value);
+                currentFilters.payment = e.target.value;
+                fetchTransactions();
+            });
+            
+            // Cashier filter change
+            const cashierSelect = document.getElementById('filterCashier');
+            cashierSelect.addEventListener('change', (e) => {
+                console.log('Cashier changed to:', e.target.value);
+                currentFilters.cashier = e.target.value;
+                fetchTransactions();
             });
         }
 

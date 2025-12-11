@@ -1,55 +1,6 @@
 @extends('layouts.kasir.index')
 
 @section('content')
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Sanjaya - Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3B82F6',
-                        secondary: '#1E40AF',
-                        accent: '#F59E0B',
-                        success: '#10B981',
-                        danger: '#EF4444',
-                        dark: '#1F2937',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        
-        /* Responsive sidebar styles */
-        @media (max-width: 1023px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .sidebar:not(.-translate-x-full) {
-                transform: translateX(0);
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .sidebar {
-                transform: translateX(0) !important;
-            }
-        }
-    </style>
-</head>
-<body class="bg-gray-50 min-h-screen lg:flex">
     <!-- Mobile Overlay -->
     <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
 
@@ -88,8 +39,12 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Penjualan Hari Ini</p>
-                                <p class="text-lg font-bold text-gray-900">Rp 2.450.000</p>
-                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>12% dari kemarin</p>
+                                <p class="text-lg font-bold text-gray-900">Rp {{ number_format($penjualanHariIni, 0, ',', '.') }}</p>
+                                @if($persenPenjualan >= 0)
+                                    <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>{{ abs($persenPenjualan) }}% dari kemarin</p>
+                                @else
+                                    <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>{{ abs($persenPenjualan) }}% dari kemarin</p>
+                                @endif
                             </div>
                             <div class="w-12 h-12 bg-gradient-to-r from-green-400 to-green-700 bg-opacity-10 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-cash-register text-white text-xl"></i>
@@ -102,8 +57,12 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Total Transaksi</p>
-                                <p class="text-lg font-bold text-gray-900">87</p>
-                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>5% dari kemarin</p>
+                                <p class="text-lg font-bold text-gray-900">{{ $totalTransaksiHariIni }}</p>
+                                @if($persenTransaksi >= 0)
+                                    <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>{{ abs($persenTransaksi) }}% dari kemarin</p>
+                                @else
+                                    <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>{{ abs($persenTransaksi) }}% dari kemarin</p>
+                                @endif
                             </div>
                             <div class="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-receipt text-success text-xl"></i>
@@ -116,8 +75,12 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Produk Terjual</p>
-                                <p class="text-lg font-bold text-gray-900">234</p>
-                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>8% dari kemarin</p>
+                                <p class="text-lg font-bold text-gray-900">{{ $produkTerjualHariIni }}</p>
+                                @if($persenProdukTerjual >= 0)
+                                    <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>{{ abs($persenProdukTerjual) }}% dari kemarin</p>
+                                @else
+                                    <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>{{ abs($persenProdukTerjual) }}% dari kemarin</p>
+                                @endif
                             </div>
                             <div class="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-box text-accent text-xl"></i>
@@ -130,7 +93,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Stok Rendah</p>
-                                <p class="text-lg font-bold text-gray-900">3</p>
+                                <p class="text-lg font-bold text-gray-900">{{ $stokRendah }}</p>
                                 <p class="text-sm text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Perlu restok</p>
                             </div>
                             <div class="w-12 h-12 bg-danger/10 rounded-lg flex items-center justify-center">
@@ -189,47 +152,38 @@
                         </div>
                         <div class="p-6">
                             <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 bg-gradient-to-r from-green-400 to-green-700 bg-opacity-10 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-receipt text-white"></i>
+                                @forelse($transaksiTerakhir as $index => $transaksi)
+                                    @php
+                                        $bgColors = [
+                                            'bg-gradient-to-r from-green-400 to-green-700 bg-opacity-10',
+                                            'bg-success/10',
+                                            'bg-accent/10'
+                                        ];
+                                        $iconColors = ['text-white', 'text-success', 'text-accent'];
+                                        $bgColor = $bgColors[$index % 3];
+                                        $iconColor = $iconColors[$index % 3];
+                                        $totalItem = $transaksi->detailTransaksi->sum('jumlah');
+                                    @endphp
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 {{ $bgColor }} rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-receipt {{ $iconColor }}"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">#TRX-{{ str_pad($transaksi->id, 3, '0', STR_PAD_LEFT) }}</p>
+                                                <p class="text-xs text-gray-500">{{ $totalItem }} item • {{ $transaksi->created_at->format('H:i') }}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">#TRX-001</p>
-                                            <p class="text-xs text-gray-500">2 item • 09:30</p>
-                                        </div>
+                                        <p class="text-sm font-bold text-gray-900">Rp {{ number_format($transaksi->bayar, 0, ',', '.') }}</p>
                                     </div>
-                                    <p class="text-sm font-bold text-gray-900">Rp 35.000</p>
-                                </div>
-                                
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-receipt text-success"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">#TRX-002</p>
-                                            <p class="text-xs text-gray-500">1 item • 09:25</p>
-                                        </div>
+                                @empty
+                                    <div class="text-center py-4">
+                                        <p class="text-sm text-gray-500">Belum ada transaksi hari ini</p>
                                     </div>
-                                    <p class="text-sm font-bold text-gray-900">Rp 15.000</p>
-                                </div>
-
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-receipt text-accent"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">#TRX-003</p>
-                                            <p class="text-xs text-gray-500">3 item • 09:20</p>
-                                        </div>
-                                    </div>
-                                    <p class="text-sm font-bold text-gray-900">Rp 45.000</p>
-                                </div>
+                                @endforelse
                             </div>
                             <div class="mt-4 pt-4 border-t border-gray-200">
-                                <a href="jurnal.html" class="text-sm text-green-600 hover:text-green-800 font-medium">Lihat Semua Transaksi →</a>
+                                <a href="{{ route('kasir.jurnal.index') }}" class="text-sm text-green-600 hover:text-green-800 font-medium">Lihat Semua Transaksi →</a>
                             </div>
                         </div>
                     </div>
@@ -241,47 +195,27 @@
                         </div>
                         <div class="p-6">
                             <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-bread-slice text-gray-400"></i>
+                                @forelse($produkTerlaris as $item)
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-box text-gray-400"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">{{ $item->produk->nama }}</p>
+                                                <p class="text-xs text-gray-500">{{ $item->total_terjual }} terjual</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">Roti Tawar</p>
-                                            <p class="text-xs text-gray-500">65 terjual</p>
-                                        </div>
+                                        <p class="text-sm font-bold text-gray-900">Rp {{ number_format($item->produk->harga, 0, ',', '.') }}</p>
                                     </div>
-                                    <p class="text-sm font-bold text-gray-900">Rp 8.000</p>
-                                </div>
-
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-cookie text-gray-400"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">Croissant</p>
-                                            <p class="text-xs text-gray-500">48 terjual</p>
-                                        </div>
+                                @empty
+                                    <div class="text-center py-4">
+                                        <p class="text-sm text-gray-500">Belum ada produk terjual hari ini</p>
                                     </div>
-                                    <p class="text-sm font-bold text-gray-900">Rp 15.000</p>
-                                </div>
-
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-water text-gray-400"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">Teh Botol</p>
-                                            <p class="text-xs text-gray-500">42 terjual</p>
-                                        </div>
-                                    </div>
-                                    <p class="text-sm font-bold text-gray-900">Rp 6.000</p>
-                                </div>
+                                @endforelse
                             </div>
                             <div class="mt-4 pt-4 border-t border-gray-200">
-                                <a href="laporan.html" class="text-sm text-green-600 hover:text-green-800 font-medium">Lihat Laporan Lengkap →</a>
+                                <a href="{{ route('kasir.jurnal.index') }}" class="text-sm text-green-600 hover:text-green-800 font-medium">Lihat Laporan Lengkap →</a>
                             </div>
                         </div>
                     </div>
@@ -437,9 +371,9 @@
         // Sales Chart Data
         const salesData = {
             '7days': {
-                labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-                sales: [1850000, 2100000, 2400000, 1950000, 2650000, 2900000, 2000000],
-                transactions: [45, 52, 68, 47, 78, 89, 60],
+                labels: @json($labels7Hari),
+                sales: @json($penjualan7Hari),
+                transactions: @json($transaksi7Hari),
                 colors: {
                     primary: 'rgba(34, 197, 94, 0.8)',
                     secondary: 'rgba(59, 130, 246, 0.6)'
