@@ -247,14 +247,14 @@ class ProdukController extends Controller
                         'tanggal_update' => now(),
                         'keterangan' => 'Update stok melalui edit produk',
                     ]);
-                    
+
                     // KURANGI STOK BAHAN BAKU jika stok BERTAMBAH (selisih positif) (Tambahan Code)
                     if ($selisihStok > 0) {
                         Log::info("=== UPDATE PRODUK: Stok '{$produk->nama}' bertambah +{$selisihStok} ===");
                         try {
                             $this->reduceBahanBakuFromResep($produk, $selisihStok);
                         } catch (\Exception $e) {
-                            Log::error("Error reduce bahan baku dari update produk: " . $e->getMessage());
+                            Log::error('Error reduce bahan baku dari update produk: '.$e->getMessage());
                             // Tidak throw agar update produk tetap berhasil
                         }
                     } else {
@@ -349,13 +349,13 @@ class ProdukController extends Controller
                 'tanggal_update' => now(),
                 'keterangan' => $request->keterangan ?? 'Penambahan stok manual',
             ]);
-             
+
             // KURANGI STOK BAHAN BAKU BERDASARKAN RESEP (Tambahan Code)
             Log::info("=== TAMBAH STOK PRODUK '{$produk->nama}' +{$stokBaru} ===");
             try {
                 $this->reduceBahanBakuFromResep($produk, $stokBaru);
             } catch (\Exception $e) {
-                Log::error("Error reduce bahan baku: " . $e->getMessage());
+                Log::error('Error reduce bahan baku: '.$e->getMessage());
                 // Tidak throw agar update stok produk tetap berhasil
             }
 
@@ -379,7 +379,6 @@ class ProdukController extends Controller
 
     public function edit(string $id) {}
 
-    
     /**
      * Tambahan code
      * Kurangi stok bahan baku berdasarkan resep produk
@@ -388,91 +387,98 @@ class ProdukController extends Controller
     {
         try {
             Log::info(">>> Produk '{$produk->nama}' +{$jumlahProduk}, cek resep...");
-            
+
             // Cari resep aktif untuk produk ini
             $resep = DB::table('resep')
                 ->where('id_produk', $produk->id)
                 ->where('status', 'aktif')
                 ->first();
-            
-            if (!$resep) {
+
+            if (! $resep) {
                 Log::warning("Produk '{$produk->nama}' tidak memiliki resep aktif");
+
                 return;
             }
-            
+
             Log::info("Resep: #{$resep->id} - {$resep->nama}");
-            
+
             // Ambil rincian resep
             $rincianReseps = DB::table('rincian_resep')
                 ->where('id_resep', $resep->id)
                 ->get();
-            
+
             foreach ($rincianReseps as $rincian) {
                 $namaBahan = $rincian->nama_bahan;
                 $qtyPer1 = (float) $rincian->qty;
                 $unit = strtolower(trim($rincian->hitungan ?? 'gram'));
-                
+
                 $totalQty = $qtyPer1 * $jumlahProduk;
-                
+
                 Log::info("  → {$namaBahan}: {$qtyPer1} {$unit} × {$jumlahProduk} = {$totalQty} {$unit}");
-                
+
                 // Cari bahan
                 $bahan = DB::table('bahan_baku')
                     ->join('konversi', 'bahan_baku.id_konversi', '=', 'konversi.id')
                     ->where('bahan_baku.nama', $namaBahan)
                     ->select('bahan_baku.*', 'konversi.satuan_kecil')
                     ->first();
-                
-                if (!$bahan) {
+
+                if (! $bahan) {
                     Log::warning("Bahan '{$namaBahan}' tidak ditemukan");
+
                     continue;
                 }
-                
+
                 // GUNAKAN satuan_kecil dari database langsung (TIDAK dikonversi lagi!)
                 $satuanStok = strtolower($bahan->satuan_kecil ?? 'gram');
-                
+
                 $convertedQty = $this->convertUnit($totalQty, $unit, $satuanStok);
-                
+
                 if ($convertedQty === null) {
                     Log::error("Konversi gagal: {$totalQty} {$unit} → {$satuanStok}");
+
                     continue;
                 }
-                
+
                 if ($bahan->stok < $convertedQty) {
                     Log::error("Stok {$namaBahan} tidak cukup: {$bahan->stok} < {$convertedQty}");
+
                     continue;
                 }
-                
+
                 $stokBaru = $bahan->stok - $convertedQty;
                 DB::table('bahan_baku')
                     ->where('id', $bahan->id)
                     ->update([
                         'stok' => $stokBaru,
                         'tglupdate' => now(),
-                        'updated_at' => now()
+                        'updated_at' => now(),
                     ]);
-                
+
                 Log::info("  ✓ {$namaBahan} berkurang {$convertedQty} {$satuanStok}. Sisa: {$stokBaru}");
             }
         } catch (\Exception $e) {
-            Log::error("ERROR reduceBahanBaku: " . $e->getMessage());
+            Log::error('ERROR reduceBahanBaku: '.$e->getMessage());
             throw $e;
         }
     }
-    
+
     private function mapToSmallestUnit($satuan)
     {
         $map = ['kg' => 'gram', 'l' => 'ml', 'liter' => 'ml'];
+
         return $map[$satuan] ?? $satuan;
     }
-    
+
     private function convertUnit($quantity, $fromUnit, $toUnit)
     {
         $fromUnit = strtolower(trim($fromUnit));
         $toUnit = strtolower(trim($toUnit));
-        
-        if ($fromUnit === $toUnit) return $quantity;
-        
+
+        if ($fromUnit === $toUnit) {
+            return $quantity;
+        }
+
         $conversions = [
             'kg' => ['gram' => 1000, 'g' => 1000],
             'gram' => ['kg' => 0.001, 'g' => 1, 'slice' => 0.1, 'pcs' => 1],
@@ -485,7 +491,7 @@ class ProdukController extends Controller
             'slice' => ['gram' => 10, 'g' => 10],
             'pcs' => ['gram' => 1, 'g' => 1],
         ];
-        
+
         return isset($conversions[$fromUnit][$toUnit]) ? $quantity * $conversions[$fromUnit][$toUnit] : null;
     }
 }

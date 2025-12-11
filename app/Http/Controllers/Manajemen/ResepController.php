@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Manajemen;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class ResepController extends Controller
 {
@@ -95,10 +94,10 @@ class ResepController extends Controller
             // Sendok
             'sdm' => ['ml' => 15, 'gram' => 15, 'g' => 15, 'sdt' => 3],
             'sdt' => ['ml' => 5, 'gram' => 5, 'g' => 5, 'sdm' => 0.333],
-            
+
             // Slice
             'slice' => ['gram' => 10, 'g' => 10],
-            
+
             // Pcs (pieces)
             'pcs' => ['gram' => 1, 'g' => 1],
         ];
@@ -199,11 +198,11 @@ class ResepController extends Controller
 
         try {
             \Illuminate\Support\Facades\DB::beginTransaction();
-            
+
             // VALIDASI STOK BAHAN BAKU SEBELUM MENYIMPAN RESEP
             $status = strtolower($data['status'] ?? 'draft');
             $stokErrors = [];
-            
+
             // normalize category to match DB enum values
             $category = $this->normalizeCategory($data['category'] ?? null);
 
@@ -218,59 +217,63 @@ class ResepController extends Controller
                     'tglupdate' => now(),
                 ]);
             }
-            
+
             // Jika status aktif dan produk punya stok, validasi bahan baku harus cukup
             if ($status === 'aktif' && $produk->stok > 0) {
                 foreach ($ingredients as $ing) {
                     $name = trim($ing['name'] ?? '');
                     $qty = isset($ing['quantity']) ? (float) $ing['quantity'] : 0;
                     $unit = strtolower(trim($ing['unit'] ?? 'gram'));
-                    
-                    if (empty($name) || $qty <= 0) continue;
-                    
+
+                    if (empty($name) || $qty <= 0) {
+                        continue;
+                    }
+
                     // Cari bahan di database
                     $bahan = DB::table('bahan_baku')
                         ->join('konversi', 'bahan_baku.id_konversi', '=', 'konversi.id')
                         ->where('bahan_baku.nama', $name)
                         ->select('bahan_baku.*', 'konversi.satuan_kecil')
                         ->first();
-                    
-                    if (!$bahan) {
+
+                    if (! $bahan) {
                         $stokErrors[] = "Bahan '{$name}' tidak ditemukan di database.";
+
                         continue;
                     }
-                    
+
                     // Hitung kebutuhan total untuk stok produk yang ada
                     $totalQty = $qty * $produk->stok;
                     $satuanStok = strtolower($bahan->satuan_kecil ?? 'gram');
-                    
+
                     // Konversi satuan resep ke satuan stok
                     $convertedQty = $this->convertUnit($totalQty, $unit, $satuanStok);
-                    
+
                     if ($convertedQty === null) {
                         $stokErrors[] = "Konversi gagal untuk bahan '{$name}': {$unit} → {$satuanStok}. Gunakan satuan yang sesuai.";
+
                         continue;
                     }
-                    
+
                     // Cek apakah stok cukup
                     if ($bahan->stok < $convertedQty) {
                         $stokErrors[] = "Stok {$name} tidak cukup! Dibutuhkan {$convertedQty} {$satuanStok}, tersedia {$bahan->stok} {$satuanStok}.";
                     }
                 }
-                
+
                 // Jika ada error stok, rollback dan kirim error
-                if (!empty($stokErrors)) {
+                if (! empty($stokErrors)) {
                     DB::rollBack();
-                    $errorMessage = "Resep tidak dapat disimpan karena stok bahan baku tidak mencukupi:\n" . implode("\n", $stokErrors);
-                    
+                    $errorMessage = "Resep tidak dapat disimpan karena stok bahan baku tidak mencukupi:\n".implode("\n", $stokErrors);
+
                     if ($request->wantsJson() || $request->ajax()) {
                         return response()->json([
-                            'success' => false, 
+                            'success' => false,
                             'message' => $errorMessage,
-                            'errors' => $stokErrors
+                            'errors' => $stokErrors,
                         ], 422);
                     }
-                    
+
                     return redirect()->back()->withErrors(['error' => $errorMessage])->withInput();
                 }
             }
@@ -384,14 +387,14 @@ class ResepController extends Controller
             }
             $resep->margin = $marginPercent;
             $resep->save();
-            
+
             // SINKRONISASI: Kurangi stok bahan baku sesuai stok produk yang sudah ada
             if ($resep->status === 'aktif' && $produk->stok > 0) {
                 \Illuminate\Support\Facades\Log::info("=== SINKRONISASI RESEP BARU: Kurangi bahan baku untuk {$produk->stok} produk yang sudah ada ===");
                 try {
                     $this->reduceBahanBakuFromResep($produk, $produk->stok, $resep->id);
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error("Error sinkronisasi stok: " . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::error('Error sinkronisasi stok: '.$e->getMessage());
                 }
             }
 
@@ -483,70 +486,74 @@ class ResepController extends Controller
             \Illuminate\Support\Facades\DB::beginTransaction();
 
             $resep = \App\Models\Resep::findOrFail($id);
-            
+
             // Simpan status lama untuk cek perubahan
             $oldStatus = $resep->status;
-            
+
             // Get new status
             $newStatus = strtolower(trim($data['status'] ?? $resep->status));
-            
+
             // VALIDASI STOK BAHAN BAKU SEBELUM UPDATE RESEP
             $produk = \App\Models\Produk::find($resep->id_produk);
-            
+
             // Jika status berubah jadi aktif dan produk punya stok, validasi bahan baku harus cukup
             if ($newStatus === 'aktif' && $oldStatus !== 'aktif' && $produk && $produk->stok > 0) {
                 $stokErrors = [];
-                
+
                 foreach ($ingredients as $ing) {
                     $name = trim($ing['name'] ?? '');
                     $qty = isset($ing['quantity']) ? (float) $ing['quantity'] : 0;
                     $unit = strtolower(trim($ing['unit'] ?? 'gram'));
-                    
-                    if (empty($name) || $qty <= 0) continue;
-                    
+
+                    if (empty($name) || $qty <= 0) {
+                        continue;
+                    }
+
                     // Cari bahan di database
                     $bahan = DB::table('bahan_baku')
                         ->join('konversi', 'bahan_baku.id_konversi', '=', 'konversi.id')
                         ->where('bahan_baku.nama', $name)
                         ->select('bahan_baku.*', 'konversi.satuan_kecil')
                         ->first();
-                    
-                    if (!$bahan) {
+
+                    if (! $bahan) {
                         $stokErrors[] = "Bahan '{$name}' tidak ditemukan di database.";
+
                         continue;
                     }
-                    
+
                     // Hitung kebutuhan total untuk stok produk yang ada
                     $totalQty = $qty * $produk->stok;
                     $satuanStok = strtolower($bahan->satuan_kecil ?? 'gram');
-                    
+
                     // Konversi satuan resep ke satuan stok
                     $convertedQty = $this->convertUnit($totalQty, $unit, $satuanStok);
-                    
+
                     if ($convertedQty === null) {
                         $stokErrors[] = "Konversi gagal untuk bahan '{$name}': {$unit} → {$satuanStok}. Gunakan satuan yang sesuai.";
+
                         continue;
                     }
-                    
+
                     // Cek apakah stok cukup
                     if ($bahan->stok < $convertedQty) {
                         $stokErrors[] = "Stok {$name} tidak cukup! Dibutuhkan {$convertedQty} {$satuanStok}, tersedia {$bahan->stok} {$satuanStok}.";
                     }
                 }
-                
+
                 // Jika ada error stok, rollback dan kirim error
-                if (!empty($stokErrors)) {
+                if (! empty($stokErrors)) {
                     DB::rollBack();
-                    $errorMessage = "Resep tidak dapat diaktifkan karena stok bahan baku tidak mencukupi:\n" . implode("\n", $stokErrors);
-                    
+                    $errorMessage = "Resep tidak dapat diaktifkan karena stok bahan baku tidak mencukupi:\n".implode("\n", $stokErrors);
+
                     if ($request->wantsJson() || $request->ajax()) {
                         return response()->json([
-                            'success' => false, 
+                            'success' => false,
                             'message' => $errorMessage,
-                            'errors' => $stokErrors
+                            'errors' => $stokErrors,
                         ], 422);
                     }
-                    
+
                     return redirect()->back()->withErrors(['error' => $errorMessage])->withInput();
                 }
             }
@@ -640,14 +647,14 @@ class ResepController extends Controller
             }
             $resep->margin = $marginPercent;
             $resep->save();
-            
+
             // SINKRONISASI: Jika status berubah jadi aktif, kurangi stok bahan baku
             if ($newStatus === 'aktif' && $oldStatus !== 'aktif' && $produk && $produk->stok > 0) {
                 \Illuminate\Support\Facades\Log::info("=== SINKRONISASI UPDATE RESEP: Status aktif, kurangi bahan untuk {$produk->stok} produk ===");
                 try {
                     $this->reduceBahanBakuFromResep($produk, $produk->stok, $resep->id);
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error("Error sinkronisasi update: " . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::error('Error sinkronisasi update: '.$e->getMessage());
                 }
             }
 
@@ -704,59 +711,62 @@ class ResepController extends Controller
     {
         try {
             \Illuminate\Support\Facades\Log::info(">>> Sinkronisasi stok: Produk '{$produk->nama}' × {$jumlahProduk}");
-            
+
             // Ambil rincian resep
             $rincianReseps = \Illuminate\Support\Facades\DB::table('rincian_resep')
                 ->where('id_resep', $resepId)
                 ->get();
-            
+
             foreach ($rincianReseps as $rincian) {
                 $namaBahan = $rincian->nama_bahan;
                 $qtyPer1 = (float) $rincian->qty;
                 $unit = strtolower(trim($rincian->hitungan ?? 'gram'));
-                
+
                 $totalQty = $qtyPer1 * $jumlahProduk;
-                
+
                 \Illuminate\Support\Facades\Log::info("  → {$namaBahan}: {$qtyPer1} {$unit} × {$jumlahProduk} = {$totalQty} {$unit}");
-                
+
                 // Cari bahan
                 $bahan = \Illuminate\Support\Facades\DB::table('bahan_baku')
                     ->join('konversi', 'bahan_baku.id_konversi', '=', 'konversi.id')
                     ->where('bahan_baku.nama', $namaBahan)
                     ->select('bahan_baku.*', 'konversi.satuan_kecil')
                     ->first();
-                
-                if (!$bahan) {
+
+                if (! $bahan) {
                     \Illuminate\Support\Facades\Log::warning("Bahan '{$namaBahan}' tidak ditemukan");
+
                     continue;
                 }
-                
+
                 $satuanStok = strtolower($bahan->satuan_kecil ?? 'gram');
                 $convertedQty = $this->convertUnit($totalQty, $unit, $satuanStok);
-                
+
                 if ($convertedQty === null) {
                     \Illuminate\Support\Facades\Log::error("Konversi gagal: {$totalQty} {$unit} → {$satuanStok}");
+
                     continue;
                 }
-                
+
                 if ($bahan->stok < $convertedQty) {
                     \Illuminate\Support\Facades\Log::error("Stok {$namaBahan} tidak cukup: {$bahan->stok} < {$convertedQty}");
+
                     continue;
                 }
-                
+
                 $stokBaru = $bahan->stok - $convertedQty;
                 \Illuminate\Support\Facades\DB::table('bahan_baku')
                     ->where('id', $bahan->id)
                     ->update([
                         'stok' => $stokBaru,
                         'tglupdate' => now(),
-                        'updated_at' => now()
+                        'updated_at' => now(),
                     ]);
-                
+
                 \Illuminate\Support\Facades\Log::info("  ✓ {$namaBahan} berkurang {$convertedQty} {$satuanStok}. Sisa: {$stokBaru}");
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Error reduceBahanBaku: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Error reduceBahanBaku: '.$e->getMessage());
             throw $e;
         }
     }
