@@ -1,6 +1,11 @@
 @extends('layouts.manajemen.index')
 
 @section('content')
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[9999] space-y-2" style="max-width: 400px;">
+        <!-- Toast notifications will be inserted here -->
+    </div>
+
     <div class="content flex-1 lg:flex-1">
         <!-- Page Content -->
         <main class="p-4 sm:p-6 lg:p-8">
@@ -307,7 +312,95 @@
         </form>
     </div>
 </div>
+
+<!-- Confirmation Modal for Delete -->
+<div id="confirmDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 transform transition-all">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <i class="fas fa-trash text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">Hapus Resep?</h3>
+            <p class="text-sm text-gray-500 text-center mb-6">
+                Resep yang dihapus tidak dapat dikembalikan. Apakah Anda yakin ingin menghapus resep ini?
+            </p>
+            <div class="flex space-x-3">
+                <button onclick="closeConfirmDelete()" 
+                    class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">
+                    Batal
+                </button>
+                <button onclick="confirmDelete()" 
+                    class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">
+                    Ya, Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // Toast Notification System
+    function showToast(message, type = 'success', duration = 4000) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        
+        const toastId = 'toast-' + Date.now();
+        const icons = {
+            success: '<i class="fas fa-check-circle text-green-500"></i>',
+            error: '<i class="fas fa-exclamation-circle text-red-500"></i>',
+            warning: '<i class="fas fa-exclamation-triangle text-yellow-500"></i>',
+            info: '<i class="fas fa-info-circle text-blue-500"></i>'
+        };
+        
+        const colors = {
+            success: 'bg-green-50 border-green-200',
+            error: 'bg-red-50 border-red-200',
+            warning: 'bg-yellow-50 border-yellow-200',
+            info: 'bg-blue-50 border-blue-200'
+        };
+        
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = `${colors[type]} border-l-4 rounded-lg shadow-lg p-4 mb-2 transform transition-all duration-300 translate-x-full opacity-0`;
+        toast.innerHTML = `
+            <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0 text-xl">
+                    ${icons[type]}
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900">${message}</p>
+                </div>
+                <button onclick="removeToast('${toastId}')" class="flex-shrink-0 text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Trigger animation
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full', 'opacity-0');
+        }, 10);
+        
+        // Auto remove
+        if (duration > 0) {
+            setTimeout(() => {
+                removeToast(toastId);
+            }, duration);
+        }
+    }
+    
+    function removeToast(toastId) {
+        const toast = document.getElementById(toastId);
+        if (!toast) return;
+        
+        toast.classList.add('translate-x-full', 'opacity-0');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }
+
     // Daftar produk (digunakan untuk mengisi otomatis nama resep & harga).
     // Variabel ini di-inject dari controller sebagai JSON.
     let produkList = @json($produks ?? []);
@@ -395,6 +488,31 @@
     let currentView = 'table';
     let editingRecipeId = null;
 
+    // Show Laravel session flash messages as toasts
+    document.addEventListener('DOMContentLoaded', function() {
+        @if(session('success'))
+            showToast('{{ session('success') }}', 'success');
+        @endif
+        
+        @if(session('error'))
+            showToast('{{ session('error') }}', 'error');
+        @endif
+        
+        @if(session('warning'))
+            showToast('{{ session('warning') }}', 'warning');
+        @endif
+        
+        @if(session('info'))
+            showToast('{{ session('info') }}', 'info');
+        @endif
+        
+        @if($errors->any())
+            @foreach($errors->all() as $error)
+                showToast('{{ $error }}', 'error');
+            @endforeach
+        @endif
+    });
+
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobileOverlay');
@@ -429,6 +547,19 @@
         setInterval(updateDateTime, 60000); // Perbarui setiap menit
         renderTableView(); 
         updateStats();
+        
+        // Check if there's an 'edit' parameter in URL to auto-open edit modal
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('edit');
+        if (editId) {
+            // Wait a bit for data to be loaded, then open edit modal
+            setTimeout(() => {
+                editRecipe(editId);
+                // Clean URL without reload
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }, 500);
+        }
+        
         // sinkronkan dengan DB setiap 60 detik
         setInterval(refreshRecipes, 60000);
     });
@@ -819,7 +950,10 @@
     // - Mencocokkan nama resep dengan `Produk` untuk pre-select; bila tidak cocok, simpan nama ke field tersembunyi
     function editRecipe(id) {
         const recipe = recipes.find(r => parseInt(r.id) === parseInt(id));
-        if (!recipe) return alert('Resep tidak ditemukan');
+        if (!recipe) {
+            showToast('Resep tidak ditemukan', 'error');
+            return;
+        }
         editingRecipeId = id;
         // set product select if product exists, otherwise store name in hidden input
         const prodSelEdit = document.getElementById('productSelect');
@@ -864,7 +998,10 @@
     // - Tidak langsung menyimpan; membuka modal dengan nilai disalin dan `editingRecipeId = null`
     function duplicateRecipe(id) {
         const recipe = recipes.find(r => parseInt(r.id) === parseInt(id));
-        if (!recipe) return alert('Resep tidak ditemukan');
+        if (!recipe) {
+            showToast('Resep tidak ditemukan', 'error');
+            return;
+        }
         editingRecipeId = null;
         // set product select if product exists, otherwise set hidden name
         const prodSelDup = document.getElementById('productSelect');
@@ -912,10 +1049,27 @@
         window.location.href = base + '/' + encodeURIComponent(id);
     }
 
-    // Hapus resep melalui AJAX
-    // - Menanyakan konfirmasi pengguna, mengirim request DELETE, lalu refresh list jika sukses
+    // Hapus resep melalui AJAX dengan konfirmasi modal
+    let deleteRecipeId = null;
+    
     function deleteRecipe(id) {
-        if (!confirm('Yakin ingin menghapus resep ini?')) return;
+        deleteRecipeId = id;
+        const modal = document.getElementById('confirmDeleteModal');
+        if (modal) modal.classList.remove('hidden');
+    }
+    
+    function closeConfirmDelete() {
+        deleteRecipeId = null;
+        const modal = document.getElementById('confirmDeleteModal');
+        if (modal) modal.classList.add('hidden');
+    }
+    
+    function confirmDelete() {
+        if (!deleteRecipeId) return;
+        
+        const id = deleteRecipeId;
+        closeConfirmDelete();
+        
         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         fetch(`/management/resep/${id}`, { method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf } })
             .then(res => res.json())
@@ -923,11 +1077,14 @@
                 if (data && data.success) {
                     // Refresh list to reflect deletion
                     refreshRecipes();
-                    alert('Resep berhasil dihapus.');
+                    showToast('Resep berhasil dihapus', 'success');
                 } else {
                     throw new Error((data && data.message) || 'Gagal menghapus resep');
                 }
-            }).catch(err => { console.error(err); alert(err.message || 'Terjadi kesalahan saat menghapus resep'); });
+            }).catch(err => { 
+                console.error(err); 
+                showToast(err.message || 'Terjadi kesalahan saat menghapus resep', 'error'); 
+            });
     }
 
     // Ketika bahan dipilih pada baris bahan:
@@ -1299,17 +1456,17 @@
         });
 
         if (invalidSelection) {
-            alert('Beberapa bahan tidak dipilih dari daftar. Pilih bahan dari daftar stok.');
+            showToast('Beberapa bahan tidak dipilih dari daftar. Pilih bahan dari daftar stok.', 'warning');
             return;
         }
 
         if (missingPrice) {
-            alert('Harga/unit wajib diisi untuk semua bahan yang memiliki jumlah. Isi harga sebelum menyimpan.');
+            showToast('Harga/unit wajib diisi untuk semua bahan yang memiliki jumlah. Isi harga sebelum menyimpan.', 'warning');
             return;
         }
 
         if (ingredients.length === 0) {
-            alert('Minimal harus ada 1 bahan baku dengan harga!');
+            showToast('Minimal harus ada 1 bahan baku dengan harga!', 'warning');
             return;
         }
 
@@ -1349,7 +1506,7 @@
                 // refresh from server to show canonical data
                 refreshRecipes();
                 editingRecipeId = null;
-                alert('Resep berhasil disimpan.');
+                showToast('Resep berhasil disimpan', 'success');
             } else {
                 throw new Error((data && data.message) || 'Gagal menyimpan resep');
             }
@@ -1370,7 +1527,7 @@
                 errorMessage = err.message;
             }
             
-            alert(errorMessage);
+            showToast(errorMessage, 'error');
         });
     }
 </script>
