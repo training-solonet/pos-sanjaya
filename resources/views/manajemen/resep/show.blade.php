@@ -11,7 +11,7 @@
                     </div>
                     <div class="flex items-center space-x-2">
                         <a href="{{ route('management.resep.index') }}" class="px-4 py-2 bg-gray-200 rounded-lg">Kembali</a>
-                        <a href="{{ route('management.resep.edit', $recipe['id']) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg">Edit</a>
+                        <a href="{{ route('management.resep.index', ['edit' => $recipe['id']]) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg">Edit</a>
                     </div>
                 </div>
 

@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('resep', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_produk')->constrained('produk')->onDelete('cascade');
-            $table->foreignId('id_bahan_baku')->constrained('bahan_baku')->onDelete('cascade');
+            $table->foreignId('id_produk')->nullable()->constrained('produk')->onDelete('cascade');
+            $table->foreignId('id_bahan_baku')->nullable()->constrained('bahan_baku')->onDelete('cascade');
             $table->string('nama');
             $table->integer('porsi')->default(1);
             $table->enum('kategori', ['Makanan', 'Minuman', 'Snack', 'Roti dan Pastry', 'Kue dan Dessert'])->nullable();

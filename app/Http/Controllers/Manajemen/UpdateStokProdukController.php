@@ -70,7 +70,10 @@ class UpdateStokProdukController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info('==========================================');
+        Log::info('=== STORE UPDATE STOK DIPANGGIL ===');
         Log::info('Store Update Stok Request:', $request->all());
+        Log::info('==========================================');
 
         $request->validate([
             'id_produk' => 'required|exists:produk,id',
@@ -106,6 +109,25 @@ class UpdateStokProdukController extends Controller
                     'tanggal_update' => Carbon::now('Asia/Jakarta'),
                     'keterangan' => $request->keterangan,
                 ]);
+                // Tambahan code unntuk resep ke bahan baku
+                Log::info('==========================================');
+                Log::info('=== MULAI KURANGI STOK BAHAN BAKU ===');
+                Log::info('==========================================');
+
+                // KURANGI STOK BAHAN BAKU BERDASARKAN RESEP
+                try {
+                    $this->reduceBahanBakuFromResep($produk, $request->stok_baru);
+                    Log::info('==========================================');
+                    Log::info('=== SELESAI KURANGI STOK BAHAN BAKU ===');
+                    Log::info('==========================================');
+                } catch (\Exception $e) {
+                    Log::error('==========================================');
+                    Log::error('=== ERROR KURANGI STOK BAHAN BAKU ===');
+                    Log::error('Error: '.$e->getMessage());
+                    Log::error('==========================================');
+                    // Jangan throw agar transaksi produk tetap berhasil
+                    // throw $e;
+                }
             });
 
             return response()->json([
@@ -301,4 +323,152 @@ class UpdateStokProdukController extends Controller
     public function create() {}
 
     public function edit($id) {}
+
+    /**
+     * Tambahan Code untuk Triger resep mengurangi bahan baku
+     * Kurangi stok bahan baku berdasarkan resep produk
+     * Dipanggil saat produk ditambah stoknya
+     */
+    private function reduceBahanBakuFromResep($produk, $jumlahProduk)
+    {
+        try {
+            Log::info(">>> TAMBAH STOK PRODUK '{$produk->nama}' sebanyak {$jumlahProduk}");
+
+            // Cari resep aktif untuk produk ini
+            $resep = DB::table('resep')
+                ->where('id_produk', $produk->id)
+                ->where('status', 'aktif')
+                ->first();
+
+            if (! $resep) {
+                Log::warning("Produk '{$produk->nama}' tidak memiliki resep aktif. Stok bahan baku tidak dikurangi.");
+
+                return;
+            }
+
+            Log::info("Resep ditemukan: #{$resep->id} - {$resep->nama}");
+
+            // Ambil rincian resep (bahan-bahan untuk 1 produk)
+            $rincianReseps = DB::table('rincian_resep')
+                ->where('id_resep', $resep->id)
+                ->get();
+
+            $errors = [];
+
+            foreach ($rincianReseps as $rincian) {
+                $namaBahan = $rincian->nama_bahan;
+                $qtyPer1Produk = (float) $rincian->qty;
+                $unitResep = strtolower(trim($rincian->hitungan ?? 'gram'));
+
+                // Total bahan yang dibutuhkan = qty per 1 produk × jumlah produk ditambahkan
+                $totalQtyNeeded = $qtyPer1Produk * $jumlahProduk;
+
+                Log::info("   → Bahan '{$namaBahan}': {$qtyPer1Produk} {$unitResep}/produk × {$jumlahProduk} produk = {$totalQtyNeeded} {$unitResep}");
+
+                // Cari bahan baku
+                $bahan = DB::table('bahan_baku')
+                    ->join('konversi', 'bahan_baku.id_konversi', '=', 'konversi.id')
+                    ->where('bahan_baku.nama', $namaBahan)
+                    ->select('bahan_baku.*', 'konversi.satuan_kecil')
+                    ->first();
+
+                if (! $bahan) {
+                    $errors[] = "Bahan '{$namaBahan}' tidak ditemukan di database";
+                    Log::warning("Bahan '{$namaBahan}' tidak ditemukan");
+
+                    continue;
+                }
+
+                // GUNAKAN satuan_kecil dari database langsung (TIDAK dikonversi lagi!)
+                // Karena stok di database sudah disimpan dalam satuan_kecil (kg, gram, pcs, dll)
+                $satuanStok = strtolower($bahan->satuan_kecil ?? 'gram');
+
+                Log::info("   → Satuan stok bahan '{$namaBahan}': {$satuanStok}, Stok tersedia: {$bahan->stok} {$satuanStok}");
+
+                // Konversi qty resep ke satuan stok database
+                $convertedQty = $this->convertUnit($totalQtyNeeded, $unitResep, $satuanStok);
+
+                if ($convertedQty === null) {
+                    $errors[] = "Tidak dapat mengkonversi {$totalQtyNeeded} {$unitResep} ke {$satuanStok} untuk '{$namaBahan}'";
+                    Log::error("Konversi gagal: {$totalQtyNeeded} {$unitResep} → {$satuanStok}");
+
+                    continue;
+                }
+
+                // Cek stok mencukupi
+                if ($bahan->stok < $convertedQty) {
+                    $errors[] = "Stok bahan '{$namaBahan}' tidak mencukupi. Tersedia: {$bahan->stok} {$satuanStok}, Dibutuhkan: {$convertedQty} {$satuanStok}";
+                    Log::error("Stok '{$namaBahan}' tidak cukup: tersedia {$bahan->stok}, butuh {$convertedQty}");
+
+                    continue;
+                }
+
+                // Kurangi stok
+                $stokBaru = $bahan->stok - $convertedQty;
+                DB::table('bahan_baku')
+                    ->where('id', $bahan->id)
+                    ->update([
+                        'stok' => $stokBaru,
+                        'tglupdate' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                Log::info("✓ Stok '{$namaBahan}' berkurang {$totalQtyNeeded} {$unitResep} = {$convertedQty} {$satuanStok}. Sisa: {$stokBaru} {$satuanStok}");
+            }
+
+            if (! empty($errors)) {
+                throw new \Exception("Terjadi kesalahan:\n".implode("\n", $errors));
+            }
+
+        } catch (\Exception $e) {
+            Log::error('ERROR reduceBahanBakuFromResep: '.$e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Map satuan ke satuan terkecil (untuk menghindari desimal di integer)
+     */
+    private function mapToSmallestUnit($satuan)
+    {
+        $map = [
+            'kg' => 'gram',
+            'l' => 'ml',
+            'liter' => 'ml',
+        ];
+
+        return $map[$satuan] ?? $satuan;
+    }
+
+    /**
+     * Konversi unit
+     */
+    private function convertUnit($quantity, $fromUnit, $toUnit)
+    {
+        $fromUnit = strtolower(trim($fromUnit));
+        $toUnit = strtolower(trim($toUnit));
+
+        if ($fromUnit === $toUnit) {
+            return $quantity;
+        }
+
+        $conversions = [
+            'kg' => ['gram' => 1000, 'g' => 1000],
+            'gram' => ['kg' => 0.001, 'g' => 1, 'slice' => 0.1, 'pcs' => 1],
+            'g' => ['kg' => 0.001, 'gram' => 1, 'slice' => 0.1, 'pcs' => 1],
+            'l' => ['ml' => 1000, 'liter' => 1],
+            'liter' => ['ml' => 1000, 'l' => 1],
+            'ml' => ['l' => 0.001, 'liter' => 0.001],
+            'sdm' => ['ml' => 15, 'gram' => 15, 'g' => 15],
+            'sdt' => ['ml' => 5, 'gram' => 5, 'g' => 5],
+            'slice' => ['gram' => 10, 'g' => 10],
+            'pcs' => ['gram' => 1, 'g' => 1],
+        ];
+
+        if (isset($conversions[$fromUnit][$toUnit])) {
+            return $quantity * $conversions[$fromUnit][$toUnit];
+        }
+
+        return null;
+    }
 }

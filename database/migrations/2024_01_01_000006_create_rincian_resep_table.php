@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_resep')->constrained('resep')->onDelete('cascade');
             $table->integer('qty')->default(0);
-            $table->enum('hitungan', ['pcs', 'gram', 'kg', 'ml', 'liter', 'sdm'])->nullable();
+            $table->enum('hitungan', ['pcs', 'gram', 'kg', 'ml', 'liter', 'sdm', 'slice'])->nullable();
             $table->integer('harga')->default(0);
             $table->string('nama_bahan');
             $table->timestamps();

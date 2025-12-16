@@ -9,6 +9,8 @@ class Resep extends Model
     protected $table = 'resep';
 
     protected $fillable = [
+        'id_produk',
+        'id_bahan_baku',
         'nama',
         'porsi',
         'kategori',

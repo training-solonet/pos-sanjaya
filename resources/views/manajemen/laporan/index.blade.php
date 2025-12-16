@@ -113,7 +113,7 @@
                         <div class="flex items-center justify-between mb-4">
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900">Grafik Penjualan Harian</h3>
-                                <p class="text-sm text-gray-500">Penjualan 30 hari terakhir</p>
+                                <p class="text-sm text-gray-500" id="salesSubtitle">Penjualan 30 hari terakhir</p>
                             </div>
                             <div class="flex space-x-2">
                                 <button onclick="changeSalesView('daily')"
@@ -185,10 +185,11 @@
                 <div class="bg-white rounded-lg border border-gray-200">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900">Produk Terlaris</h3>
+                        <p class="text-sm text-gray-500 mt-1">Menampilkan produk dengan penjualan tertinggi</p>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto" style="max-height: 400px; overflow-y: auto;">
                         <table class="w-full">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-gray-50 sticky top-0 z-10">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Terjual
@@ -198,24 +199,29 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profit</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">
+                            <tbody class="divide-y divide-gray-200 bg-white">
                                 @forelse($topProducts as $prod)
-                                    <tr>
+                                    <tr class="hover:bg-gray-50 transition-colors">
                                         <td class="px-6 py-4">
                                             <div class="flex items-center space-x-3">
-                                                <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                    <i class="fas fa-box text-gray-400"></i>
+                                                <div class="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-box text-blue-600"></i>
                                                 </div>
                                                 <span class="font-medium text-gray-900">{{ $prod->nama }}</span>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">{{ number_format($prod->total_qty,0,',','.') }} pcs</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">Rp {{ number_format($prod->revenue,0,',','.') }}</td>
-                                        <td class="px-6 py-4 text-sm text-success">Rp {{ number_format(($prod->revenue * 0.5) ?? 0,0,',','.') }}</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ number_format($prod->total_qty,0,',','.') }} pcs</td>
+                                        <td class="px-6 py-4 text-sm text-gray-900 font-semibold">Rp {{ number_format($prod->revenue,0,',','.') }}</td>
+                                        <td class="px-6 py-4 text-sm text-green-600 font-semibold">Rp {{ number_format(($prod->revenue * 0.5) ?? 0,0,',','.') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">Tidak ada data produk terlaris</td>
+                                        <td colspan="4" class="px-6 py-8 text-center">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <i class="fas fa-box-open text-gray-300 text-4xl mb-2"></i>
+                                                <p class="text-gray-500">Tidak ada data produk terlaris</p>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -316,30 +322,41 @@
     let serverProducts = @json($productsChart ?? null);
     let serverMonthly = @json($monthlyReport ?? null);
 
-    // Generate realistic sales data based on October 2025
+    // Get current month and year label in Indonesian
+    function getMonthYearLabel() {
+        const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const currentDate = new Date();
+        return months[currentDate.getMonth()] + ' ' + currentDate.getFullYear();
+    }
+
+    // Generate realistic sales data based on current month
     function generateSalesData(type = 'daily') {
-        const currentDate = new Date(2025, 9, 1); // October 1, 2025
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const today = currentDate.getDate(); // Tanggal hari ini
         const labels = [];
         const data = [];
 
         if (type === 'daily') {
-            // Generate 30 days of data
-            for (let i = 0; i < 30; i++) {
-                const date = new Date(currentDate);
-                date.setDate(date.getDate() + i);
-                labels.push(date.getDate());
+            // Generate data only up to today
+            for (let i = 1; i <= today; i++) {
+                labels.push(i);
 
                 // Generate realistic sales with patterns
                 let baseAmount = 1800000; // Base 1.8M
+                
+                const date = new Date(year, month, i);
+                const dayOfWeek = date.getDay();
 
                 // Weekend boost (Sabtu-Minggu)
-                const dayOfWeek = date.getDay();
                 if (dayOfWeek === 0 || dayOfWeek === 6) {
                     baseAmount *= 1.4; // 40% increase on weekends
                 }
 
                 // Peak days (mid-month bonus)
-                if (date.getDate() >= 15 && date.getDate() <= 20) {
+                if (i >= 15 && i <= 20) {
                     baseAmount *= 1.2; // 20% increase mid-month
                 }
 
@@ -347,14 +364,45 @@
                 const variation = (Math.random() - 0.5) * 600000;
                 data.push(Math.round(baseAmount + variation));
             }
-        } else {
-            // Weekly data (4 weeks)
-            const weekLabels = ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'];
-            labels.push(...weekLabels);
-
-            // Weekly totals (sum of 7 days each)
-            const weeklyTotals = [12500000, 13200000, 14100000, 13800000];
-            data.push(...weeklyTotals);
+        } else if (type === 'weekly') {
+            // Weekly data - aggregate daily data by week (up to today)
+            const dailySales = [];
+            
+            // Generate daily sales first (only up to today)
+            for (let i = 1; i <= today; i++) {
+                let baseAmount = 1800000;
+                const date = new Date(year, month, i);
+                const dayOfWeek = date.getDay();
+                
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    baseAmount *= 1.4;
+                }
+                if (i >= 15 && i <= 20) {
+                    baseAmount *= 1.2;
+                }
+                
+                const variation = (Math.random() - 0.5) * 600000;
+                dailySales.push(Math.round(baseAmount + variation));
+            }
+            
+            // Group by weeks
+            let weekNumber = 1;
+            let weekTotal = 0;
+            let daysInWeek = 0;
+            
+            for (let i = 0; i < dailySales.length; i++) {
+                weekTotal += dailySales[i];
+                daysInWeek++;
+                
+                // Every 7 days or last day of month
+                if (daysInWeek === 7 || i === dailySales.length - 1) {
+                    labels.push('Minggu ' + weekNumber);
+                    data.push(weekTotal);
+                    weekTotal = 0;
+                    daysInWeek = 0;
+                    weekNumber++;
+                }
+            }
         }
 
         return {
@@ -365,10 +413,19 @@
 
     // Generate product sales data (fallback) - kept for demo if server data not present
     function generateProductData(type = 'quantity') {
+        const productColors = [
+            '#EF4444', // Red
+            '#F59E0B', // Amber
+            '#10B981', // Green
+            '#3B82F6', // Blue
+            '#8B5CF6', // Purple
+            '#EC4899'  // Pink
+        ];
+        
         return {
-            labels: ['Demo A', 'Demo B', 'Demo C'],
-            data: [120, 90, 60],
-            colors: ['#EF4444', '#F97316', '#F59E0B']
+            labels: ['Kue Sus', 'Croissant', 'Roti Tawar', 'Donat', 'Brownies', 'Cookies'],
+            data: type === 'quantity' ? [145, 120, 98, 87, 76, 54] : [2175000, 1800000, 1470000, 1305000, 1140000, 810000],
+            colors: productColors
         };
     }
 
@@ -380,13 +437,45 @@
         let labels = [];
         let data = [];
 
-        if (serverSales && serverSales.labels && serverSales.data) {
-            labels = serverSales.labels;
-            data = serverSales.data;
+        if (type === 'daily') {
+            // Use server data (from database) for daily view
+            if (serverSales && serverSales.labels && serverSales.data) {
+                labels = serverSales.labels;
+                data = serverSales.data;
+            } else {
+                // Fallback to generated data if server data not available
+                const generated = generateSalesData(type);
+                labels = generated.labels;
+                data = generated.data;
+            }
         } else {
-            const generated = generateSalesData(type);
-            labels = generated.labels;
-            data = generated.data;
+            // For weekly view, aggregate server data into weeks
+            if (serverSales && serverSales.labels && serverSales.data) {
+                labels = [];
+                data = [];
+                let weekNumber = 1;
+                let weekTotal = 0;
+                let daysInWeek = 0;
+                
+                for (let i = 0; i < serverSales.data.length; i++) {
+                    weekTotal += serverSales.data[i];
+                    daysInWeek++;
+                    
+                    // Every 7 days or last day
+                    if (daysInWeek === 7 || i === serverSales.data.length - 1) {
+                        labels.push('Minggu ' + weekNumber);
+                        data.push(weekTotal);
+                        weekTotal = 0;
+                        daysInWeek = 0;
+                        weekNumber++;
+                    }
+                }
+            } else {
+                // Fallback to generated data
+                const generated = generateSalesData(type);
+                labels = generated.labels;
+                data = generated.data;
+            }
         }
 
         if (salesChart) {
@@ -431,21 +520,53 @@
                     }
                 },
                 scales: {
-                    x: { grid: { display: false }, title: { display: true, text: type === 'daily' ? 'Tanggal' : 'Periode', font: { size: 12, weight: 'bold' } } },
-                    y: { grid: { color: 'rgba(0, 0, 0, 0.05)' }, title: { display: true, text: 'Penjualan (Rp)', font: { size: 12, weight: 'bold' } }, ticks: { callback: function(value) { return 'Rp ' + (value / 1000000).toFixed(1) + 'M'; } } }
+                    x: { 
+                        grid: { display: false },
+                        title: { 
+                            display: true, 
+                            text: type === 'daily' ? getMonthYearLabel() : 'Periode', 
+                            font: { size: 12, weight: 'bold' } 
+                        }
+                    },
+                    y: { 
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                        title: { 
+                            display: true, 
+                            text: 'Penjualan (Rp)', 
+                            font: { size: 12, weight: 'bold' } 
+                        },
+                        ticks: { 
+                            callback: function(value) { 
+                                if (value >= 1000000) {
+                                    return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
+                                } else if (value >= 1000) {
+                                    return 'Rp ' + (value / 1000).toFixed(0) + 'K';
+                                }
+                                return 'Rp ' + value;
+                            }
+                        }
+                    }
                 },
                 animation: { duration: 800, easing: 'easeInOutQuart' }
             }
         });
 
         // Update statistics
-        const max = data.length ? Math.max(...data) : 0;
-        const min = data.length ? Math.min(...data) : 0;
-        const avg = data.length ? Math.round(data.reduce((a, b) => a + b, 0) / data.length) : 0;
+        // Filter out zero or invalid values for more accurate min calculation
+        const validData = data.filter(val => val > 0);
+        const max = validData.length ? Math.max(...validData) : 0;
+        const min = validData.length ? Math.min(...validData) : 0;
+        const total = validData.length ? validData.reduce((a, b) => a + b, 0) : 0;
+        const avg = validData.length ? Math.round(total / validData.length) : 0;
 
-        document.getElementById('maxSales').textContent = formatCurrency(max);
-        document.getElementById('minSales').textContent = formatCurrency(min);
-        document.getElementById('avgSales').textContent = formatCurrency(avg);
+        const maxEl = document.getElementById('maxSales');
+        const minEl = document.getElementById('minSales');
+        const avgEl = document.getElementById('avgSales');
+        
+        if (maxEl) maxEl.textContent = formatCurrency(max);
+        if (minEl) minEl.textContent = formatCurrency(min);
+        if (avgEl) avgEl.textContent = formatCurrency(avg);
     }
 
     // Create products chart (uses server data when available)
@@ -457,15 +578,27 @@
         let data = [];
         let colors = [];
 
-        if (serverProducts && serverProducts.labels) {
+        if (serverProducts && serverProducts.labels && serverProducts.labels.length > 0) {
             labels = serverProducts.labels;
-            data = (type === 'quantity') ? serverProducts.dataQty : serverProducts.dataRevenue;
+            data = (type === 'quantity') ? (serverProducts.dataQty || []) : (serverProducts.dataRevenue || []);
             colors = serverProducts.colors || [];
+            
+            // Generate colors if not provided
+            if (colors.length === 0) {
+                const defaultColors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
+                colors = labels.map((_, i) => defaultColors[i % defaultColors.length]);
+            }
         } else {
             const generated = generateProductData(type);
             labels = generated.labels;
             data = generated.data;
             colors = generated.colors;
+        }
+        
+        // Pastikan data tidak kosong
+        if (labels.length === 0 || data.length === 0) {
+            console.warn('No data available for products chart');
+            return;
         }
 
         if (productsChart) {
@@ -474,16 +607,65 @@
 
         productsChart = new Chart(ctx, {
             type: 'doughnut',
-            data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 0, hoverBorderWidth: 3, hoverBorderColor: '#FFFFFF', hoverOffset: 10 }] },
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    data: data, 
+                    backgroundColor: colors, 
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF',
+                    hoverBorderWidth: 3, 
+                    hoverBorderColor: '#FFFFFF', 
+                    hoverOffset: 10 
+                }] 
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'right', labels: { boxWidth: 15, font: { size: 12 }, padding: 15, generateLabels: function(chart) { const data = chart.data; return data.labels.map((label, i) => ({ text: label, fillStyle: data.datasets[0].backgroundColor[i], hidden: false, index: i })); } } },
-                    tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', titleColor: '#FFF', bodyColor: '#FFF', callbacks: { label: function(context) { const value = context.parsed; const total = context.dataset.data.reduce((a,b)=>a+b,0); const percentage = ((value/total)*100).toFixed(1); if (type === 'quantity') return context.label + ': ' + value + ' porsi (' + percentage + '%)'; return context.label + ': ' + formatCurrency(value) + ' (' + percentage + '%)'; } } }
+                    legend: { 
+                        position: 'right', 
+                        labels: { 
+                            boxWidth: 15, 
+                            font: { size: 12 }, 
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            generateLabels: function(chart) { 
+                                const data = chart.data; 
+                                return data.labels.map((label, i) => ({ 
+                                    text: label, 
+                                    fillStyle: data.datasets[0].backgroundColor[i], 
+                                    hidden: false, 
+                                    index: i 
+                                })); 
+                            } 
+                        } 
+                    },
+                    tooltip: { 
+                        backgroundColor: 'rgba(0,0,0,0.8)', 
+                        titleColor: '#FFF', 
+                        bodyColor: '#FFF',
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: { 
+                            label: function(context) { 
+                                const value = context.parsed; 
+                                const total = context.dataset.data.reduce((a,b)=>a+b,0); 
+                                const percentage = ((value/total)*100).toFixed(1); 
+                                if (type === 'quantity') {
+                                    return context.label + ': ' + value + ' pcs (' + percentage + '%)';
+                                }
+                                return context.label + ': ' + formatCurrency(value) + ' (' + percentage + '%)'; 
+                            } 
+                        } 
+                    }
                 },
-                cutout: '65%',
-                animation: { animateRotate: true, duration: 800 }
+                cutout: '60%',
+                animation: { 
+                    animateRotate: true, 
+                    duration: 800 
+                }
             }
         });
     }
@@ -497,6 +679,16 @@
 
         event.target.classList.add('active', 'bg-blue-100', 'text-blue-600');
         event.target.classList.remove('bg-gray-100', 'text-gray-600');
+
+        // Update subtitle
+        const subtitle = document.getElementById('salesSubtitle');
+        if (subtitle) {
+            if (type === 'daily') {
+                subtitle.textContent = 'Penjualan 30 hari terakhir';
+            } else {
+                subtitle.textContent = 'Penjualan mingguan (30 hari terakhir)';
+            }
+        }
 
         createSalesChart(type);
     }
@@ -528,10 +720,26 @@
         updateDateTime();
         setInterval(updateDateTime, 60000);
 
+        // Check if Chart.js is loaded
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js tidak ter-load. Pastikan CDN Chart.js berfungsi.');
+            return;
+        }
+
         // Create charts with delay to ensure DOM is ready
         setTimeout(() => {
-            createSalesChart('daily');
-            createProductsChart('quantity');
+            try {
+                // Update initial subtitle
+                const subtitle = document.getElementById('salesSubtitle');
+                if (subtitle) {
+                    subtitle.textContent = 'Penjualan 30 hari terakhir';
+                }
+                
+                createSalesChart('daily');
+                createProductsChart('quantity');
+            } catch (error) {
+                console.error('Error creating charts:', error);
+            }
         }, 300);
     });
 </script>
@@ -970,12 +1178,7 @@
             </div>
         </main>
     </div>
-
-    <script>
-        let sidebarOpen = false;
-
-        // Toggle sidebar
-        function toggleSidebar() {
+@endsection
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
             
