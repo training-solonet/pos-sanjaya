@@ -44,16 +44,16 @@
                             
                             <!-- Categories -->
                             <div class="flex space-x-2 overflow-x-auto scrollbar-hide">
-                                <button class="px-6 py-2.5 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-xl whitespace-nowrap font-medium shadow-sm">
+                                <button class="category-btn px-6 py-2.5 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-xl whitespace-nowrap font-medium shadow-sm" onclick="filterByCategory('semua')" data-category="semua">
                                     <i class="fas fa-th-large mr-2"></i>Semua
                                 </button>
-                                <button class="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors">
+                                <button class="category-btn px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors" onclick="filterByCategory('makanan')" data-category="makanan">
                                     <i class="fas fa-utensils mr-2"></i>Makanan
                                 </button>
-                                <button class="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors">
+                                <button class="category-btn px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors" onclick="filterByCategory('minuman')" data-category="minuman">
                                     <i class="fas fa-coffee mr-2"></i>Minuman
                                 </button>
-                                <button class="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors">
+                                <button class="category-btn px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors" onclick="filterByCategory('snack')" data-category="snack">
                                     <i class="fas fa-cookie-bite mr-2"></i>Snack
                                 </button>
                             </div>
@@ -83,7 +83,8 @@
                                 @forelse($produks as $produk)
                                 <!-- Product Card: {{ $produk->nama }} -->
                                 <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg')">
+                                     data-nama="{{ strtolower($produk->nama) }}"
+                                     onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg', {{ $produk->stok }})">  
                                     <div class="relative">
                                         <div class="aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
                                             <i class="fas fa-bread-slice text-green-500 text-2xl group-hover:scale-110 transition-transform"></i>
@@ -363,9 +364,101 @@
         </div>
     </div>
 
+    <style>
+        @keyframes slide-in {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .animate-slide-in {
+            animation: slide-in 0.3s ease-out;
+        }
+    </style>
+
     <script>
         let cart = [];
         let sidebarOpen = false;
+        let currentCategory = 'semua';
+
+        // Determine category based on product name
+        function getCategoryByName(productName) {
+            const name = productName.toLowerCase();
+            
+            // Snack items
+            const snackItems = [
+                'kue buaya', 'roti pisang', 'roti black forest', 
+                'roti selai strowberry', 'kue sus', 'roti canai', 
+                'croissant', 'baguette'
+            ];
+            
+            // Minuman items
+            const minumanItems = [
+                'air mineral', 'lemon tea'
+            ];
+            
+            // Check if product is snack
+            if (snackItems.some(item => name.includes(item))) {
+                return 'snack';
+            }
+            
+            // Check if product is minuman
+            if (minumanItems.some(item => name.includes(item))) {
+                return 'minuman';
+            }
+            
+            // Default to makanan for other items
+            return 'makanan';
+        }
+
+        // Filter products by category
+        function filterByCategory(category) {
+            currentCategory = category;
+            
+            // Update button states
+            const buttons = document.querySelectorAll('.category-btn');
+            buttons.forEach(btn => {
+                const btnCategory = btn.getAttribute('data-category');
+                if (btnCategory === category) {
+                    btn.className = 'category-btn px-6 py-2.5 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-xl whitespace-nowrap font-medium shadow-sm';
+                } else {
+                    btn.className = 'category-btn px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors';
+                }
+            });
+            
+            // Filter product cards
+            const productCards = document.querySelectorAll('.product-card');
+            let visibleCount = 0;
+            
+            productCards.forEach(card => {
+                const productName = card.getAttribute('data-nama');
+                const productCategory = getCategoryByName(productName);
+                
+                if (category === 'semua' || productCategory === category) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Update product count display
+            updateProductCountDisplay(visibleCount);
+        }
+        
+        // Update product count display
+        function updateProductCountDisplay(count) {
+            const countDisplays = document.querySelectorAll('.text-sm.text-gray-500');
+            countDisplays.forEach(display => {
+                if (display.textContent.includes('Menampilkan')) {
+                    display.textContent = `Menampilkan 1-${count} dari ${count} produk`;
+                }
+            });
+        }
 
         // Toggle sidebar
         function toggleSidebar() {
@@ -448,17 +541,30 @@
         }
 
         // Add product to cart
-        function addToCart(id, name, price, image) {
+        function addToCart(id, name, price, image, stock) {
             const existingItem = cart.find(item => item.id === id);
             
+            // Check stock availability
             if (existingItem) {
+                // Check if adding one more would exceed stock
+                if (existingItem.quantity >= stock) {
+                    // Show error notification
+                    showStockAlert(name, stock);
+                    return;
+                }
                 existingItem.quantity += 1;
             } else {
+                // Check if stock is available
+                if (stock <= 0) {
+                    showStockAlert(name, stock);
+                    return;
+                }
                 cart.push({
                     id: id,
                     name: name,
                     price: price,
                     image: image,
+                    stock: stock,
                     quantity: 1
                 });
             }
@@ -477,6 +583,35 @@
             });
         }
 
+        // Show stock alert
+        function showStockAlert(productName, availableStock) {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3 animate-slide-in';
+            toast.innerHTML = `
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-semibold">Stok Tidak Mencukupi!</p>
+                    <p class="text-sm">${productName} hanya tersisa ${availableStock} item</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         // Remove item from cart
         function removeFromCart(index) {
             cart.splice(index, 1);
@@ -485,12 +620,73 @@
 
         // Update item quantity
         function updateQuantity(index, change) {
-            cart[index].quantity += change;
-            if (cart[index].quantity <= 0) {
+            const item = cart[index];
+            const newQuantity = item.quantity + change;
+            
+            // Check if trying to increase quantity
+            if (change > 0) {
+                // Check if new quantity would exceed stock
+                if (newQuantity > item.stock) {
+                    showStockAlert(item.name, item.stock);
+                    return;
+                }
+            }
+            
+            item.quantity = newQuantity;
+            
+            if (item.quantity <= 0) {
                 removeFromCart(index);
             } else {
                 updateCartDisplay();
             }
+        }
+
+        // Set quantity manually from input field
+        function setQuantity(index, value, maxStock) {
+            const item = cart[index];
+            let newQuantity = parseInt(value);
+            
+            // Validate input
+            if (isNaN(newQuantity) || newQuantity < 1) {
+                newQuantity = 1;
+            }
+            
+            // Check if quantity exceeds stock
+            if (newQuantity > maxStock) {
+                showStockAlert(item.name, maxStock);
+                newQuantity = maxStock;
+            }
+            
+            item.quantity = newQuantity;
+            updateCartDisplay();
+        }
+
+        // Show stock alert
+        function showStockAlert(productName, availableStock) {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3 animate-slide-in';
+            toast.innerHTML = `
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-semibold">Stok Tidak Mencukupi!</p>
+                    <p class="text-sm">${productName} hanya tersisa ${availableStock} item</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
         }
 
         // Update cart display
@@ -530,15 +726,24 @@
                         <div class="flex-1 min-w-0">
                             <h4 class="font-medium text-xs text-gray-900 truncate">${item.name}</h4>
                             <p class="text-green-600 font-semibold text-xs">Rp ${item.price.toLocaleString('id-ID')}</p>
+                            <p class="text-gray-400 text-xs">Stok: ${item.stock}</p>
                         </div>
                         <div class="flex items-center space-x-1">
                             <button onclick="updateQuantity(${index}, -1)" 
                                     class="w-6 h-6 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-gray-200 transition-colors">
                                 <i class="fas fa-minus text-xs text-gray-600"></i>
                             </button>
-                            <span class="font-medium text-xs w-6 text-center">${item.quantity}</span>
+                            <input type="number" 
+                                   value="${item.quantity}" 
+                                   min="1" 
+                                   max="${item.stock}"
+                                   onchange="setQuantity(${index}, this.value, ${item.stock})"
+                                   onkeypress="return isNumber(event)"
+                                   class="w-12 text-center font-medium text-xs border border-gray-200 rounded px-1 py-1 focus:outline-none focus:ring-1 focus:ring-green-400 focus:border-green-400"
+                            />
                             <button onclick="updateQuantity(${index}, 1)" 
-                                    class="w-6 h-6 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                                    ${item.quantity >= item.stock ? 'disabled' : ''}
+                                    class="w-6 h-6 rounded-full ${item.quantity >= item.stock ? 'bg-gray-50 cursor-not-allowed opacity-50' : 'bg-gray-100 hover:bg-gray-200'} border border-gray-200 flex items-center justify-center transition-colors">
                                 <i class="fas fa-plus text-xs text-gray-600"></i>
                             </button>
                         </div>

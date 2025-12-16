@@ -103,7 +103,7 @@ class DashboardController extends Controller
             'transaksiTerakhir',
             'produkTerlaris',
             'penjualan7Hari',
-            'transaksi7Hari',
+            'transaksi7Hari', 
             'labels7Hari'
         ));
     }

@@ -18,8 +18,8 @@
         </header>
 
         <!-- Page Content -->
-        <main class="p-4 sm:p-6 lg:p-8">
-            <div class="space-y-6">
+        <main class="px-4 sm:px-6 lg:px-8 pb-4 sm:pt-1 sm:pb-6 lg:pt-1 lg:pb-8">
+            <div class="space-y-4">
                 <!-- Header -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h2 class="text-2xl font-bold text-gray-900">Jurnal Harian</h2>
