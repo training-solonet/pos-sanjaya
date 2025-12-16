@@ -108,6 +108,7 @@ class ProdukController extends Controller
 
         $request->validate([
             'nama' => 'required|string|max:255|unique:produk,nama',
+            'nama' => 'required|string|max:255|unique:produk,nama',
             'stok' => 'required|integer|min:0',
             'min_stok' => 'required|integer|min:0',
             'harga' => 'required|integer|min:0',
@@ -133,8 +134,26 @@ class ProdukController extends Controller
                 }
 
                 // Create product dengan bahan baku yang valid
+                // Cari bahan baku pertama yang tersedia
+                $bahanBaku = BahanBaku::first();
+
+                if (! $bahanBaku) {
+                    // Buat bahan baku default jika tidak ada
+                    $bahanBaku = BahanBaku::create([
+                        'nama' => 'Bahan Baku Umum',
+                        'stok' => 0,
+                        'min_stok' => 0,
+                        'kategori' => 'Bahan Utama',
+                        'harga_satuan' => 0,
+                        'id_konversi' => 1, // Pastikan ada konversi dengan id=1
+                        'tglupdate' => now(),
+                    ]);
+                }
+
+                // Create product dengan bahan baku yang valid
                 $produk = Produk::create([
                     'nama' => $request->nama,
+                    'id_bahan_baku' => $bahanBaku->id,
                     'id_bahan_baku' => $bahanBaku->id,
                     'stok' => $request->stok,
                     'min_stok' => $request->min_stok,
@@ -218,6 +237,7 @@ class ProdukController extends Controller
         Log::info('Update Product Request:', ['id' => $id, 'data' => $request->all()]);
 
         $request->validate([
+            'nama' => 'required|string|max:255|unique:produk,nama,'.$id,
             'nama' => 'required|string|max:255|unique:produk,nama,'.$id,
             'stok' => 'required|integer|min:0',
             'min_stok' => 'required|integer|min:0',
