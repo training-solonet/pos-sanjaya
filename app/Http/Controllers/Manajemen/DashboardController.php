@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers\Manajemen;
 
-use Carbon\Carbon;
-use App\Models\Produk;
+use App\Http\Controllers\Controller;
 use App\Models\BahanBaku;
+use App\Models\Produk;
 use App\Models\Transaksi;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Response;
 
 class DashboardController extends Controller
 {
@@ -36,7 +35,7 @@ class DashboardController extends Controller
             'labels7Hari' => $data['labels7Hari'],
             'penjualan7Hari' => $data['penjualan7Hari'],
             'penjualan30Hari' => $data['penjualan30Hari'],
-            'todaySales' => $data['todaySales']
+            'todaySales' => $data['todaySales'],
         ]);
 
         return view('manajemen.dashboard.index', $data);
@@ -51,7 +50,7 @@ class DashboardController extends Controller
         $yesterday = Carbon::yesterday();
         $sevenDaysAgo = Carbon::today()->subDays(6);
         $thirtyDaysAgo = Carbon::today()->subDays(29);
-        
+
         // 1. TOTAL PENJUALAN HARI INI
         $todaySales = Transaksi::whereDate('tgl', $today)->sum('bayar') ?? 0;
         $yesterdaySales = Transaksi::whereDate('tgl', $yesterday)->sum('bayar') ?? 0;
@@ -86,7 +85,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($product) {
                 $percentage = $product->min_stok > 0 ? round(($product->stok / $product->min_stok) * 100) : 0;
-                
+
                 if ($product->stok == 0) {
                     $statusColor = 'red';
                     $statusText = 'Habis';
@@ -100,7 +99,7 @@ class DashboardController extends Controller
                     $statusColor = 'yellow';
                     $statusText = 'Rendah';
                 }
-                
+
                 return (object) [
                     'id' => $product->id,
                     'nama' => $product->nama,
@@ -118,9 +117,9 @@ class DashboardController extends Controller
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
             ->join('transaksi', 'detail_transaksi.id_transaksi', '=', 'transaksi.id')
             ->select(
-                'produk.id', 
-                'produk.nama', 
-                'produk.harga', 
+                'produk.id',
+                'produk.nama',
+                'produk.harga',
                 DB::raw('SUM(detail_transaksi.jumlah) as total_qty')
             )
             ->whereBetween('transaksi.tgl', [$sevenDaysAgo->toDateString(), $today->toDateString()])
@@ -137,7 +136,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($bahan) {
                 $percentage = $bahan->min_stok > 0 ? round(($bahan->stok / $bahan->min_stok) * 100) : 0;
-                
+
                 if ($bahan->stok == 0) {
                     $statusColor = 'red';
                     $statusText = 'Habis';
@@ -151,11 +150,11 @@ class DashboardController extends Controller
                     $statusColor = 'yellow';
                     $statusText = 'Rendah';
                 }
-                
+
                 // Format stok display
                 $konversi = $bahan->konversi;
-                $stokDisplay = $bahan->stok . ' ' . ($konversi->satuan_kecil ?? 'unit');
-                
+                $stokDisplay = $bahan->stok.' '.($konversi->satuan_kecil ?? 'unit');
+
                 return (object) [
                     'id' => $bahan->id,
                     'nama' => $bahan->nama,
@@ -188,12 +187,12 @@ class DashboardController extends Controller
         $labels30Hari = ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'];
         $penjualan30Hari = [0, 0, 0, 0];
         $transaksi30Hari = [0, 0, 0, 0];
-        
+
         // Hitung per minggu (7 hari per minggu)
         for ($week = 0; $week < 4; $week++) {
             $startDate = Carbon::today()->subDays((($week + 1) * 7) - 1);
             $endDate = Carbon::today()->subDays($week * 7);
-            
+
             $penjualan30Hari[$week] = Transaksi::whereBetween('tgl', [$startDate->toDateString(), $endDate->toDateString()])
                 ->sum('bayar') ?? 0;
             $transaksi30Hari[$week] = Transaksi::whereBetween('tgl', [$startDate->toDateString(), $endDate->toDateString()])
@@ -224,7 +223,7 @@ class DashboardController extends Controller
             'lowStockProducts' => $lowStockProducts,
             'lowStockBahanBaku' => $lowStockBahanBaku,
             'topProducts' => $topProducts,
-            
+
             // Data chart
             'labels7Hari' => $labels7Hari,
             'penjualan7Hari' => $penjualan7Hari,
@@ -232,20 +231,20 @@ class DashboardController extends Controller
             'labels30Hari' => $labels30Hari,
             'penjualan30Hari' => $penjualan30Hari,
             'transaksi30Hari' => $transaksi30Hari,
-            
+
             // Chart summary
             'chartSummary' => [
                 '7days' => [
                     'totalSales' => $totalSales7Days,
                     'totalTransactions' => $totalTransactions7Days,
-                    'avgDaily' => $avgDaily7Days
+                    'avgDaily' => $avgDaily7Days,
                 ],
                 '30days' => [
                     'totalSales' => $totalSales30Days,
                     'totalTransactions' => $totalTransactions30Days,
-                    'avgDaily' => $avgDaily30Days
-                ]
-            ]
+                    'avgDaily' => $avgDaily30Days,
+                ],
+            ],
         ];
     }
 
@@ -256,7 +255,7 @@ class DashboardController extends Controller
     {
         $data = $this->getDashboardData();
         $today = Carbon::today()->format('d-m-Y');
-        
+
         switch ($format) {
             case 'excel':
                 return $this->exportExcel($data, $today);
@@ -275,95 +274,95 @@ class DashboardController extends Controller
     private function exportExcel($data, $date)
     {
         $filename = "dashboard_report_{$date}.xls";
-        
-        header("Content-Type: application/vnd.ms-excel");
+
+        header('Content-Type: application/vnd.ms-excel');
         header("Content-Disposition: attachment; filename=\"$filename\"");
-        
-        echo "<html>";
-        echo "<head>";
-        echo "<style>";
-        echo "table { border-collapse: collapse; width: 100%; }";
-        echo "th, td { border: 1px solid black; padding: 8px; text-align: left; }";
-        echo "th { background-color: #f2f2f2; }";
-        echo ".title { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 20px; }";
-        echo "</style>";
-        echo "</head>";
-        echo "<body>";
-        
+
+        echo '<html>';
+        echo '<head>';
+        echo '<style>';
+        echo 'table { border-collapse: collapse; width: 100%; }';
+        echo 'th, td { border: 1px solid black; padding: 8px; text-align: left; }';
+        echo 'th { background-color: #f2f2f2; }';
+        echo '.title { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 20px; }';
+        echo '</style>';
+        echo '</head>';
+        echo '<body>';
+
         echo "<div class='title'>Laporan Dashboard Sanjaya Bakery - {$date}</div>";
-        
+
         // Summary Statistics
-        echo "<h3>Statistik Ringkasan</h3>";
-        echo "<table>";
-        echo "<tr><th>Metrik</th><th>Hari Ini</th><th>Pertumbuhan</th></tr>";
-        echo "<tr><td>Total Penjualan</td><td>Rp " . number_format($data['todaySales'], 0, ',', '.') . "</td><td>{$data['salesGrowth']}%</td></tr>";
+        echo '<h3>Statistik Ringkasan</h3>';
+        echo '<table>';
+        echo '<tr><th>Metrik</th><th>Hari Ini</th><th>Pertumbuhan</th></tr>';
+        echo '<tr><td>Total Penjualan</td><td>Rp '.number_format($data['todaySales'], 0, ',', '.')."</td><td>{$data['salesGrowth']}%</td></tr>";
         echo "<tr><td>Total Transaksi</td><td>{$data['todayTransactions']}</td><td>{$data['transactionsGrowth']}%</td></tr>";
-        echo "<tr><td>Produk Terjual</td><td>" . number_format($data['todayProductsSold'], 0, ',', '.') . "</td><td>{$data['productsSoldGrowth']}%</td></tr>";
+        echo '<tr><td>Produk Terjual</td><td>'.number_format($data['todayProductsSold'], 0, ',', '.')."</td><td>{$data['productsSoldGrowth']}%</td></tr>";
         echo "<tr><td>Stok Rendah</td><td>{$data['lowStockCount']}</td><td>-</td></tr>";
-        echo "</table><br>";
-        
+        echo '</table><br>';
+
         // Low Stock Products
-        if (!empty($data['lowStockProducts'])) {
-            echo "<h3>Produk Stok Rendah</h3>";
-            echo "<table>";
-            echo "<tr><th>Nama Produk</th><th>Stok</th><th>Stok Minimum</th><th>Status</th></tr>";
+        if (! empty($data['lowStockProducts'])) {
+            echo '<h3>Produk Stok Rendah</h3>';
+            echo '<table>';
+            echo '<tr><th>Nama Produk</th><th>Stok</th><th>Stok Minimum</th><th>Status</th></tr>';
             foreach ($data['lowStockProducts'] as $product) {
-                echo "<tr>";
+                echo '<tr>';
                 echo "<td>{$product->nama}</td>";
                 echo "<td>{$product->stok} {$product->satuan}</td>";
                 echo "<td>{$product->min_stok} {$product->satuan}</td>";
                 echo "<td>{$product->status_text} ({$product->percentage}%)</td>";
-                echo "</tr>";
+                echo '</tr>';
             }
-            echo "</table><br>";
+            echo '</table><br>';
         }
-        
+
         // Low Stock Bahan Baku
-        if (!empty($data['lowStockBahanBaku'])) {
-            echo "<h3>Bahan Baku Stok Rendah</h3>";
-            echo "<table>";
-            echo "<tr><th>Nama Bahan Baku</th><th>Stok</th><th>Stok Minimum</th><th>Status</th></tr>";
+        if (! empty($data['lowStockBahanBaku'])) {
+            echo '<h3>Bahan Baku Stok Rendah</h3>';
+            echo '<table>';
+            echo '<tr><th>Nama Bahan Baku</th><th>Stok</th><th>Stok Minimum</th><th>Status</th></tr>';
             foreach ($data['lowStockBahanBaku'] as $bahan) {
-                echo "<tr>";
+                echo '<tr>';
                 echo "<td>{$bahan->nama}</td>";
                 echo "<td>{$bahan->stok_display}</td>";
                 echo "<td>{$bahan->min_stok} {$bahan->satuan_kecil}</td>";
                 echo "<td>{$bahan->status_text} ({$bahan->percentage}%)</td>";
-                echo "</tr>";
+                echo '</tr>';
             }
-            echo "</table><br>";
+            echo '</table><br>';
         }
-        
+
         // Top Products
-        if (!empty($data['topProducts'])) {
-            echo "<h3>Produk Terlaris (7 Hari Terakhir)</h3>";
-            echo "<table>";
-            echo "<tr><th>Nama Produk</th><th>Harga</th><th>Terjual</th></tr>";
+        if (! empty($data['topProducts'])) {
+            echo '<h3>Produk Terlaris (7 Hari Terakhir)</h3>';
+            echo '<table>';
+            echo '<tr><th>Nama Produk</th><th>Harga</th><th>Terjual</th></tr>';
             foreach ($data['topProducts'] as $product) {
-                echo "<tr>";
+                echo '<tr>';
                 echo "<td>{$product->nama}</td>";
-                echo "<td>Rp " . number_format($product->harga ?? 0, 0, ',', '.') . "</td>";
-                echo "<td>" . number_format($product->total_qty ?? 0, 0, ',', '.') . "</td>";
-                echo "</tr>";
+                echo '<td>Rp '.number_format($product->harga ?? 0, 0, ',', '.').'</td>';
+                echo '<td>'.number_format($product->total_qty ?? 0, 0, ',', '.').'</td>';
+                echo '</tr>';
             }
-            echo "</table><br>";
+            echo '</table><br>';
         }
-        
+
         // Sales Chart Data (7 days)
-        if (!empty($data['penjualan7Hari'])) {
-            echo "<h3>Data Penjualan 7 Hari Terakhir</h3>";
-            echo "<table>";
-            echo "<tr><th>Hari</th><th>Penjualan (Rp)</th></tr>";
+        if (! empty($data['penjualan7Hari'])) {
+            echo '<h3>Data Penjualan 7 Hari Terakhir</h3>';
+            echo '<table>';
+            echo '<tr><th>Hari</th><th>Penjualan (Rp)</th></tr>';
             for ($i = 0; $i < count($data['labels7Hari']); $i++) {
-                echo "<tr>";
+                echo '<tr>';
                 echo "<td>{$data['labels7Hari'][$i]}</td>";
-                echo "<td>Rp " . number_format($data['penjualan7Hari'][$i], 0, ',', '.') . "</td>";
-                echo "</tr>";
+                echo '<td>Rp '.number_format($data['penjualan7Hari'][$i], 0, ',', '.').'</td>';
+                echo '</tr>';
             }
-            echo "</table>";
+            echo '</table>';
         }
-        
-        echo "</body></html>";
+
+        echo '</body></html>';
         exit;
     }
 
@@ -373,82 +372,82 @@ class DashboardController extends Controller
     private function exportCSV($data, $date)
     {
         $filename = "dashboard_report_{$date}.csv";
-        
+
         header('Content-Type: text/csv; charset=utf-8');
         header("Content-Disposition: attachment; filename=\"$filename\"");
-        
+
         $output = fopen('php://output', 'w');
-        
+
         // Add BOM for UTF-8
-        fputs($output, $bom = (chr(0xEF) . chr(0xBB) . chr(0xBF)));
-        
+        fwrite($output, $bom = (chr(0xEF).chr(0xBB).chr(0xBF)));
+
         // Summary
-        fputcsv($output, ['Laporan Dashboard Sanjaya Bakery - ' . $date]);
+        fputcsv($output, ['Laporan Dashboard Sanjaya Bakery - '.$date]);
         fputcsv($output, []);
         fputcsv($output, ['Statistik Ringkasan']);
         fputcsv($output, ['Metrik', 'Hari Ini', 'Pertumbuhan']);
-        fputcsv($output, ['Total Penjualan', 'Rp ' . number_format($data['todaySales'], 0, ',', '.'), $data['salesGrowth'] . '%']);
-        fputcsv($output, ['Total Transaksi', $data['todayTransactions'], $data['transactionsGrowth'] . '%']);
-        fputcsv($output, ['Produk Terjual', number_format($data['todayProductsSold'], 0, ',', '.'), $data['productsSoldGrowth'] . '%']);
+        fputcsv($output, ['Total Penjualan', 'Rp '.number_format($data['todaySales'], 0, ',', '.'), $data['salesGrowth'].'%']);
+        fputcsv($output, ['Total Transaksi', $data['todayTransactions'], $data['transactionsGrowth'].'%']);
+        fputcsv($output, ['Produk Terjual', number_format($data['todayProductsSold'], 0, ',', '.'), $data['productsSoldGrowth'].'%']);
         fputcsv($output, ['Stok Rendah', $data['lowStockCount'], '-']);
         fputcsv($output, []);
-        
+
         // Low Stock Products
-        if (!empty($data['lowStockProducts'])) {
+        if (! empty($data['lowStockProducts'])) {
             fputcsv($output, ['Produk Stok Rendah']);
             fputcsv($output, ['Nama Produk', 'Stok', 'Stok Minimum', 'Status']);
             foreach ($data['lowStockProducts'] as $product) {
                 fputcsv($output, [
                     $product->nama,
-                    $product->stok . ' ' . $product->satuan,
-                    $product->min_stok . ' ' . $product->satuan,
-                    $product->status_text . ' (' . $product->percentage . '%)'
+                    $product->stok.' '.$product->satuan,
+                    $product->min_stok.' '.$product->satuan,
+                    $product->status_text.' ('.$product->percentage.'%)',
                 ]);
             }
             fputcsv($output, []);
         }
-        
+
         // Low Stock Bahan Baku
-        if (!empty($data['lowStockBahanBaku'])) {
+        if (! empty($data['lowStockBahanBaku'])) {
             fputcsv($output, ['Bahan Baku Stok Rendah']);
             fputcsv($output, ['Nama Bahan Baku', 'Stok', 'Stok Minimum', 'Status']);
             foreach ($data['lowStockBahanBaku'] as $bahan) {
                 fputcsv($output, [
                     $bahan->nama,
                     $bahan->stok_display,
-                    $bahan->min_stok . ' ' . $bahan->satuan_kecil,
-                    $bahan->status_text . ' (' . $bahan->percentage . '%)'
+                    $bahan->min_stok.' '.$bahan->satuan_kecil,
+                    $bahan->status_text.' ('.$bahan->percentage.'%)',
                 ]);
             }
             fputcsv($output, []);
         }
-        
+
         // Top Products
-        if (!empty($data['topProducts'])) {
+        if (! empty($data['topProducts'])) {
             fputcsv($output, ['Produk Terlaris (7 Hari Terakhir)']);
             fputcsv($output, ['Nama Produk', 'Harga', 'Terjual']);
             foreach ($data['topProducts'] as $product) {
                 fputcsv($output, [
                     $product->nama,
-                    'Rp ' . number_format($product->harga ?? 0, 0, ',', '.'),
-                    number_format($product->total_qty ?? 0, 0, ',', '.')
+                    'Rp '.number_format($product->harga ?? 0, 0, ',', '.'),
+                    number_format($product->total_qty ?? 0, 0, ',', '.'),
                 ]);
             }
             fputcsv($output, []);
         }
-        
+
         // Sales Data
-        if (!empty($data['penjualan7Hari'])) {
+        if (! empty($data['penjualan7Hari'])) {
             fputcsv($output, ['Data Penjualan 7 Hari Terakhir']);
             fputcsv($output, ['Hari', 'Penjualan (Rp)']);
             for ($i = 0; $i < count($data['labels7Hari']); $i++) {
                 fputcsv($output, [
                     $data['labels7Hari'][$i],
-                    'Rp ' . number_format($data['penjualan7Hari'][$i], 0, ',', '.')
+                    'Rp '.number_format($data['penjualan7Hari'][$i], 0, ',', '.'),
                 ]);
             }
         }
-        
+
         fclose($output);
         exit;
     }
@@ -460,10 +459,10 @@ class DashboardController extends Controller
     {
         // Simple HTML PDF export
         $filename = "dashboard_report_{$date}.html";
-        
+
         header('Content-Type: application/pdf');
         header("Content-Disposition: attachment; filename=\"$filename\"");
-        
+
         $html = "<!DOCTYPE html>
         <html>
         <head>
@@ -490,7 +489,7 @@ class DashboardController extends Controller
             <div class='summary-box'>
                 <h3>Ringkasan Hari Ini</h3>
                 <div class='metric'>
-                    <div class='metric-value'>Rp " . number_format($data['todaySales'], 0, ',', '.') . "</div>
+                    <div class='metric-value'>Rp ".number_format($data['todaySales'], 0, ',', '.')."</div>
                     <div class='metric-label'>Total Penjualan</div>
                 </div>
                 <div class='metric'>
@@ -498,7 +497,7 @@ class DashboardController extends Controller
                     <div class='metric-label'>Total Transaksi</div>
                 </div>
                 <div class='metric'>
-                    <div class='metric-value'>" . number_format($data['todayProductsSold'], 0, ',', '.') . "</div>
+                    <div class='metric-value'>".number_format($data['todayProductsSold'], 0, ',', '.')."</div>
                     <div class='metric-label'>Produk Terjual</div>
                 </div>
                 <div class='metric'>
@@ -506,22 +505,22 @@ class DashboardController extends Controller
                     <div class='metric-label'>Stok Rendah</div>
                 </div>
             </div>";
-        
+
         // Low Stock Products
-        if (!empty($data['lowStockProducts'])) {
-            $html .= "<h3>Produk Stok Rendah</h3>
+        if (! empty($data['lowStockProducts'])) {
+            $html .= '<h3>Produk Stok Rendah</h3>
             <table>
                 <tr>
                     <th>Nama Produk</th>
                     <th>Stok</th>
                     <th>Stok Minimum</th>
                     <th>Status</th>
-                </tr>";
-            
+                </tr>';
+
             foreach ($data['lowStockProducts'] as $product) {
-                $statusColor = $product->status_color == 'red' ? 'style="color: #e53e3e;"' : 
+                $statusColor = $product->status_color == 'red' ? 'style="color: #e53e3e;"' :
                               ($product->status_color == 'orange' ? 'style="color: #ed8936;"' : 'style="color: #d69e2e;"');
-                
+
                 $html .= "<tr>
                     <td>{$product->nama}</td>
                     <td>{$product->stok} {$product->satuan}</td>
@@ -529,25 +528,25 @@ class DashboardController extends Controller
                     <td {$statusColor}>{$product->status_text} ({$product->percentage}%)</td>
                 </tr>";
             }
-            
-            $html .= "</table>";
+
+            $html .= '</table>';
         }
-        
+
         // Low Stock Bahan Baku
-        if (!empty($data['lowStockBahanBaku'])) {
-            $html .= "<h3>Bahan Baku Stok Rendah</h3>
+        if (! empty($data['lowStockBahanBaku'])) {
+            $html .= '<h3>Bahan Baku Stok Rendah</h3>
             <table>
                 <tr>
                     <th>Nama Bahan Baku</th>
                     <th>Stok</th>
                     <th>Stok Minimum</th>
                     <th>Status</th>
-                </tr>";
-            
+                </tr>';
+
             foreach ($data['lowStockBahanBaku'] as $bahan) {
-                $statusColor = $bahan->status_color == 'red' ? 'style="color: #e53e3e;"' : 
+                $statusColor = $bahan->status_color == 'red' ? 'style="color: #e53e3e;"' :
                               ($bahan->status_color == 'orange' ? 'style="color: #ed8936;"' : 'style="color: #d69e2e;"');
-                
+
                 $html .= "<tr>
                     <td>{$bahan->nama}</td>
                     <td>{$bahan->stok_display}</td>
@@ -555,33 +554,33 @@ class DashboardController extends Controller
                     <td {$statusColor}>{$bahan->status_text} ({$bahan->percentage}%)</td>
                 </tr>";
             }
-            
-            $html .= "</table>";
+
+            $html .= '</table>';
         }
-        
+
         // Top Products
-        if (!empty($data['topProducts'])) {
-            $html .= "<h3>Produk Terlaris (7 Hari Terakhir)</h3>
+        if (! empty($data['topProducts'])) {
+            $html .= '<h3>Produk Terlaris (7 Hari Terakhir)</h3>
             <table>
                 <tr>
                     <th>Nama Produk</th>
                     <th>Harga</th>
                     <th>Terjual</th>
-                </tr>";
-            
+                </tr>';
+
             foreach ($data['topProducts'] as $product) {
                 $html .= "<tr>
                     <td>{$product->nama}</td>
-                    <td>Rp " . number_format($product->harga ?? 0, 0, ',', '.') . "</td>
-                    <td>" . number_format($product->total_qty ?? 0, 0, ',', '.') . "</td>
-                </tr>";
+                    <td>Rp ".number_format($product->harga ?? 0, 0, ',', '.').'</td>
+                    <td>'.number_format($product->total_qty ?? 0, 0, ',', '.').'</td>
+                </tr>';
             }
-            
-            $html .= "</table>";
+
+            $html .= '</table>';
         }
-        
-        $html .= "</body></html>";
-        
+
+        $html .= '</body></html>';
+
         echo $html;
         exit;
     }
@@ -592,6 +591,7 @@ class DashboardController extends Controller
     public function api()
     {
         $data = $this->getDashboardData();
+
         return response()->json($data);
     }
 
