@@ -15,7 +15,7 @@ class LaporanController extends Controller
         // Get filter dates from request or use defaults
         $startDate = request('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = request('end_date', Carbon::now()->toDateString());
-        
+
         // Validate and parse dates
         try {
             $startDate = Carbon::parse($startDate)->startOfDay();
@@ -104,7 +104,7 @@ class LaporanController extends Controller
         $previousMonthStart = Carbon::now()->subMonth()->startOfMonth();
         $currentTotal = Transaksi::whereBetween('tgl', [$currentMonthStart->toDateString(), Carbon::now()->toDateString()])->sum('bayar');
         $previousTotal = Transaksi::whereBetween('tgl', [$previousMonthStart->toDateString(), $currentMonthStart->copy()->subDay()->toDateString()])->sum('bayar');
-        
+
         // Calculate growth: if previous month has data, calculate percentage, otherwise show as new growth
         if ($previousTotal > 0) {
             $growth = round((($currentTotal - $previousTotal) / $previousTotal) * 100, 1);
@@ -122,7 +122,7 @@ class LaporanController extends Controller
         $totalCost = DB::table('detail_transaksi')
             ->whereIn('id_transaksi', $currentMonthTransactions)
             ->sum(DB::raw('harga * jumlah'));
-        
+
         $profitMargin = $totalRevenue > 0 ? round((($totalRevenue - $totalCost) / $totalRevenue) * 100, 1) : null;
 
         $monthlyReport = [
