@@ -22,16 +22,6 @@
                                         </p>
                                     </div>
                                 </div>
-                                <div class="flex items-center space-x-2">
-                                    <button onclick="swapUnits()"
-                                        class="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors">
-                                        <i class="fas fa-sync-alt"></i>
-                                    </button>
-                                    <button onclick="clearAll()"
-                                        class="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
                             </div>
                         </div>
 
