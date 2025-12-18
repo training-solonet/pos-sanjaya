@@ -71,11 +71,11 @@
                                     <h3 class="text-lg font-semibold text-gray-900">Daftar Produk</h3>
                                     <div class="flex items-center space-x-2">
                                         <span class="text-sm text-gray-500">Tampilan:</span>
-                                        <button class="p-2 bg-gradient-to-r from-green-400 to-green-700 bg-opacity-10 text-white rounded-lg">
+                                        <button id="gridViewBtn" onclick="toggleView('grid')" class="p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all" title="Tampilan Grid">
                                             <i class="fas fa-th text-sm"></i>
                                         </button>
-                                        <button class="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
-                                            <i class="fas fa-list text b-sm"></i>
+                                        <button id="listViewBtn" onclick="toggleView('list')" class="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all" title="Tampilan List">
+                                            <i class="fas fa-list text-sm"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -98,21 +98,26 @@
                                 <!-- Product Card: {{ $produk->nama }} -->
                                 <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
                                      data-nama="{{ strtolower($produk->nama) }}"
+                                     data-id="{{ $produk->id }}"
+                                     data-price="{{ $produk->harga }}"
+                                     data-stock="{{ $produk->stok }}"
                                      onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg', {{ $produk->stok }})">  
-                                    <div class="relative">
+                                    <div class="relative product-image-wrapper">
                                         <div class="aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
                                             <i class="fas fa-bread-slice text-green-500 text-2xl group-hover:scale-110 transition-transform"></i>
                                         </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">{{ $produk->stok }}</div>
+                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold product-stock-badge">{{ $produk->stok }}</div>
                                     </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">{{ $produk->nama }}</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp {{ number_format($produk->harga, 0, ',', '.') }}</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Produk</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 {{ $produk->stok > 0 ? 'bg-success' : 'bg-red-500' }} rounded-full"></div>
-                                                <span class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-medium">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
+                                    <div class="product-details">
+                                        <div class="product-info space-y-1">
+                                            <h3 class="font-semibold text-gray-900 text-sm product-name">{{ $produk->nama }}</h3>
+                                            <p class="text-green-600 font-bold text-lg product-price">Rp {{ number_format($produk->harga, 0, ',', '.') }}</p>
+                                            <div class="flex items-center justify-between product-meta">
+                                                <span class="text-xs text-gray-500">Produk</span>
+                                                <div class="flex items-center space-x-1 product-status">
+                                                    <div class="w-2 h-2 {{ $produk->stok > 0 ? 'bg-success' : 'bg-red-500' }} rounded-full"></div>
+                                                    <span class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-medium">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -288,8 +293,6 @@
                                 </div>
                             </div>
                             
-                           
-                            
                             <!-- Action Buttons -->
                             <div class="space-y-3">
                                 <!-- Printer Settings -->
@@ -392,12 +395,153 @@
         .animate-slide-in {
             animation: slide-in 0.3s ease-out;
         }
+        
+        /* List view specific styles */
+        .product-card.list-view {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 1rem !important;
+        }
+        
+        .product-card.list-view .product-image-wrapper {
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+        }
+        
+        .product-card.list-view .product-details {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        
+        .product-card.list-view .product-info {
+            flex: 1;
+        }
+        
+        .product-card.list-view .product-price {
+            text-align: right;
+            min-width: 150px;
+        }
     </style>
 
     <script>
         let cart = [];
         let sidebarOpen = false;
         let currentCategory = 'semua';
+        let currentView = 'grid'; // Default view
+
+        // Toggle between grid and list view
+        function toggleView(viewType) {
+            currentView = viewType;
+            const productGrid = document.getElementById('productGrid');
+            const productCards = document.querySelectorAll('.product-card');
+            const gridBtn = document.getElementById('gridViewBtn');
+            const listBtn = document.getElementById('listViewBtn');
+            
+            if (viewType === 'grid') {
+                // Switch to grid view
+                productGrid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100';
+                
+                // Update product cards for grid view
+                productCards.forEach(card => {
+                    if (!card.id || card.id !== 'noResultsMessage') {
+                        card.className = 'product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1';
+                        
+                        // Adjust image wrapper
+                        const imageWrapper = card.querySelector('.product-image-wrapper');
+                        if (imageWrapper) {
+                            imageWrapper.className = 'relative product-image-wrapper';
+                            const imgDiv = imageWrapper.querySelector('div:first-child');
+                            if (imgDiv) {
+                                imgDiv.className = 'aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden';
+                            }
+                        }
+                        
+                        // Adjust product details
+                        const details = card.querySelector('.product-details');
+                        if (details) {
+                            details.className = 'product-details';
+                        }
+                        
+                        const info = card.querySelector('.product-info');
+                        if (info) {
+                            info.className = 'product-info space-y-1';
+                        }
+                        
+                        const price = card.querySelector('.product-price');
+                        if (price) {
+                            price.className = 'text-green-600 font-bold text-lg product-price';
+                        }
+                        
+                        const meta = card.querySelector('.product-meta');
+                        if (meta) {
+                            meta.className = 'flex items-center justify-between product-meta';
+                        }
+                    }
+                });
+                
+                // Update button states
+                gridBtn.className = 'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
+                listBtn.className = 'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
+            } else {
+                // Switch to list view
+                productGrid.className = 'flex flex-col gap-3 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100';
+                
+                // Update product cards for list view
+                productCards.forEach(card => {
+                    if (!card.id || card.id !== 'noResultsMessage') {
+                        card.className = 'product-card list-view group bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer';
+                        
+                        // Adjust image wrapper for list
+                        const imageWrapper = card.querySelector('.product-image-wrapper');
+                        if (imageWrapper) {
+                            imageWrapper.className = 'relative product-image-wrapper flex-shrink-0';
+                            const imgDiv = imageWrapper.querySelector('div:first-child');
+                            if (imgDiv) {
+                                imgDiv.className = 'w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center overflow-hidden';
+                            }
+                        }
+                        
+                        // Adjust product details for list
+                        const details = card.querySelector('.product-details');
+                        if (details) {
+                            details.className = 'product-details flex-1 flex items-center justify-between gap-4';
+                        }
+                        
+                        const info = card.querySelector('.product-info');
+                        if (info) {
+                            info.className = 'product-info flex-1';
+                        }
+                        
+                        const name = card.querySelector('.product-name');
+                        if (name) {
+                            name.className = 'font-semibold text-gray-900 text-base product-name mb-1';
+                        }
+                        
+                        const price = card.querySelector('.product-price');
+                        if (price) {
+                            price.className = 'text-green-600 font-bold text-xl product-price';
+                        }
+                        
+                        const meta = card.querySelector('.product-meta');
+                        if (meta) {
+                            meta.className = 'flex items-center gap-3 product-meta mt-1';
+                        }
+                    }
+                });
+                
+                // Update button states
+                gridBtn.className = 'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
+                listBtn.className = 'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
+            }
+            
+            // Save preference to localStorage
+            localStorage.setItem('productViewPreference', viewType);
+        }
 
         // Determine category based on product name
         function getCategoryByName(productName) {
@@ -1659,6 +1803,12 @@
             const overlay = document.getElementById('sidebarOverlay');
             sidebar.classList.remove('show');
             overlay.classList.remove('show');
+            
+            // Load saved view preference
+            const savedView = localStorage.getItem('productViewPreference');
+            if (savedView && (savedView === 'grid' || savedView === 'list')) {
+                toggleView(savedView);
+            }
             
             // Initialize search functionality
             const searchInput = document.getElementById('searchInput');
