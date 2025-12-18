@@ -1,7 +1,6 @@
 @extends('layouts.manajemen.index')
 
 @section('content')
-
     <main class="flex-1 p-4 sm:p-6 lg:p-8">
         <div class="max-w-7xl mx-auto">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -21,16 +20,6 @@
                                         <p class="text-sm text-gray-500">Buat dan kelola satuan untuk kebutuhan bisnis Anda
                                         </p>
                                     </div>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <button onclick="swapUnits()"
-                                        class="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors">
-                                        <i class="fas fa-sync-alt"></i>
-                                    </button>
-                                    <button onclick="clearAll()"
-                                        class="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -471,15 +460,6 @@
         updateDateTime();
         setInterval(updateDateTime, 60000);
     });
-
-    // Sidebar toggle function
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-
-        sidebar.classList.toggle('show');
-        overlay.classList.toggle('hidden');
-    }
 
     // Data konversi dari server (di-inject oleh controller)
     const serverKonversi = @json($konversi ?? []);

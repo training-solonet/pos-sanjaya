@@ -162,17 +162,6 @@
         </div>
     </main>
 
-    <!-- Toggle Sidebar Script -->
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobileOverlay');
-            
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
-        }
-    </script>
-
     <script>
         // Data from backend
         const salesData = {

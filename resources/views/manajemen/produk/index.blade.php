@@ -6,7 +6,7 @@
 
 @section('content')
     <!-- Main Content -->
-    <div class="content flex-1 lg:flex-1">
+    {{-- <div class="content flex-1 lg:flex-1"> --}}
 
         <!-- Page Content -->
         <main class="p-4 sm:p-6 lg:p-8">
@@ -234,7 +234,7 @@
                 </div>
             </div>
         </main>
-    </div>
+    {{-- </div> --}}
 
     <!-- Add Product Modal -->
     <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">

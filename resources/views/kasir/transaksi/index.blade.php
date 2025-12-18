@@ -398,10 +398,9 @@
         
         /* List view specific styles */
         .product-card.list-view {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 1rem !important;
+            flex-direction: row;
+            align-items: center;
+            gap: 1rem;
         }
         
         .product-card.list-view .product-image-wrapper {
@@ -425,6 +424,11 @@
         .product-card.list-view .product-price {
             text-align: right;
             min-width: 150px;
+        }
+        
+        /* Hidden product card */
+        .product-card.hidden-card {
+            display: none !important;
         }
     </style>
 
@@ -450,6 +454,15 @@
                 productCards.forEach(card => {
                     if (!card.id || card.id !== 'noResultsMessage') {
                         card.className = 'product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1';
+                        
+                        // Reset display based on current filter
+                        const productName = card.getAttribute('data-nama');
+                        const productCategory = getCategoryByName(productName);
+                        const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                        
+                        if (!matchesCategory) {
+                            card.classList.add('hidden-card');
+                        }
                         
                         // Adjust image wrapper
                         const imageWrapper = card.querySelector('.product-image-wrapper');
@@ -495,6 +508,17 @@
                 productCards.forEach(card => {
                     if (!card.id || card.id !== 'noResultsMessage') {
                         card.className = 'product-card list-view group bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer';
+                        
+                        // Reset display based on current filter  
+                        const productName = card.getAttribute('data-nama');
+                        const productCategory = getCategoryByName(productName);
+                        const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                        
+                        // Show as flex for list view
+                        card.style.display = 'flex';
+                        if (!matchesCategory) {
+                            card.classList.add('hidden-card');
+                        }
                         
                         // Adjust image wrapper for list
                         const imageWrapper = card.querySelector('.product-image-wrapper');
@@ -603,10 +627,13 @@
                 
                 // Show card if it matches both search and category
                 if (matchesSearch && matchesCategory) {
-                    card.style.display = 'block';
+                    // Remove hidden class to show card
+                    card.classList.remove('hidden-card');
+                    card.style.display = currentView === 'list' ? 'flex' : 'block';
                     visibleCount++;
                 } else {
-                    card.style.display = 'none';
+                    // Add hidden class to hide card
+                    card.classList.add('hidden-card');
                 }
             });
             
@@ -648,8 +675,50 @@
                 }
             });
             
-            // Re-run search to apply both category and search filters
-            searchProduct();
+            // Clear search input when changing category
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                const clearBtn = document.getElementById('clearSearchBtn');
+                if (clearBtn) {
+                    clearBtn.classList.add('hidden');
+                }
+            }
+            
+            // Apply category filter to all products
+            const productCards = document.querySelectorAll('.product-card');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            let visibleCount = 0;
+            
+            productCards.forEach(card => {
+                if (!card.id || card.id !== 'noResultsMessage') {
+                    const productName = card.getAttribute('data-nama');
+                    const productCategory = getCategoryByName(productName);
+                    const matchesCategory = category === 'semua' || productCategory === category;
+                    
+                    if (matchesCategory) {
+                        // Remove hidden class and set appropriate display
+                        card.classList.remove('hidden-card');
+                        card.style.display = currentView === 'list' ? 'flex' : 'block';
+                        visibleCount++;
+                    } else {
+                        // Add hidden class to hide card
+                        card.classList.add('hidden-card');
+                    }
+                }
+            });
+            
+            // Show/hide no results message
+            if (noResultsMessage) {
+                if (visibleCount === 0) {
+                    noResultsMessage.classList.remove('hidden');
+                } else {
+                    noResultsMessage.classList.add('hidden');
+                }
+            }
+            
+            // Update product count display
+            updateProductCountDisplay(visibleCount);
         }
         
         // Update product count display
@@ -720,12 +789,6 @@
             }
         });
 
-        // Auto-close sidebar when window is resized to large screens
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 1024 && sidebarOpen) {
-                closeSidebar();
-            }
-        });
         let isMobileCartOpen = false;
 
         // Update current date and time
