@@ -6,7 +6,7 @@
         <!-- Toast notifications will be inserted here -->
     </div>
 
-    <div class="content flex-1 lg:flex-1">
+    {{-- <div class="content flex-1 lg:flex-1"> --}}
         <!-- Page Content -->
         <main class="p-4 sm:p-6 lg:p-8">
             <div class="space-y-6">
@@ -190,7 +190,7 @@
                 </div>
             </div>
         </main>
-    </div>
+    {{-- </div> --}}
 @endsection
 <!-- Add Recipe Modal -->
 <div id="addRecipeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
@@ -547,16 +547,6 @@
             dropdown.classList.add('hidden');
         }
     });
-
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('mobileOverlay');
-
-        if (window.innerWidth < 1024) {
-            if (sidebar && sidebar.classList) sidebar.classList.toggle('-translate-x-full');
-            if (overlay && overlay.classList) overlay.classList.toggle('hidden');
-        }
-    }
 
     function updateDateTime() {
         const now = new Date();

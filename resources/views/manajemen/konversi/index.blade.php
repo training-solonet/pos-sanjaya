@@ -1,7 +1,6 @@
 @extends('layouts.manajemen.index')
 
 @section('content')
-
     <main class="flex-1 p-4 sm:p-6 lg:p-8">
         <div class="max-w-7xl mx-auto">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -461,15 +460,6 @@
         updateDateTime();
         setInterval(updateDateTime, 60000);
     });
-
-    // Sidebar toggle function
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-
-        sidebar.classList.toggle('show');
-        overlay.classList.toggle('hidden');
-    }
 
     // Data konversi dari server (di-inject oleh controller)
     const serverKonversi = @json($konversi ?? []);

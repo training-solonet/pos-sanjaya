@@ -1,8 +1,6 @@
 @extends('layouts.manajemen.index')
 
 @section('content')
-    <div class="content flex-1 lg:flex-1">
-
         <!-- Page Content -->
         <main class="p-4 sm:p-6 lg:p-8">
             <div class="space-y-6">
@@ -269,24 +267,6 @@
 @endsection
 
 <script>
-    let sidebarOpen = false;
-
-    // Toggle sidebar
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-
-        sidebarOpen = !sidebarOpen;
-
-        if (sidebarOpen) {
-            sidebar.classList.add('show');
-            overlay.classList.remove('hidden');
-        } else {
-            sidebar.classList.remove('show');
-            overlay.classList.add('hidden');
-        }
-    }
-
     // Update current date and time
     function updateDateTime() {
         const now = new Date();
@@ -303,17 +283,6 @@
             dateTimeElement.textContent = now.toLocaleDateString('id-ID', options);
         }
     }
-
-    // Handle window resize
-    window.addEventListener('resize', function() {
-        if (window.innerWidth >= 1024) {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.remove('show');
-            overlay.classList.add('hidden');
-            sidebarOpen = false;
-        }
-    });
 
     // Chart variables
     let salesChart, productsChart;

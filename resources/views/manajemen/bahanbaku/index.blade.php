@@ -2,7 +2,7 @@
 
 @section('content')
   <!-- Main Content -->
-  <div class="content flex-1 lg:flex-1">
+  {{-- <div class="content flex-1 lg:flex-1"> --}}
     <!-- Page Content -->
     <main class="p-3 sm:p-4 md:p-6 lg:p-8">
       <div class="space-y-4 md:space-y-6">
@@ -188,7 +188,7 @@
         </div>
       </div>
     </main>
-  </div>
+  {{-- </div> --}}
 
   <!-- Add Bahan Baku Modal -->
   <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto">
@@ -1167,19 +1167,6 @@
         });
         
         // Handle window resize untuk responsif
-        function handleResize() {
-            if (window.innerWidth >= 1024) {
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-                sidebarOpen = false;
-            }
-        }
-        
-        // Initial check
-        handleResize();
-        window.addEventListener('resize', handleResize);
     });
 </script>
 

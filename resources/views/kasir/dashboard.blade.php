@@ -297,21 +297,6 @@
     </div>
 
     <script>
-        let sidebarOpen = false;
-
-        // Toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobileOverlay');
-            
-            // Only toggle on mobile/tablet
-            if (window.innerWidth < 1024) {
-                sidebar.classList.toggle('-translate-x-full');
-                overlay.classList.toggle('hidden');
-                sidebarOpen = !sidebar.classList.contains('-translate-x-full');
-            }
-        }
-
         // Update current date and time
         function updateDateTime() {
             const now = new Date();
@@ -328,45 +313,6 @@
                 dateTimeElement.textContent = now.toLocaleDateString('id-ID', options);
             }
         }
-
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobileOverlay');
-            
-            if (window.innerWidth >= 1024) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.add('hidden');
-                sidebarOpen = false;
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-                sidebarOpen = false;
-            }
-        });
-
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(e) {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobileOverlay');
-            const menuButtons = document.querySelectorAll('[onclick*="toggleSidebar"]');
-            
-            let clickedMenuButton = false;
-            menuButtons.forEach(button => {
-                if (button.contains(e.target)) {
-                    clickedMenuButton = true;
-                }
-            });
-            
-            if (window.innerWidth < 1024 && 
-                !sidebar.contains(e.target) && 
-                !clickedMenuButton && 
-                !sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-                sidebarOpen = false;
-            }
-        });
 
         // Sales Chart Data
         const salesData = {

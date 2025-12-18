@@ -1,8 +1,12 @@
 <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
     <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
-            <!-- Empty Space -->
+            <!-- Mobile Menu Button -->
             <div class="flex items-center">
+                <button onclick="toggleSidebar()" title="Menu"
+                    class="lg:hidden w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                    <i class="fas fa-bars text-gray-600"></i>
+                </button>
             </div>
 
             <!-- Header Actions -->

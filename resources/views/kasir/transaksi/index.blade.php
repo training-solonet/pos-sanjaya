@@ -365,26 +365,6 @@
 
     <script>
         let cart = [];
-        let sidebarOpen = false;
-
-        // Toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const hamburger = document.getElementById('hamburgerBtn');
-            
-            sidebarOpen = !sidebarOpen;
-            
-            if (sidebarOpen) {
-                sidebar.classList.add('show');
-                overlay.classList.add('show');
-                hamburger.classList.add('active');
-            } else {
-                sidebar.classList.remove('show');
-                overlay.classList.remove('show');
-                hamburger.classList.remove('active');
-            }
-        }
 
         // Close sidebar
         function closeSidebar() {
@@ -425,12 +405,6 @@
             }
         });
 
-        // Auto-close sidebar when window is resized to large screens
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 1024 && sidebarOpen) {
-                closeSidebar();
-            }
-        });
         let isMobileCartOpen = false;
 
         // Update current date and time

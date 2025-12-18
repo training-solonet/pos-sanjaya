@@ -4,8 +4,8 @@
         <div class="flex justify-between items-center h-16">
           <!-- Mobile Menu Button & Page Title -->
           <div class="flex items-center space-x-4">
-            <button onclick="toggleSidebar()"
-              class="lg:hidden w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+            <button onclick="toggleSidebar()" title="Menu"
+              class="lg:hidden w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
               <i class="fas fa-bars text-gray-600"></i>
             </button>
           </div>

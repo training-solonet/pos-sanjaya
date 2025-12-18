@@ -277,7 +277,6 @@
     }
 
     let currentEditId = null;
-    let sidebarOpen = false;
     let allTransactions = [];
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -329,74 +328,6 @@
         dateTimeElement.textContent = dateTimeString;
       }
     }
-
-    // Toggle Sidebar
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('mobileOverlay');
-      
-      if (!sidebar) return;
-      
-      // Only toggle on mobile/tablet
-      if (window.innerWidth < 1024) {
-        sidebar.classList.toggle('-translate-x-full');
-        if (overlay) {
-          overlay.classList.toggle('hidden');
-        }
-        sidebarOpen = !sidebar.classList.contains('-translate-x-full');
-      }
-    }
-
-    // Handle window resize
-    window.addEventListener('resize', function () {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('mobileOverlay');
-
-      if (window.innerWidth >= 1024) {
-        if (sidebar) {
-          sidebar.classList.remove('-translate-x-full');
-        }
-        if (overlay) {
-          overlay.classList.add('hidden');
-        }
-        sidebarOpen = false;
-      } else {
-        if (sidebar) {
-          sidebar.classList.add('-translate-x-full');
-        }
-        if (overlay) {
-          overlay.classList.add('hidden');
-        }
-        sidebarOpen = false;
-      }
-    });
-
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', function (e) {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('mobileOverlay');
-      const menuButtons = document.querySelectorAll('[onclick*="toggleSidebar"]');
-
-      if (!sidebar) return;
-
-      let clickedMenuButton = false;
-      menuButtons.forEach(button => {
-        if (button.contains(e.target)) {
-          clickedMenuButton = true;
-        }
-      });
-
-      if (window.innerWidth < 1024 &&
-        !sidebar.contains(e.target) &&
-        !clickedMenuButton &&
-        !sidebar.classList.contains('-translate-x-full')) {
-        sidebar.classList.add('-translate-x-full');
-        if (overlay) {
-          overlay.classList.add('hidden');
-        }
-        sidebarOpen = false;
-      }
-    });
 
     // Load transactions from server - OPTIMIZED VERSION
     async function loadTransactions() {
