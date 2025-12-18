@@ -558,26 +558,36 @@
         function createProductsChart() {
             const ctx = document.getElementById('productsChart').getContext('2d');
             
+            // Data produk terlaris dari controller
+            const produkData = @json($produkTerlarisChart);
+            const labels = produkData.map(item => item.produk ? item.produk.nama : 'Produk');
+            const values = produkData.map(item => parseInt(item.total_terjual));
+            
+            // Warna yang bervariasi
+            const colors = [
+                'rgba(34, 197, 94, 0.8)',
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(156, 163, 175, 0.8)'
+            ];
+            
+            const borderColors = [
+                'rgb(34, 197, 94)',
+                'rgb(59, 130, 246)',
+                'rgb(245, 158, 11)',
+                'rgb(239, 68, 68)',
+                'rgb(156, 163, 175)'
+            ];
+            
             new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Roti Tawar', 'Croissant', 'Teh Botol', 'Donat Coklat', 'Lainnya'],
+                    labels: labels.length > 0 ? labels : ['Tidak ada data'],
                     datasets: [{
-                        data: [65, 48, 42, 35, 25],
-                        backgroundColor: [
-                            'rgba(34, 197, 94, 0.8)',
-                            'rgba(59, 130, 246, 0.8)',
-                            'rgba(245, 158, 11, 0.8)',
-                            'rgba(239, 68, 68, 0.8)',
-                            'rgba(156, 163, 175, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgb(34, 197, 94)',
-                            'rgb(59, 130, 246)',
-                            'rgb(245, 158, 11)',
-                            'rgb(239, 68, 68)',
-                            'rgb(156, 163, 175)'
-                        ],
+                        data: values.length > 0 ? values : [1],
+                        backgroundColor: colors.slice(0, labels.length > 0 ? labels.length : 1),
+                        borderColor: borderColors.slice(0, labels.length > 0 ? labels.length : 1),
                         borderWidth: 2
                     }]
                 },
@@ -620,13 +630,17 @@
         function createHourlyChart() {
             const ctx = document.getElementById('hourlyChart').getContext('2d');
             
+            // Data penjualan per jam dari controller
+            const hourlyLabels = @json($labelJam);
+            const hourlyData = @json($penjualanPerJam);
+            
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'],
+                    labels: hourlyLabels,
                     datasets: [{
                         label: 'Transaksi',
-                        data: [2, 5, 8, 12, 18, 25, 15, 12, 8, 5],
+                        data: hourlyData,
                         backgroundColor: 'rgba(59, 130, 246, 0.8)',
                         borderColor: 'rgb(59, 130, 246)',
                         borderWidth: 1,

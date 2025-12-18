@@ -35,9 +35,14 @@
                                     <i class="fas fa-search text-gray-400"></i>
                                 </div>
                                 <input type="text" 
+                                       id="searchInput"
                                        placeholder="Cari produk atau scan barcode..." 
-                                       class="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors bg-gray-50 focus:bg-white">
-                                <button class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                                       class="w-full pl-12 pr-20 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors bg-gray-50 focus:bg-white"
+                                       autocomplete="off">
+                                <button id="clearSearchBtn" class="absolute inset-y-0 right-12 pr-2 flex items-center hidden" onclick="clearSearch()" title="Hapus pencarian">
+                                    <i class="fas fa-times-circle text-gray-400 hover:text-red-500 transition-colors"></i>
+                                </button>
+                                <button class="absolute inset-y-0 right-0 pr-4 flex items-center" onclick="document.getElementById('searchInput').focus()" title="Scan Barcode">
                                     <i class="fas fa-qrcode text-gray-400 hover:text-green-600 transition-colors"></i>
                                 </button>
                             </div>
@@ -79,7 +84,16 @@
                                 </div>
                             </div>
                             
-                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" id="productGrid">
+                                <!-- No results message (hidden by default) -->
+                                <div id="noResultsMessage" class="col-span-full text-center py-12 hidden">
+                                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-search text-gray-400 text-3xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Produk Tidak Ditemukan</h3>
+                                    <p class="text-sm text-gray-500">Coba gunakan kata kunci lain atau scan barcode produk</p>
+                                </div>
+                                
                                 @forelse($produks as $produk)
                                 <!-- Product Card: {{ $produk->nama }} -->
                                 <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
@@ -415,6 +429,66 @@
             return 'makanan';
         }
 
+        // Search products
+        function searchProduct() {
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const productCards = document.querySelectorAll('.product-card');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            const clearBtn = document.getElementById('clearSearchBtn');
+            let visibleCount = 0;
+            
+            // Show/hide clear button
+            if (clearBtn) {
+                if (searchInput.value.length > 0) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+            }
+            
+            productCards.forEach(card => {
+                const productName = card.getAttribute('data-nama');
+                const productCategory = getCategoryByName(productName);
+                
+                // Check if product matches search term
+                const matchesSearch = searchTerm === '' || productName.includes(searchTerm);
+                
+                // Check if product matches current category
+                const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                
+                // Show card if it matches both search and category
+                if (matchesSearch && matchesCategory) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Show/hide no results message
+            if (noResultsMessage) {
+                if (visibleCount === 0 && productCards.length > 0) {
+                    noResultsMessage.classList.remove('hidden');
+                } else {
+                    noResultsMessage.classList.add('hidden');
+                }
+            }
+            
+            // Update product count display
+            updateProductCountDisplay(visibleCount);
+        }
+        
+        // Clear search input
+        function clearSearch() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.focus();
+                searchProduct();
+            }
+        }
+
         // Filter products by category
         function filterByCategory(category) {
             currentCategory = category;
@@ -430,24 +504,8 @@
                 }
             });
             
-            // Filter product cards
-            const productCards = document.querySelectorAll('.product-card');
-            let visibleCount = 0;
-            
-            productCards.forEach(card => {
-                const productName = card.getAttribute('data-nama');
-                const productCategory = getCategoryByName(productName);
-                
-                if (category === 'semua' || productCategory === category) {
-                    card.style.display = 'block';
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-            
-            // Update product count display
-            updateProductCountDisplay(visibleCount);
+            // Re-run search to apply both category and search filters
+            searchProduct();
         }
         
         // Update product count display
@@ -1601,6 +1659,53 @@
             const overlay = document.getElementById('sidebarOverlay');
             sidebar.classList.remove('show');
             overlay.classList.remove('show');
+            
+            // Initialize search functionality
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                // Search on input (real-time)
+                searchInput.addEventListener('input', function() {
+                    searchProduct();
+                });
+                
+                // Also search on Enter key
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        searchProduct();
+                    }
+                });
+                
+                // Support barcode scanner - typically sends Enter after barcode
+                let barcodeBuffer = '';
+                let barcodeTimeout;
+                
+                searchInput.addEventListener('keydown', function(e) {
+                    // Clear timeout if exists
+                    if (barcodeTimeout) {
+                        clearTimeout(barcodeTimeout);
+                    }
+                    
+                    // Add character to buffer
+                    if (e.key.length === 1) {
+                        barcodeBuffer += e.key;
+                    }
+                    
+                    // If Enter is pressed, process as barcode
+                    if (e.key === 'Enter' && barcodeBuffer.length > 3) {
+                        e.preventDefault();
+                        console.log('Barcode detected:', barcodeBuffer);
+                        // The search will automatically run from the input event
+                        barcodeBuffer = '';
+                        return;
+                    }
+                    
+                    // Reset buffer after 100ms (barcode scanners are fast)
+                    barcodeTimeout = setTimeout(() => {
+                        barcodeBuffer = '';
+                    }, 100);
+                });
+            }
             sidebarOpen = false;
             
             // Check if Bluetooth is supported

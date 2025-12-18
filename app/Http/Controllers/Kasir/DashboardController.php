@@ -79,6 +79,17 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
+        // 6a. Data untuk grafik produk terlaris (top 5)
+        $produkTerlarisChart = DetailTransaksi::select('id_produk', DB::raw('SUM(jumlah) as total_terjual'))
+            ->whereHas('transaksi', function ($query) use ($today) {
+                $query->whereDate('tgl', $today);
+            })
+            ->with('produk')
+            ->groupBy('id_produk')
+            ->orderBy('total_terjual', 'desc')
+            ->limit(5)
+            ->get();
+
         // 7. Data untuk grafik penjualan 7 hari terakhir
         $penjualan7Hari = [];
         $transaksi7Hari = [];
@@ -92,6 +103,20 @@ class DashboardController extends Controller
             $labels7Hari[] = $dayNames[$date->dayOfWeek];
         }
 
+        // 8. Data penjualan per jam hari ini
+        $penjualanPerJam = [];
+        $labelJam = [];
+        
+        for ($hour = 8; $hour <= 17; $hour++) {
+            $labelJam[] = sprintf('%02d:00', $hour);
+            
+            $count = Transaksi::whereDate('tgl', $today)
+                ->whereRaw('HOUR(created_at) = ?', [$hour])
+                ->count();
+            
+            $penjualanPerJam[] = $count;
+        }
+
         return view('kasir.dashboard', compact(
             'penjualanHariIni',
             'persenPenjualan',
@@ -102,9 +127,12 @@ class DashboardController extends Controller
             'stokRendah',
             'transaksiTerakhir',
             'produkTerlaris',
+            'produkTerlarisChart',
             'penjualan7Hari',
-            'transaksi7Hari', 
-            'labels7Hari'
+            'transaksi7Hari',
+            'labels7Hari',
+            'penjualanPerJam',
+            'labelJam'
         ));
     }
 

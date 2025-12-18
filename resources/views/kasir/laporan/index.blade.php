@@ -298,7 +298,7 @@
         // Fetch transactions from API
         async function fetchTransactions() {
             try {
-                // Show loading state
+                // Show loading state   
                 showLoadingState();
                 
                 const params = new URLSearchParams();
