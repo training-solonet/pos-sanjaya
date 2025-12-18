@@ -12,21 +12,39 @@ class LaporanController extends Controller
     //
     public function index()
     {
-        // Total penjualan (sum bayar)
-        $totalSales = Transaksi::sum('bayar') ?? 0;
+        // Get filter dates from request or use defaults
+        $startDate = request('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = request('end_date', Carbon::now()->toDateString());
 
-        // Jumlah transaksi
-        $totalTransactions = Transaksi::count();
+        // Validate and parse dates
+        try {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $endDate = Carbon::parse($endDate)->endOfDay();
+        } catch (\Exception $e) {
+            $startDate = Carbon::now()->startOfMonth();
+            $endDate = Carbon::now()->endOfDay();
+        }
+
+        // Total penjualan dengan filter tanggal
+        $totalSales = Transaksi::whereBetween('tgl', [$startDate, $endDate])->sum('bayar') ?? 0;
+
+        // Jumlah transaksi dengan filter
+        $totalTransactions = Transaksi::whereBetween('tgl', [$startDate, $endDate])->count();
 
         // Rata-rata per transaksi
         $avgPerTransaction = $totalTransactions ? round($totalSales / $totalTransactions) : 0;
 
-        // Total produk terjual (semua qty)
-        $totalProductsSold = DB::table('detail_transaksi')->sum('jumlah') ?? 0;
+        // Total produk terjual (dengan filter tanggal)
+        $totalProductsSold = DB::table('detail_transaksi')
+            ->join('transaksi', 'detail_transaksi.id_transaksi', '=', 'transaksi.id')
+            ->whereBetween('transaksi.tgl', [$startDate, $endDate])
+            ->sum('detail_transaksi.jumlah') ?? 0;
 
-        // Top products (qty and revenue)
+        // Top products (dengan filter tanggal)
         $topProducts = DB::table('detail_transaksi')
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
+            ->join('transaksi', 'detail_transaksi.id_transaksi', '=', 'transaksi.id')
+            ->whereBetween('transaksi.tgl', [$startDate, $endDate])
             ->select('produk.id', 'produk.nama', DB::raw('SUM(detail_transaksi.jumlah) as total_qty'), DB::raw('SUM(detail_transaksi.jumlah * detail_transaksi.harga) as revenue'))
             ->groupBy('produk.id', 'produk.nama')
             ->orderByDesc('total_qty')
@@ -38,9 +56,11 @@ class LaporanController extends Controller
         $topSellerName = $topSeller->nama ?? null;
         $topSellerQty = $topSeller->total_qty ?? 0;
 
-        // Determine highest revenue product (may be outside the top-qty list)
+        // Determine highest revenue product (dengan filter tanggal)
         $highestRevenueRow = DB::table('detail_transaksi')
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
+            ->join('transaksi', 'detail_transaksi.id_transaksi', '=', 'transaksi.id')
+            ->whereBetween('transaksi.tgl', [$startDate, $endDate])
             ->select('produk.nama', DB::raw('SUM(detail_transaksi.jumlah * detail_transaksi.harga) as revenue'))
             ->groupBy('produk.nama')
             ->orderByDesc('revenue')
@@ -84,13 +104,33 @@ class LaporanController extends Controller
         $previousMonthStart = Carbon::now()->subMonth()->startOfMonth();
         $currentTotal = Transaksi::whereBetween('tgl', [$currentMonthStart->toDateString(), Carbon::now()->toDateString()])->sum('bayar');
         $previousTotal = Transaksi::whereBetween('tgl', [$previousMonthStart->toDateString(), $currentMonthStart->copy()->subDay()->toDateString()])->sum('bayar');
-        $growth = $previousTotal > 0 ? round((($currentTotal - $previousTotal) / $previousTotal) * 100, 1) : null;
+
+        // Calculate growth: if previous month has data, calculate percentage, otherwise show as new growth
+        if ($previousTotal > 0) {
+            $growth = round((($currentTotal - $previousTotal) / $previousTotal) * 100, 1);
+        } elseif ($currentTotal > 0) {
+            $growth = 100; // 100% growth from zero
+        } else {
+            $growth = null; // No data at all
+        }
+
+        // Calculate profit margin (assuming 30% average profit margin for simplicity)
+        // In real scenario, you would calculate: (Revenue - Cost) / Revenue * 100
+        // For now, we use a simple calculation based on detail_transaksi total
+        $currentMonthTransactions = Transaksi::whereBetween('tgl', [$currentMonthStart->toDateString(), Carbon::now()->toDateString()])->pluck('id');
+        $totalRevenue = $currentTotal;
+        $totalCost = DB::table('detail_transaksi')
+            ->whereIn('id_transaksi', $currentMonthTransactions)
+            ->sum(DB::raw('harga * jumlah'));
+
+        $profitMargin = $totalRevenue > 0 ? round((($totalRevenue - $totalCost) / $totalRevenue) * 100, 1) : null;
 
         $monthlyReport = [
             'monthLabel' => Carbon::now()->format('F Y'),
             'total' => (int) $currentTotal,
             'growthPercent' => $growth,
             'previousTotal' => (int) $previousTotal,
+            'profitMargin' => $profitMargin,
         ];
 
         return view('manajemen.laporan.index', compact(
@@ -105,7 +145,9 @@ class LaporanController extends Controller
             'topSellerName',
             'topSellerQty',
             'highestRevenueName',
-            'highestRevenueValue'
+            'highestRevenueValue',
+            'startDate',
+            'endDate'
         ));
     }
 }

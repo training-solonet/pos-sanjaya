@@ -1,7 +1,7 @@
 @extends('layouts.manajemen.index')
 
 @section('content')
-    <div class="content flex-1 lg:flex-1">
+    {{-- <div class="content flex-1 lg:flex-1"> --}}
         <main class="p-6">
             <div class="bg-white rounded-lg border border-gray-200 p-6">
                 <div class="flex items-start justify-between mb-4">
@@ -97,5 +97,5 @@
                 </div>
             </div>
         </main>
-    </div>
+    {{-- </div> --}}
 @endsection

@@ -6,7 +6,7 @@
         <!-- Toast notifications will be inserted here -->
     </div>
 
-    <div class="content flex-1 lg:flex-1">
+    {{-- <div class="content flex-1 lg:flex-1"> --}}
         <!-- Page Content -->
         <main class="p-4 sm:p-6 lg:p-8">
             <div class="space-y-6">
@@ -22,11 +22,28 @@
                         <p class="text-gray-600">Manajemen resep dan analisis biaya produksi</p>
                     </div>
                     <div class="flex items-center space-x-3">
-                        <button onclick="exportRecipes()"
-                            class="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 shadow-sm">
-                            <i class="fas fa-download mr-2"></i>
-                            Export Data
-                        </button>
+                        <div class="relative inline-block text-left">
+                            <button onclick="toggleExportDropdown()" id="exportButton"
+                                class="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 shadow-sm">
+                                <i class="fas fa-download mr-2"></i>
+                                Export Data
+                                <i class="fas fa-chevron-down ml-2"></i>
+                            </button>
+                            <div id="exportDropdown" class="hidden absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                                <div class="py-1">
+                                    <a href="{{ route('management.resep.index', ['export' => 'excel']) }}" 
+                                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-file-excel text-green-600 mr-2"></i>
+                                        Export ke Excel
+                                    </a>
+                                    <a href="{{ route('management.resep.index', ['export' => 'pdf']) }}" 
+                                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-file-pdf text-red-600 mr-2"></i>
+                                        Export ke PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                         <button onclick="openAddRecipeModal()"
                             class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 shadow-sm">
                             <i class="fas fa-plus mr-2"></i>
@@ -173,7 +190,7 @@
                 </div>
             </div>
         </main>
-    </div>
+    {{-- </div> --}}
 @endsection
 <!-- Add Recipe Modal -->
 <div id="addRecipeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
@@ -513,15 +530,23 @@
         @endif
     });
 
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('mobileOverlay');
-
-        if (window.innerWidth < 1024) {
-            if (sidebar && sidebar.classList) sidebar.classList.toggle('-translate-x-full');
-            if (overlay && overlay.classList) overlay.classList.toggle('hidden');
+    // Toggle export dropdown
+    function toggleExportDropdown() {
+        const dropdown = document.getElementById('exportDropdown');
+        if (dropdown) {
+            dropdown.classList.toggle('hidden');
         }
     }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('exportDropdown');
+        const button = document.getElementById('exportButton');
+        
+        if (dropdown && button && !button.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
 
     function updateDateTime() {
         const now = new Date();
@@ -652,7 +677,7 @@
         }
 
         grid.innerHTML = recipesToRender.map(recipe => `
-                <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 recipe-card">
+                <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 recipe-card cursor-pointer" onclick="viewRecipe(${recipe.id})">
                     <div class="p-6">
                         <div class="flex items-start justify-between mb-4">
                             <div class="flex items-center space-x-3">
@@ -689,11 +714,11 @@
                         <div class="flex items-center justify-between">
                             <!-- Name click navigates to detail page; removed separate detail button -->
                             <div class="flex items-center space-x-2">
-                                <button onclick="editRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Edit">
+                                <button onclick="event.stopPropagation(); editRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <!-- duplicate removed -->
-                                <button onclick="deleteRecipe(${recipe.id})" class="text-red-600 hover:text-red-700" title="Hapus">
+                                <button onclick="event.stopPropagation(); deleteRecipe(${recipe.id})" class="text-red-600 hover:text-red-700" title="Hapus">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>

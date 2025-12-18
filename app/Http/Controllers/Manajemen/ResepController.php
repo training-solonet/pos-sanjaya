@@ -58,11 +58,277 @@ class ResepController extends Controller
         // provide produk list so the recipe modal can autofill name & harga
         $produks = \App\Models\Produk::select('id', 'nama', 'harga')->get()->toArray();
 
+        // Handle export requests
+        if ($request->has('export')) {
+            $format = $request->input('export'); // 'excel' or 'pdf'
+
+            if ($format === 'excel') {
+                return $this->exportExcel($recipes);
+            } elseif ($format === 'pdf') {
+                return $this->exportPdf($recipes);
+            }
+        }
+
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json(['success' => true, 'recipes' => $recipes, 'bahans' => $bahans, 'produks' => $produks], 200);
         }
 
         return view('manajemen.resep.index', compact('resep', 'recipes', 'bahans', 'produks'));
+    }
+
+    /**
+     * Export recipes to Excel with detailed ingredients
+     */
+    private function exportExcel($recipes)
+    {
+        $filename = 'resep_detail_'.date('Y-m-d_His').'.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () use ($recipes) {
+            $file = fopen('php://output', 'w');
+
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            $no = 1;
+            foreach ($recipes as $recipe) {
+                // Header Resep
+                fputcsv($file, ['RESEP #'.$no]);
+                fputcsv($file, ['Nama', $recipe['name']]);
+                fputcsv($file, ['Kategori', $recipe['category']]);
+                fputcsv($file, ['Porsi', $recipe['yield']]);
+                fputcsv($file, ['Waktu Pembuatan', $recipe['duration']]);
+                fputcsv($file, ['Status', $recipe['status']]);
+                fputcsv($file, []);
+
+                // Bahan-bahan
+                fputcsv($file, ['BAHAN-BAHAN']);
+                fputcsv($file, ['No', 'Nama Bahan', 'Jumlah', 'Satuan', 'Harga/Unit', 'Subtotal']);
+
+                if (! empty($recipe['ingredients'])) {
+                    $ingredientNo = 1;
+                    foreach ($recipe['ingredients'] as $ingredient) {
+                        fputcsv($file, [
+                            $ingredientNo++,
+                            $ingredient['name'],
+                            $ingredient['quantity'],
+                            $ingredient['unit'],
+                            'Rp '.number_format($ingredient['price'], 0, ',', '.'),
+                            'Rp '.number_format($ingredient['subtotal'], 0, ',', '.'),
+                        ]);
+                    }
+                } else {
+                    fputcsv($file, ['', 'Tidak ada bahan', '', '', '', '']);
+                }
+
+                fputcsv($file, []);
+                fputcsv($file, ['RINGKASAN BIAYA']);
+                fputcsv($file, ['Total Food Cost', 'Rp '.number_format($recipe['foodCost'], 0, ',', '.')]);
+                fputcsv($file, ['Harga Jual', 'Rp '.number_format($recipe['sellingPrice'] ?? 0, 0, ',', '.')]);
+                fputcsv($file, ['Margin Keuntungan', $recipe['margin'].'%']);
+                fputcsv($file, []);
+
+                // Instruksi & Catatan
+                if (! empty($recipe['instructions'])) {
+                    fputcsv($file, ['INSTRUKSI PEMBUATAN']);
+                    fputcsv($file, [$recipe['instructions']]);
+                    fputcsv($file, []);
+                }
+
+                if (! empty($recipe['notes'])) {
+                    fputcsv($file, ['CATATAN']);
+                    fputcsv($file, [$recipe['notes']]);
+                    fputcsv($file, []);
+                }
+
+                fputcsv($file, ['========================================']);
+                fputcsv($file, []);
+                $no++;
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Export recipes to PDF with detailed ingredients
+     */
+    private function exportPdf($recipes)
+    {
+        $html = '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Rincian Resep</title>
+            <style>
+                body { font-family: DejaVu Sans, sans-serif; font-size: 10px; margin: 20px; }
+                h1 { text-align: center; color: #333; font-size: 18px; margin-bottom: 5px; }
+                h2 { color: #4CAF50; font-size: 14px; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; }
+                h3 { font-size: 12px; color: #555; margin: 10px 0 5px 0; }
+                .header { text-align: center; margin-bottom: 15px; }
+                .recipe-card { 
+                    border: 1px solid #ddd; 
+                    padding: 15px; 
+                    margin-bottom: 20px; 
+                    page-break-inside: avoid;
+                    background-color: #fafafa;
+                }
+                .info-row { margin: 5px 0; }
+                .label { font-weight: bold; display: inline-block; width: 120px; }
+                table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 9px; }
+                th { background-color: #4CAF50; color: white; padding: 6px; text-align: left; border: 1px solid #ddd; }
+                td { padding: 6px; border: 1px solid #ddd; }
+                .summary-box { 
+                    background-color: #e8f5e9; 
+                    padding: 10px; 
+                    margin: 10px 0; 
+                    border-left: 4px solid #4CAF50;
+                }
+                .instructions { 
+                    background-color: #fff9e6; 
+                    padding: 10px; 
+                    margin: 10px 0;
+                    border-left: 4px solid #ffc107;
+                    white-space: pre-wrap;
+                }
+                .notes { 
+                    background-color: #e3f2fd; 
+                    padding: 10px; 
+                    margin: 10px 0;
+                    border-left: 4px solid #2196f3;
+                    white-space: pre-wrap;
+                }
+                .footer { margin-top: 20px; text-align: right; font-size: 8px; color: #666; }
+                .page-break { page-break-after: always; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📋 RINCIAN RESEP LENGKAP</h1>
+                <p style="font-size: 9px; color: #666;">Tanggal Cetak: '.date('d F Y H:i').' WIB</p>
+            </div>';
+
+        $totalRecipes = count($recipes);
+        foreach ($recipes as $index => $recipe) {
+            $html .= '
+            <div class="recipe-card">
+                <h2>Resep #'.($index + 1).': '.htmlspecialchars($recipe['name']).'</h2>
+                
+                <div class="info-row">
+                    <span class="label">Kategori:</span> '.htmlspecialchars($recipe['category']).'
+                </div>
+                <div class="info-row">
+                    <span class="label">Porsi/Yield:</span> '.htmlspecialchars($recipe['yield']).' porsi
+                </div>
+                <div class="info-row">
+                    <span class="label">Waktu Pembuatan:</span> '.htmlspecialchars($recipe['duration']).'
+                </div>
+                <div class="info-row">
+                    <span class="label">Status:</span> <strong>'.htmlspecialchars($recipe['status']).'</strong>
+                </div>
+                
+                <h3>🥘 Bahan-Bahan</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="5%">No</th>
+                            <th width="35%">Nama Bahan</th>
+                            <th width="12%">Jumlah</th>
+                            <th width="12%">Satuan</th>
+                            <th width="18%">Harga/Unit</th>
+                            <th width="18%">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+
+            if (! empty($recipe['ingredients'])) {
+                $ingredientNo = 1;
+                foreach ($recipe['ingredients'] as $ingredient) {
+                    $html .= '
+                        <tr>
+                            <td style="text-align: center;">'.$ingredientNo++.'</td>
+                            <td>'.htmlspecialchars($ingredient['name']).'</td>
+                            <td style="text-align: right;">'.number_format($ingredient['quantity'], 2, ',', '.').'</td>
+                            <td>'.htmlspecialchars($ingredient['unit']).'</td>
+                            <td style="text-align: right;">Rp '.number_format($ingredient['price'], 0, ',', '.').'</td>
+                            <td style="text-align: right;"><strong>Rp '.number_format($ingredient['subtotal'], 0, ',', '.').'</strong></td>
+                        </tr>';
+                }
+            } else {
+                $html .= '
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #999;">Tidak ada bahan</td>
+                        </tr>';
+            }
+
+            $html .= '
+                    </tbody>
+                </table>
+                
+                <div class="summary-box">
+                    <h3 style="margin-top: 0;">💰 Ringkasan Biaya</h3>
+                    <div class="info-row">
+                        <span class="label">Total Food Cost:</span> <strong>Rp '.number_format($recipe['foodCost'], 0, ',', '.').'</strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Harga Jual Target:</span> <strong>Rp '.number_format($recipe['sellingPrice'] ?? 0, 0, ',', '.').'</strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Margin Keuntungan:</span> <strong style="color: #4CAF50;">'.$recipe['margin'].'%</strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Keuntungan/Porsi:</span> <strong>Rp '.number_format(($recipe['sellingPrice'] ?? 0) - $recipe['foodCost'], 0, ',', '.').'</strong>
+                    </div>
+                </div>';
+
+            if (! empty($recipe['instructions'])) {
+                $html .= '
+                <div class="instructions">
+                    <h3 style="margin-top: 0;">📝 Instruksi Pembuatan</h3>
+                    <p style="margin: 5px 0;">'.nl2br(htmlspecialchars($recipe['instructions'])).'</p>
+                </div>';
+            }
+
+            if (! empty($recipe['notes'])) {
+                $html .= '
+                <div class="notes">
+                    <h3 style="margin-top: 0;">💡 Catatan Chef</h3>
+                    <p style="margin: 5px 0;">'.nl2br(htmlspecialchars($recipe['notes'])).'</p>
+                </div>';
+            }
+
+            $html .= '</div>';
+
+            // Add page break except for last recipe
+            if ($index < $totalRecipes - 1) {
+                $html .= '<div class="page-break"></div>';
+            }
+        }
+
+        $html .= '
+            <div class="footer">
+                <p>Dicetak oleh: <strong>POS Sanjaya</strong> | Total Resep: '.$totalRecipes.'</p>
+            </div>
+        </body>
+        </html>';
+
+        // Create PDF using DomPDF
+        $dompdf = new \Dompdf\Dompdf;
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->stream('resep_rincian_'.date('Y-m-d_His').'.pdf');
     }
 
     /**

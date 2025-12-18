@@ -31,12 +31,96 @@
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         
-        @media (max-width: 1023px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar:not(.-translate-x-full) { transform: translateX(0); }
+        /* Sidebar base styles */
+        .sidebar {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 16rem !important; /* 256px */
         }
+        
+        /* Sidebar collapsed state */
+        .sidebar.collapsed {
+            width: 4.5rem !important; /* 72px */
+        }
+        
+        /* Hide text when collapsed */
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        
+        .sidebar.collapsed .sidebar-title {
+            display: none;
+        }
+        
+        .sidebar.collapsed .sidebar-user-info {
+            display: none;
+        }
+        
+        .sidebar.collapsed .sidebar-logout-btn {
+            display: none;
+        }
+        
+        /* Center icons when collapsed */
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        
+        .sidebar.collapsed .sidebar-icon {
+            margin-right: 0 !important;
+        }
+        
+        /* Main content margin adjustment */
+        .content {
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Desktop mode */
         @media (min-width: 1024px) {
-            .sidebar { transform: translateX(0) !important; }
+            .sidebar {
+                transform: translateX(0) !important;
+            }
+            
+            .content {
+                margin-left: 16rem;
+            }
+            
+            .content.sidebar-collapsed {
+                margin-left: 4.5rem;
+            }
+        }
+        
+        /* Mobile mode */
+        @media (max-width: 1023px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 16rem !important;
+            }
+            
+            .sidebar.-translate-x-full {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar:not(.-translate-x-full) {
+                transform: translateX(0);
+            }
+            
+            .sidebar.collapsed {
+                width: 16rem !important;
+            }
+            
+            .content {
+                margin-left: 0 !important;
+            }
+        }
+        
+        /* Icon rotation animation */
+        .rotate-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .rotate-icon.rotated {
+            transform: rotate(180deg);
         }
     </style>
 </head>
@@ -51,7 +135,7 @@
     <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()"></div>
     
     <!-- Main Content -->
-    <div class="content flex-1 lg:ml-64">
+    <div class="content flex-1">
         <!-- Header -->
         @include('layouts.manajemen.header')
         
@@ -68,16 +152,63 @@
     <!-- PERBAIKAN: Tambahkan script untuk update waktu di layout utama -->
     <script>
         let sidebarOpen = false;
+        let sidebarCollapsed = false;
         
         // Toggle sidebar
         function toggleSidebar() {
             const sidebar = document.getElementById("sidebar");
             const overlay = document.getElementById("mobileOverlay");
+            const content = document.querySelector('.content');
+            const toggleIcon = document.getElementById('desktopToggleIcon');
+            
+            console.log('Toggle sidebar clicked, width:', window.innerWidth);
+            
+            if (!sidebar) {
+                console.error('Sidebar element not found!');
+                return;
+            }
             
             if (window.innerWidth < 1024) {
+                // Mobile behavior - slide in/out
                 sidebar.classList.toggle("-translate-x-full");
-                overlay.classList.toggle("hidden");
+                if (overlay) {
+                    overlay.classList.toggle("hidden");
+                }
                 sidebarOpen = !sidebar.classList.contains("-translate-x-full");
+                console.log('Mobile: sidebar open:', sidebarOpen);
+            } else {
+                // Desktop behavior - collapse/expand
+                sidebar.classList.toggle('collapsed');
+                if (content) {
+                    content.classList.toggle('sidebar-collapsed');
+                }
+                if (toggleIcon) {
+                    toggleIcon.classList.toggle('rotated');
+                }
+                sidebarCollapsed = sidebar.classList.contains('collapsed');
+                console.log('Desktop: sidebar collapsed:', sidebarCollapsed);
+                
+                // Save state to localStorage
+                localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+            }
+        }
+        
+        // Restore sidebar state from localStorage
+        function restoreSidebarState() {
+            const sidebar = document.getElementById("sidebar");
+            const content = document.querySelector('.content');
+            const toggleIcon = document.getElementById('desktopToggleIcon');
+            const savedState = localStorage.getItem('sidebarCollapsed');
+            
+            if (savedState === 'true' && window.innerWidth >= 1024) {
+                sidebar.classList.add('collapsed');
+                if (content) {
+                    content.classList.add('sidebar-collapsed');
+                }
+                if (toggleIcon) {
+                    toggleIcon.classList.add('rotated');
+                }
+                sidebarCollapsed = true;
             }
         }
         
@@ -105,15 +236,21 @@
         window.addEventListener("resize", function() {
             const sidebar = document.getElementById("sidebar");
             const overlay = document.getElementById("mobileOverlay");
+            const content = document.querySelector('.content');
             
             if (window.innerWidth >= 1024) {
                 sidebar.classList.remove("-translate-x-full");
                 overlay.classList.add("hidden");
                 sidebarOpen = false;
+                // Restore collapsed state on desktop
+                restoreSidebarState();
             } else {
                 sidebar.classList.add("-translate-x-full");
+                sidebar.classList.remove('collapsed');
+                content.classList.remove('sidebar-collapsed');
                 overlay.classList.add("hidden");
                 sidebarOpen = false;
+                sidebarCollapsed = false;
             }
         });
         
@@ -142,8 +279,15 @@
         
         // Initialize datetime on page load
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing...');
             updateDateTime();
             setInterval(updateDateTime, 1000); // Update setiap 1 detik
+            restoreSidebarState(); // Restore sidebar state
+            
+            // Debug: check if sidebar element exists
+            const sidebar = document.getElementById("sidebar");
+            console.log('Sidebar element:', sidebar);
+            console.log('Initial sidebar classes:', sidebar ? sidebar.className : 'not found');
         });
     </script>
 </body>
