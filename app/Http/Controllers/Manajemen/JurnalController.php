@@ -24,7 +24,7 @@ class JurnalController extends Controller
 
         // Ambil data jurnal untuk hari ini (default view) - GABUNGAN data manual dan transaksi
         $today = now()->format('Y-m-d');
-        
+
         // Ambil data jurnal manual (role manajemen)
         $jurnalsManual = Jurnal::whereDate('tgl', $today)
             ->where('role', 'manajemen')
@@ -33,7 +33,7 @@ class JurnalController extends Controller
 
         // Ambil data transaksi hari ini dan konversi ke format jurnal
         $transaksiHariIni = Transaksi::whereDate('tgl', $today)->get();
-        
+
         // Gabungkan data
         $jurnals = $jurnalsManual->concat($this->convertTransactionsToJurnals($transaksiHariIni))
             ->sortByDesc('tgl');
@@ -88,21 +88,21 @@ class JurnalController extends Controller
             if (str_starts_with($id, 'transaksi_')) {
                 $transaksiId = str_replace('transaksi_', '', $id);
                 $transaksi = Transaksi::findOrFail($transaksiId);
-                
+
                 $jurnalData = [
-                    'id' => 'transaksi_' . $transaksi->id,
+                    'id' => 'transaksi_'.$transaksi->id,
                     'tgl' => $transaksi->tgl,
                     'jenis' => 'pemasukan',
-                    'keterangan' => 'Penjualan - Transaksi #' . str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
+                    'keterangan' => 'Penjualan - Transaksi #'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
                     'nominal' => $transaksi->bayar - $transaksi->kembalian,
                     'kategori' => 'Penjualan',
                     'role' => 'admin',
                     'is_transaction' => true,
                 ];
-                
+
                 return response()->json($jurnalData);
             }
-            
+
             // Jika bukan transaksi, ambil dari jurnal manual
             $jurnal = Jurnal::where('id', $id)
                 ->where('role', 'manajemen')
@@ -213,7 +213,7 @@ class JurnalController extends Controller
 
         // Ambil transaksi berdasarkan filter yang sama
         $transaksiQuery = Transaksi::query();
-        
+
         if ($request->has('date') && $request->date) {
             $transaksiQuery->whereDate('tgl', $request->date);
         }
@@ -243,10 +243,10 @@ class JurnalController extends Controller
         }
 
         $transaksis = $transaksiQuery->orderBy('tgl', 'desc')->get();
-        
+
         // Konversi transaksi ke format jurnal
         $jurnalsTransaksi = $this->convertTransactionsToJurnals($transaksis);
-        
+
         // Gabungkan dan urutkan
         $allJurnals = $jurnalsManual->concat($jurnalsTransaksi)
             ->sortByDesc('tgl')
@@ -259,11 +259,11 @@ class JurnalController extends Controller
     private function getSummary(Request $request)
     {
         $date = $request->has('date') && $request->date ? $request->date : now()->format('Y-m-d');
-        
+
         // Summary dari jurnal manual
         $manualQuery = Jurnal::where('role', 'manajemen')
             ->whereDate('tgl', $date);
-            
+
         $manualData = $manualQuery->select(
             DB::raw('COUNT(*) as total_transaksi'),
             DB::raw('SUM(CASE WHEN jenis = "pemasukan" THEN nominal ELSE 0 END) as total_pemasukan'),
@@ -301,10 +301,10 @@ class JurnalController extends Controller
     {
         return $transaksis->map(function ($transaksi) {
             return [
-                'id' => 'transaksi_' . $transaksi->id,
+                'id' => 'transaksi_'.$transaksi->id,
                 'tgl' => $transaksi->tgl,
                 'jenis' => 'pemasukan',
-                'keterangan' => 'Penjualan - Transaksi #' . str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
+                'keterangan' => 'Penjualan - Transaksi #'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
                 'nominal' => $transaksi->bayar - $transaksi->kembalian,
                 'kategori' => 'Penjualan',
                 'role' => 'admin',
