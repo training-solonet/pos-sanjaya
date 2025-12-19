@@ -35,25 +35,30 @@
                                     <i class="fas fa-search text-gray-400"></i>
                                 </div>
                                 <input type="text" 
+                                       id="searchInput"
                                        placeholder="Cari produk atau scan barcode..." 
-                                       class="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors bg-gray-50 focus:bg-white">
-                                <button class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                                       class="w-full pl-12 pr-20 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors bg-gray-50 focus:bg-white"
+                                       autocomplete="off">
+                                <button id="clearSearchBtn" class="absolute inset-y-0 right-12 pr-2 flex items-center hidden" onclick="clearSearch()" title="Hapus pencarian">
+                                    <i class="fas fa-times-circle text-gray-400 hover:text-red-500 transition-colors"></i>
+                                </button>
+                                <button class="absolute inset-y-0 right-0 pr-4 flex items-center" onclick="document.getElementById('searchInput').focus()" title="Scan Barcode">
                                     <i class="fas fa-qrcode text-gray-400 hover:text-green-600 transition-colors"></i>
                                 </button>
                             </div>
                             
                             <!-- Categories -->
                             <div class="flex space-x-2 overflow-x-auto scrollbar-hide">
-                                <button class="px-6 py-2.5 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-xl whitespace-nowrap font-medium shadow-sm">
+                                <button class="category-btn px-6 py-2.5 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-xl whitespace-nowrap font-medium shadow-sm" onclick="filterByCategory('semua')" data-category="semua">
                                     <i class="fas fa-th-large mr-2"></i>Semua
                                 </button>
-                                <button class="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors">
+                                <button class="category-btn px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors" onclick="filterByCategory('makanan')" data-category="makanan">
                                     <i class="fas fa-utensils mr-2"></i>Makanan
                                 </button>
-                                <button class="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors">
+                                <button class="category-btn px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors" onclick="filterByCategory('minuman')" data-category="minuman">
                                     <i class="fas fa-coffee mr-2"></i>Minuman
                                 </button>
-                                <button class="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors">
+                                <button class="category-btn px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors" onclick="filterByCategory('snack')" data-category="snack">
                                     <i class="fas fa-cookie-bite mr-2"></i>Snack
                                 </button>
                             </div>
@@ -66,11 +71,11 @@
                                     <h3 class="text-lg font-semibold text-gray-900">Daftar Produk</h3>
                                     <div class="flex items-center space-x-2">
                                         <span class="text-sm text-gray-500">Tampilan:</span>
-                                        <button class="p-2 bg-gradient-to-r from-green-400 to-green-700 bg-opacity-10 text-white rounded-lg">
+                                        <button id="gridViewBtn" onclick="toggleView('grid')" class="p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all" title="Tampilan Grid">
                                             <i class="fas fa-th text-sm"></i>
                                         </button>
-                                        <button class="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
-                                            <i class="fas fa-list text b-sm"></i>
+                                        <button id="listViewBtn" onclick="toggleView('list')" class="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all" title="Tampilan List">
+                                            <i class="fas fa-list text-sm"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -79,25 +84,40 @@
                                 </div>
                             </div>
                             
-                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" id="productGrid">
+                                <!-- No results message (hidden by default) -->
+                                <div id="noResultsMessage" class="col-span-full text-center py-12 hidden">
+                                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-search text-gray-400 text-3xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Produk Tidak Ditemukan</h3>
+                                    <p class="text-sm text-gray-500">Coba gunakan kata kunci lain atau scan barcode produk</p>
+                                </div>
+                                
                                 @forelse($produks as $produk)
                                 <!-- Product Card: {{ $produk->nama }} -->
                                 <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-                                     onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg')">
-                                    <div class="relative">
+                                     data-nama="{{ strtolower($produk->nama) }}"
+                                     data-id="{{ $produk->id }}"
+                                     data-price="{{ $produk->harga }}"
+                                     data-stock="{{ $produk->stok }}"
+                                     onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg', {{ $produk->stok }})">  
+                                    <div class="relative product-image-wrapper">
                                         <div class="aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
                                             <i class="fas fa-bread-slice text-green-500 text-2xl group-hover:scale-110 transition-transform"></i>
                                         </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold">{{ $produk->stok }}</div>
+                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold product-stock-badge">{{ $produk->stok }}</div>
                                     </div>
-                                    <div class="space-y-1">
-                                        <h3 class="font-semibold text-gray-900 text-sm">{{ $produk->nama }}</h3>
-                                        <p class="text-green-600 font-bold text-lg">Rp {{ number_format($produk->harga, 0, ',', '.') }}</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs text-gray-500">Produk</span>
-                                            <div class="flex items-center space-x-1">
-                                                <div class="w-2 h-2 {{ $produk->stok > 0 ? 'bg-success' : 'bg-red-500' }} rounded-full"></div>
-                                                <span class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-medium">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
+                                    <div class="product-details">
+                                        <div class="product-info space-y-1">
+                                            <h3 class="font-semibold text-gray-900 text-sm product-name">{{ $produk->nama }}</h3>
+                                            <p class="text-green-600 font-bold text-lg product-price">Rp {{ number_format($produk->harga, 0, ',', '.') }}</p>
+                                            <div class="flex items-center justify-between product-meta">
+                                                <span class="text-xs text-gray-500">Produk</span>
+                                                <div class="flex items-center space-x-1 product-status">
+                                                    <div class="w-2 h-2 {{ $produk->stok > 0 ? 'bg-success' : 'bg-red-500' }} rounded-full"></div>
+                                                    <span class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-medium">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -273,8 +293,6 @@
                                 </div>
                             </div>
                             
-                           
-                            
                             <!-- Action Buttons -->
                             <div class="space-y-3">
                                 <!-- Printer Settings -->
@@ -363,8 +381,374 @@
         </div>
     </div>
 
+    <style>
+        @keyframes slide-in {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .animate-slide-in {
+            animation: slide-in 0.3s ease-out;
+        }
+        
+        /* List view specific styles */
+        .product-card.list-view {
+            flex-direction: row;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .product-card.list-view .product-image-wrapper {
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+        }
+        
+        .product-card.list-view .product-details {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        
+        .product-card.list-view .product-info {
+            flex: 1;
+        }
+        
+        .product-card.list-view .product-price {
+            text-align: right;
+            min-width: 150px;
+        }
+        
+        /* Hidden product card */
+        .product-card.hidden-card {
+            display: none !important;
+        }
+    </style>
+
     <script>
         let cart = [];
+        let sidebarOpen = false;
+        let currentCategory = 'semua';
+        let currentView = 'grid'; // Default view
+
+        // Toggle between grid and list view
+        function toggleView(viewType) {
+            currentView = viewType;
+            const productGrid = document.getElementById('productGrid');
+            const productCards = document.querySelectorAll('.product-card');
+            const gridBtn = document.getElementById('gridViewBtn');
+            const listBtn = document.getElementById('listViewBtn');
+            
+            if (viewType === 'grid') {
+                // Switch to grid view
+                productGrid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100';
+                
+                // Update product cards for grid view
+                productCards.forEach(card => {
+                    if (!card.id || card.id !== 'noResultsMessage') {
+                        card.className = 'product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1';
+                        
+                        // Reset display based on current filter
+                        const productName = card.getAttribute('data-nama');
+                        const productCategory = getCategoryByName(productName);
+                        const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                        
+                        if (!matchesCategory) {
+                            card.classList.add('hidden-card');
+                        }
+                        
+                        // Adjust image wrapper
+                        const imageWrapper = card.querySelector('.product-image-wrapper');
+                        if (imageWrapper) {
+                            imageWrapper.className = 'relative product-image-wrapper';
+                            const imgDiv = imageWrapper.querySelector('div:first-child');
+                            if (imgDiv) {
+                                imgDiv.className = 'aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden';
+                            }
+                        }
+                        
+                        // Adjust product details
+                        const details = card.querySelector('.product-details');
+                        if (details) {
+                            details.className = 'product-details';
+                        }
+                        
+                        const info = card.querySelector('.product-info');
+                        if (info) {
+                            info.className = 'product-info space-y-1';
+                        }
+                        
+                        const price = card.querySelector('.product-price');
+                        if (price) {
+                            price.className = 'text-green-600 font-bold text-lg product-price';
+                        }
+                        
+                        const meta = card.querySelector('.product-meta');
+                        if (meta) {
+                            meta.className = 'flex items-center justify-between product-meta';
+                        }
+                    }
+                });
+                
+                // Update button states
+                gridBtn.className = 'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
+                listBtn.className = 'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
+            } else {
+                // Switch to list view
+                productGrid.className = 'flex flex-col gap-3 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100';
+                
+                // Update product cards for list view
+                productCards.forEach(card => {
+                    if (!card.id || card.id !== 'noResultsMessage') {
+                        card.className = 'product-card list-view group bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer';
+                        
+                        // Reset display based on current filter  
+                        const productName = card.getAttribute('data-nama');
+                        const productCategory = getCategoryByName(productName);
+                        const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                        
+                        // Show as flex for list view
+                        card.style.display = 'flex';
+                        if (!matchesCategory) {
+                            card.classList.add('hidden-card');
+                        }
+                        
+                        // Adjust image wrapper for list
+                        const imageWrapper = card.querySelector('.product-image-wrapper');
+                        if (imageWrapper) {
+                            imageWrapper.className = 'relative product-image-wrapper flex-shrink-0';
+                            const imgDiv = imageWrapper.querySelector('div:first-child');
+                            if (imgDiv) {
+                                imgDiv.className = 'w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center overflow-hidden';
+                            }
+                        }
+                        
+                        // Adjust product details for list
+                        const details = card.querySelector('.product-details');
+                        if (details) {
+                            details.className = 'product-details flex-1 flex items-center justify-between gap-4';
+                        }
+                        
+                        const info = card.querySelector('.product-info');
+                        if (info) {
+                            info.className = 'product-info flex-1';
+                        }
+                        
+                        const name = card.querySelector('.product-name');
+                        if (name) {
+                            name.className = 'font-semibold text-gray-900 text-base product-name mb-1';
+                        }
+                        
+                        const price = card.querySelector('.product-price');
+                        if (price) {
+                            price.className = 'text-green-600 font-bold text-xl product-price';
+                        }
+                        
+                        const meta = card.querySelector('.product-meta');
+                        if (meta) {
+                            meta.className = 'flex items-center gap-3 product-meta mt-1';
+                        }
+                    }
+                });
+                
+                // Update button states
+                gridBtn.className = 'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
+                listBtn.className = 'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
+            }
+            
+            // Save preference to localStorage
+            localStorage.setItem('productViewPreference', viewType);
+        }
+
+        // Determine category based on product name
+        function getCategoryByName(productName) {
+            const name = productName.toLowerCase();
+            
+            // Snack items
+            const snackItems = [
+                'kue buaya', 'roti pisang', 'roti black forest', 
+                'roti selai strowberry', 'kue sus', 'roti canai', 
+                'croissant', 'baguette'
+            ];
+            
+            // Minuman items
+            const minumanItems = [
+                'air mineral', 'lemon tea'
+            ];
+            
+            // Check if product is snack
+            if (snackItems.some(item => name.includes(item))) {
+                return 'snack';
+            }
+            
+            // Check if product is minuman
+            if (minumanItems.some(item => name.includes(item))) {
+                return 'minuman';
+            }
+            
+            // Default to makanan for other items
+            return 'makanan';
+        }
+
+        // Search products
+        function searchProduct() {
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const productCards = document.querySelectorAll('.product-card');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            const clearBtn = document.getElementById('clearSearchBtn');
+            let visibleCount = 0;
+            
+            // Show/hide clear button
+            if (clearBtn) {
+                if (searchInput.value.length > 0) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+            }
+            
+            productCards.forEach(card => {
+                const productName = card.getAttribute('data-nama');
+                const productCategory = getCategoryByName(productName);
+                
+                // Check if product matches search term
+                const matchesSearch = searchTerm === '' || productName.includes(searchTerm);
+                
+                // Check if product matches current category
+                const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                
+                // Show card if it matches both search and category
+                if (matchesSearch && matchesCategory) {
+                    // Remove hidden class to show card
+                    card.classList.remove('hidden-card');
+                    card.style.display = currentView === 'list' ? 'flex' : 'block';
+                    visibleCount++;
+                } else {
+                    // Add hidden class to hide card
+                    card.classList.add('hidden-card');
+                }
+            });
+            
+            // Show/hide no results message
+            if (noResultsMessage) {
+                if (visibleCount === 0 && productCards.length > 0) {
+                    noResultsMessage.classList.remove('hidden');
+                } else {
+                    noResultsMessage.classList.add('hidden');
+                }
+            }
+            
+            // Update product count display
+            updateProductCountDisplay(visibleCount);
+        }
+        
+        // Clear search input
+        function clearSearch() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.focus();
+                searchProduct();
+            }
+        }
+
+        // Filter products by category
+        function filterByCategory(category) {
+            currentCategory = category;
+            
+            // Update button states
+            const buttons = document.querySelectorAll('.category-btn');
+            buttons.forEach(btn => {
+                const btnCategory = btn.getAttribute('data-category');
+                if (btnCategory === category) {
+                    btn.className = 'category-btn px-6 py-2.5 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-xl whitespace-nowrap font-medium shadow-sm';
+                } else {
+                    btn.className = 'category-btn px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors';
+                }
+            });
+            
+            // Clear search input when changing category
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                const clearBtn = document.getElementById('clearSearchBtn');
+                if (clearBtn) {
+                    clearBtn.classList.add('hidden');
+                }
+            }
+            
+            // Apply category filter to all products
+            const productCards = document.querySelectorAll('.product-card');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            let visibleCount = 0;
+            
+            productCards.forEach(card => {
+                if (!card.id || card.id !== 'noResultsMessage') {
+                    const productName = card.getAttribute('data-nama');
+                    const productCategory = getCategoryByName(productName);
+                    const matchesCategory = category === 'semua' || productCategory === category;
+                    
+                    if (matchesCategory) {
+                        // Remove hidden class and set appropriate display
+                        card.classList.remove('hidden-card');
+                        card.style.display = currentView === 'list' ? 'flex' : 'block';
+                        visibleCount++;
+                    } else {
+                        // Add hidden class to hide card
+                        card.classList.add('hidden-card');
+                    }
+                }
+            });
+            
+            // Show/hide no results message
+            if (noResultsMessage) {
+                if (visibleCount === 0) {
+                    noResultsMessage.classList.remove('hidden');
+                } else {
+                    noResultsMessage.classList.add('hidden');
+                }
+            }
+            
+            // Update product count display
+            updateProductCountDisplay(visibleCount);
+        }
+        
+        // Update product count display
+        function updateProductCountDisplay(count) {
+            const countDisplays = document.querySelectorAll('.text-sm.text-gray-500');
+            countDisplays.forEach(display => {
+                if (display.textContent.includes('Menampilkan')) {
+                    display.textContent = `Menampilkan 1-${count} dari ${count} produk`;
+                }
+            });
+        }
+
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const hamburger = document.getElementById('hamburgerBtn');
+            
+            sidebarOpen = !sidebarOpen;
+            
+            if (sidebarOpen) {
+                sidebar.classList.add('show');
+                overlay.classList.add('show');
+                hamburger.classList.add('active');
+            } else {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+                hamburger.classList.remove('active');
+            }
+        }
 
         // Close sidebar
         function closeSidebar() {
@@ -422,17 +806,30 @@
         }
 
         // Add product to cart
-        function addToCart(id, name, price, image) {
+        function addToCart(id, name, price, image, stock) {
             const existingItem = cart.find(item => item.id === id);
             
+            // Check stock availability
             if (existingItem) {
+                // Check if adding one more would exceed stock
+                if (existingItem.quantity >= stock) {
+                    // Show error notification
+                    showStockAlert(name, stock);
+                    return;
+                }
                 existingItem.quantity += 1;
             } else {
+                // Check if stock is available
+                if (stock <= 0) {
+                    showStockAlert(name, stock);
+                    return;
+                }
                 cart.push({
                     id: id,
                     name: name,
                     price: price,
                     image: image,
+                    stock: stock,
                     quantity: 1
                 });
             }
@@ -451,6 +848,35 @@
             });
         }
 
+        // Show stock alert
+        function showStockAlert(productName, availableStock) {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3 animate-slide-in';
+            toast.innerHTML = `
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-semibold">Stok Tidak Mencukupi!</p>
+                    <p class="text-sm">${productName} hanya tersisa ${availableStock} item</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         // Remove item from cart
         function removeFromCart(index) {
             cart.splice(index, 1);
@@ -459,12 +885,73 @@
 
         // Update item quantity
         function updateQuantity(index, change) {
-            cart[index].quantity += change;
-            if (cart[index].quantity <= 0) {
+            const item = cart[index];
+            const newQuantity = item.quantity + change;
+            
+            // Check if trying to increase quantity
+            if (change > 0) {
+                // Check if new quantity would exceed stock
+                if (newQuantity > item.stock) {
+                    showStockAlert(item.name, item.stock);
+                    return;
+                }
+            }
+            
+            item.quantity = newQuantity;
+            
+            if (item.quantity <= 0) {
                 removeFromCart(index);
             } else {
                 updateCartDisplay();
             }
+        }
+
+        // Set quantity manually from input field
+        function setQuantity(index, value, maxStock) {
+            const item = cart[index];
+            let newQuantity = parseInt(value);
+            
+            // Validate input
+            if (isNaN(newQuantity) || newQuantity < 1) {
+                newQuantity = 1;
+            }
+            
+            // Check if quantity exceeds stock
+            if (newQuantity > maxStock) {
+                showStockAlert(item.name, maxStock);
+                newQuantity = maxStock;
+            }
+            
+            item.quantity = newQuantity;
+            updateCartDisplay();
+        }
+
+        // Show stock alert
+        function showStockAlert(productName, availableStock) {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3 animate-slide-in';
+            toast.innerHTML = `
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-semibold">Stok Tidak Mencukupi!</p>
+                    <p class="text-sm">${productName} hanya tersisa ${availableStock} item</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
         }
 
         // Update cart display
@@ -504,15 +991,24 @@
                         <div class="flex-1 min-w-0">
                             <h4 class="font-medium text-xs text-gray-900 truncate">${item.name}</h4>
                             <p class="text-green-600 font-semibold text-xs">Rp ${item.price.toLocaleString('id-ID')}</p>
+                            <p class="text-gray-400 text-xs">Stok: ${item.stock}</p>
                         </div>
                         <div class="flex items-center space-x-1">
                             <button onclick="updateQuantity(${index}, -1)" 
                                     class="w-6 h-6 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-gray-200 transition-colors">
                                 <i class="fas fa-minus text-xs text-gray-600"></i>
                             </button>
-                            <span class="font-medium text-xs w-6 text-center">${item.quantity}</span>
+                            <input type="number" 
+                                   value="${item.quantity}" 
+                                   min="1" 
+                                   max="${item.stock}"
+                                   onchange="setQuantity(${index}, this.value, ${item.stock})"
+                                   onkeypress="return isNumber(event)"
+                                   class="w-12 text-center font-medium text-xs border border-gray-200 rounded px-1 py-1 focus:outline-none focus:ring-1 focus:ring-green-400 focus:border-green-400"
+                            />
                             <button onclick="updateQuantity(${index}, 1)" 
-                                    class="w-6 h-6 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                                    ${item.quantity >= item.stock ? 'disabled' : ''}
+                                    class="w-6 h-6 rounded-full ${item.quantity >= item.stock ? 'bg-gray-50 cursor-not-allowed opacity-50' : 'bg-gray-100 hover:bg-gray-200'} border border-gray-200 flex items-center justify-center transition-colors">
                                 <i class="fas fa-plus text-xs text-gray-600"></i>
                             </button>
                         </div>
@@ -1370,6 +1866,59 @@
             const overlay = document.getElementById('sidebarOverlay');
             sidebar.classList.remove('show');
             overlay.classList.remove('show');
+            
+            // Load saved view preference
+            const savedView = localStorage.getItem('productViewPreference');
+            if (savedView && (savedView === 'grid' || savedView === 'list')) {
+                toggleView(savedView);
+            }
+            
+            // Initialize search functionality
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                // Search on input (real-time)
+                searchInput.addEventListener('input', function() {
+                    searchProduct();
+                });
+                
+                // Also search on Enter key
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        searchProduct();
+                    }
+                });
+                
+                // Support barcode scanner - typically sends Enter after barcode
+                let barcodeBuffer = '';
+                let barcodeTimeout;
+                
+                searchInput.addEventListener('keydown', function(e) {
+                    // Clear timeout if exists
+                    if (barcodeTimeout) {
+                        clearTimeout(barcodeTimeout);
+                    }
+                    
+                    // Add character to buffer
+                    if (e.key.length === 1) {
+                        barcodeBuffer += e.key;
+                    }
+                    
+                    // If Enter is pressed, process as barcode
+                    if (e.key === 'Enter' && barcodeBuffer.length > 3) {
+                        e.preventDefault();
+                        console.log('Barcode detected:', barcodeBuffer);
+                        // The search will automatically run from the input event
+                        barcodeBuffer = '';
+                        return;
+                    }
+                    
+                    // Reset buffer after 100ms (barcode scanners are fast)
+                    barcodeTimeout = setTimeout(() => {
+                        barcodeBuffer = '';
+                    }, 100);
+                });
+            }
             sidebarOpen = false;
             
             // Check if Bluetooth is supported
