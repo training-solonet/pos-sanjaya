@@ -13,7 +13,7 @@
           <!-- Header Actions -->
           <div class="flex items-center space-x-4">
             <div class="hidden md:block text-right">
-              <p class="text-sm font-medium text-gray-900">Manager: Admin</p>
+              <p class="text-sm font-medium text-gray-900">{{ ucfirst(Auth::user()->role) }}: {{ Auth::user()->name }}</p>
               <p class="text-xs text-gray-500" id="currentDateTime"></p>
             </div>
             
@@ -49,18 +49,17 @@
                 <!-- Notification List -->
                 <div class="max-h-96 overflow-y-auto">
                   @forelse($notifications as $notif)
-                    <a href="{{ $notif['type'] === 'bahan_baku' ? route('management.bahanbaku.index') : route('management.produk.index') }}" 
-                       class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 transition-colors">
+                    <div class="block px-4 py-3 border-b border-gray-100">
                       <div class="flex items-start space-x-3">
                         <!-- Icon -->
                         <div class="flex-shrink-0">
                           @if($notif['color'] === 'red')
                             <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                              <i class="fas {{ $notif['type'] === 'bahan_baku' ? 'fa-cubes' : 'fa-cookie-bite' }} text-red-600"></i>
+                              <i class="fas fa-cookie-bite text-red-600"></i>
                             </div>
                           @else
                             <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                              <i class="fas {{ $notif['type'] === 'bahan_baku' ? 'fa-cubes' : 'fa-cookie-bite' }} text-yellow-600"></i>
+                              <i class="fas fa-cookie-bite text-yellow-600"></i>
                             </div>
                           @endif
                         </div>
@@ -68,12 +67,10 @@
                         <!-- Content -->
                         <div class="flex-1 min-w-0">
                           <p class="text-sm font-medium text-gray-900 truncate">{{ $notif['nama'] }}</p>
-                          <p class="text-xs text-gray-500 mt-0.5">
-                            {{ $notif['type'] === 'bahan_baku' ? 'Bahan Baku' : 'Produk' }}
-                          </p>
+                          <p class="text-xs text-gray-500 mt-0.5">Produk</p>
                           <div class="flex items-center mt-1 space-x-2">
                             <span class="text-xs {{ $notif['color'] === 'red' ? 'text-red-600' : 'text-yellow-600' }} font-medium">
-                              Stok: {{ $notif['stok'] }}{{ $notif['type'] === 'bahan_baku' ? ' ' . $notif['satuan'] : ' pcs' }}
+                              Stok: {{ $notif['stok'] }} pcs
                             </span>
                             <span class="text-xs text-gray-400">•</span>
                             <span class="text-xs px-2 py-0.5 rounded-full {{ $notif['color'] === 'red' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700' }}">
@@ -81,13 +78,8 @@
                             </span>
                           </div>
                         </div>
-
-                        <!-- Arrow -->
-                        <div class="flex-shrink-0">
-                          <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
-                        </div>
                       </div>
-                    </a>
+                    </div>
                   @empty
                     <div class="px-4 py-8 text-center">
                       <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">

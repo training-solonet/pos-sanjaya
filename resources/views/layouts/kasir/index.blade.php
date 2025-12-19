@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -44,7 +45,7 @@
         /* Sidebar base styles */
         .sidebar {
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 16rem !important; /* 256px */
+            width: 18rem !important; /* 288px - Diperbesar agar nama toko tidak terpotong */
         }
         
         /* Sidebar collapsed state */
@@ -80,6 +81,15 @@
             margin-right: 0 !important;
         }
         
+        /* Rotate chevron icon when collapsed */
+        .rotate-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .rotate-icon.rotated {
+            transform: rotate(180deg);
+        }
+        
         /* Main content margin adjustment */
         .content {
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -92,7 +102,7 @@
             }
             
             .content {
-                margin-left: 16rem;
+                margin-left: 18rem;
             }
             
             .content.sidebar-collapsed {
@@ -104,7 +114,7 @@
         @media (max-width: 1023px) {
             .sidebar {
                 transform: translateX(-100%);
-                width: 16rem !important;
+                width: 18rem !important;
             }
             
             .sidebar.-translate-x-full {
@@ -116,7 +126,7 @@
             }
             
             .sidebar.collapsed {
-                width: 16rem !important;
+                width: 18rem !important;
             }
             
             .content {
