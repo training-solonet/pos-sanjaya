@@ -25,14 +25,6 @@ class TransaksiController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -103,15 +95,10 @@ class TransaksiController extends Controller
                 $produk->decrement('stok', $item['quantity']);
             }
 
-            // Catat ke jurnal
-            Jurnal::create([
-                'tgl' => now(),
-                'jenis' => 'pemasukan',
-                'keterangan' => 'Penjualan - Transaksi #'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
-                'nominal' => $total,
-                'kategori' => 'Penjualan',
-                'role' => 'admin',
-            ]);
+            // Catat ke jurnal (sudah ada di Controller Transaksi)
+            // Catatan: Data jurnal ini akan dibaca oleh JurnalController manajemen
+            // TIDAK PERLU membuat entry di tabel jurnal lagi
+            // Karena kita akan membaca langsung dari tabel transaksi
 
             DB::commit();
 

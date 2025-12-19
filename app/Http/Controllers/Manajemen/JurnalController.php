@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Manajemen;
 
 use App\Http\Controllers\Controller;
 use App\Models\Jurnal;
+use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,19 +22,34 @@ class JurnalController extends Controller
             return $this->getSummary($request);
         }
 
-        // Ambil data jurnal untuk hari ini (default view)
+        // Ambil data jurnal untuk hari ini (default view) - GABUNGAN data manual dan transaksi
         $today = now()->format('Y-m-d');
-        $jurnals = Jurnal::whereDate('tgl', $today)
+        
+        // Ambil data jurnal manual (role manajemen)
+        $jurnalsManual = Jurnal::whereDate('tgl', $today)
             ->where('role', 'manajemen')
             ->orderBy('tgl', 'desc')
             ->get();
 
-        return view('manajemen.jurnal.index', compact('jurnals'));
+        // Ambil data transaksi hari ini dan konversi ke format jurnal
+        $transaksiHariIni = Transaksi::whereDate('tgl', $today)->get();
+        
+        // Gabungkan data
+        $jurnals = $jurnalsManual->concat($this->convertTransactionsToJurnals($transaksiHariIni))
+            ->sortByDesc('tgl');
+
+        // Hitung total penjualan hari ini UNTUK TAMPILAN DI JURNAL
+        $todaySales = Transaksi::whereDate('tgl', $today)
+            ->sum(DB::raw('bayar - kembalian'));
+
+        // Hitung total transaksi hari ini
+        $todayTransactions = Transaksi::whereDate('tgl', $today)->count();
+
+        return view('manajemen.jurnal.index', compact('jurnals', 'todaySales', 'todayTransactions'));
     }
 
     public function store(Request $request)
     {
-
         $validated = $request->validate([
             'tgl' => 'required|date',
             'jenis' => 'required|in:pemasukan,pengeluaran',
@@ -68,6 +84,26 @@ class JurnalController extends Controller
     public function show($id)
     {
         try {
+            // Cek apakah ID adalah transaksi (format: transaksi_{id})
+            if (str_starts_with($id, 'transaksi_')) {
+                $transaksiId = str_replace('transaksi_', '', $id);
+                $transaksi = Transaksi::findOrFail($transaksiId);
+                
+                $jurnalData = [
+                    'id' => 'transaksi_' . $transaksi->id,
+                    'tgl' => $transaksi->tgl,
+                    'jenis' => 'pemasukan',
+                    'keterangan' => 'Penjualan - Transaksi #' . str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
+                    'nominal' => $transaksi->bayar - $transaksi->kembalian,
+                    'kategori' => 'Penjualan',
+                    'role' => 'admin',
+                    'is_transaction' => true,
+                ];
+                
+                return response()->json($jurnalData);
+            }
+            
+            // Jika bukan transaksi, ambil dari jurnal manual
             $jurnal = Jurnal::where('id', $id)
                 ->where('role', 'manajemen')
                 ->firstOrFail();
@@ -82,6 +118,14 @@ class JurnalController extends Controller
 
     public function update(Request $request, $id)
     {
+        // Cek apakah ID adalah transaksi (tidak boleh edit transaksi dari kasir)
+        if (str_starts_with($id, 'transaksi_')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi dari kasir tidak dapat diedit dari halaman ini',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'tgl' => 'required|date',
             'jenis' => 'required|in:pemasukan,pengeluaran',
@@ -112,6 +156,14 @@ class JurnalController extends Controller
 
     public function destroy($id)
     {
+        // Cek apakah ID adalah transaksi (tidak boleh hapus transaksi dari kasir)
+        if (str_starts_with($id, 'transaksi_')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi dari kasir tidak dapat dihapus dari halaman ini',
+            ], 403);
+        }
+
         try {
             $jurnal = Jurnal::where('id', $id)
                 ->where('role', 'manajemen')
@@ -132,7 +184,7 @@ class JurnalController extends Controller
         }
     }
 
-    // Method untuk mendapatkan data jurnal berdasarkan filter - sekarang bagian dari index
+    // Method untuk mendapatkan data jurnal berdasarkan filter - sekarang termasuk transaksi
     private function getData(Request $request)
     {
         $query = Jurnal::where('role', 'manajemen');
@@ -157,21 +209,62 @@ class JurnalController extends Controller
             $query->where('keterangan', 'like', '%'.$request->search.'%');
         }
 
-        $jurnals = $query->orderBy('tgl', 'desc')->get();
+        $jurnalsManual = $query->orderBy('tgl', 'desc')->get();
 
-        return response()->json($jurnals);
-    }
-
-    // Method untuk mendapatkan summary - sekarang bagian dari index
-    private function getSummary(Request $request)
-    {
-        $query = Jurnal::where('role', 'manajemen');
-
+        // Ambil transaksi berdasarkan filter yang sama
+        $transaksiQuery = Transaksi::query();
+        
         if ($request->has('date') && $request->date) {
-            $query->whereDate('tgl', $request->date);
+            $transaksiQuery->whereDate('tgl', $request->date);
         }
 
-        $data = $query->select(
+        // Untuk jenis, transaksi selalu pemasukan
+        if ($request->has('jenis') && $request->jenis != 'semua') {
+            if ($request->jenis == 'pemasukan') {
+                // Hanya ambil jika filter pemasukan
+                $transaksiQuery->whereRaw('1=1');
+            } else {
+                // Jika filter pengeluaran, jangan ambil transaksi
+                $transaksiQuery->whereRaw('1=0');
+            }
+        }
+
+        // Untuk kategori, transaksi selalu Penjualan
+        if ($request->has('kategori') && $request->kategori != 'semua') {
+            if ($request->kategori == 'Penjualan') {
+                $transaksiQuery->whereRaw('1=1');
+            } else {
+                $transaksiQuery->whereRaw('1=0');
+            }
+        }
+
+        if ($request->has('search') && $request->search) {
+            $transaksiQuery->where('id', 'like', '%'.$request->search.'%');
+        }
+
+        $transaksis = $transaksiQuery->orderBy('tgl', 'desc')->get();
+        
+        // Konversi transaksi ke format jurnal
+        $jurnalsTransaksi = $this->convertTransactionsToJurnals($transaksis);
+        
+        // Gabungkan dan urutkan
+        $allJurnals = $jurnalsManual->concat($jurnalsTransaksi)
+            ->sortByDesc('tgl')
+            ->values();
+
+        return response()->json($allJurnals);
+    }
+
+    // Method untuk mendapatkan summary - sekarang termasuk transaksi
+    private function getSummary(Request $request)
+    {
+        $date = $request->has('date') && $request->date ? $request->date : now()->format('Y-m-d');
+        
+        // Summary dari jurnal manual
+        $manualQuery = Jurnal::where('role', 'manajemen')
+            ->whereDate('tgl', $date);
+            
+        $manualData = $manualQuery->select(
             DB::raw('COUNT(*) as total_transaksi'),
             DB::raw('SUM(CASE WHEN jenis = "pemasukan" THEN nominal ELSE 0 END) as total_pemasukan'),
             DB::raw('SUM(CASE WHEN jenis = "pengeluaran" THEN nominal ELSE 0 END) as total_pengeluaran'),
@@ -179,13 +272,47 @@ class JurnalController extends Controller
             DB::raw('COUNT(CASE WHEN jenis = "pengeluaran" THEN 1 END) as jumlah_pengeluaran')
         )->first();
 
+        // Summary dari transaksi
+        $transaksiQuery = Transaksi::whereDate('tgl', $date);
+        $transaksiData = $transaksiQuery->select(
+            DB::raw('COUNT(*) as jumlah_transaksi'),
+            DB::raw('SUM(bayar - kembalian) as total_penjualan')
+        )->first();
+
+        // Gabungkan data
+        $totalPemasukan = ($manualData->total_pemasukan ?? 0) + ($transaksiData->total_penjualan ?? 0);
+        $totalPengeluaran = $manualData->total_pengeluaran ?? 0;
+        $jumlahPemasukan = ($manualData->jumlah_pemasukan ?? 0) + ($transaksiData->jumlah_transaksi ?? 0);
+        $jumlahPengeluaran = $manualData->jumlah_pengeluaran ?? 0;
+        $totalTransaksi = ($manualData->total_transaksi ?? 0) + ($transaksiData->jumlah_transaksi ?? 0);
+
         return response()->json([
-            'total_revenue' => $data->total_pemasukan ?? 0,
-            'total_expense' => $data->total_pengeluaran ?? 0,
-            'net_balance' => ($data->total_pemasukan ?? 0) - ($data->total_pengeluaran ?? 0),
-            'revenue_count' => $data->jumlah_pemasukan ?? 0,
-            'expense_count' => $data->jumlah_pengeluaran ?? 0,
+            'total_revenue' => $totalPemasukan,
+            'total_expense' => $totalPengeluaran,
+            'net_balance' => $totalPemasukan - $totalPengeluaran,
+            'revenue_count' => $jumlahPemasukan,
+            'expense_count' => $jumlahPengeluaran,
+            'total_transactions' => $totalTransaksi,
         ]);
+    }
+
+    // Helper method: Konversi transaksi ke format jurnal
+    private function convertTransactionsToJurnals($transaksis)
+    {
+        return $transaksis->map(function ($transaksi) {
+            return [
+                'id' => 'transaksi_' . $transaksi->id,
+                'tgl' => $transaksi->tgl,
+                'jenis' => 'pemasukan',
+                'keterangan' => 'Penjualan - Transaksi #' . str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
+                'nominal' => $transaksi->bayar - $transaksi->kembalian,
+                'kategori' => 'Penjualan',
+                'role' => 'admin',
+                'is_transaction' => true,
+                'created_at' => $transaksi->created_at,
+                'updated_at' => $transaksi->updated_at,
+            ];
+        });
     }
 
     // Method create dan edit (kosong karena menggunakan modal)
