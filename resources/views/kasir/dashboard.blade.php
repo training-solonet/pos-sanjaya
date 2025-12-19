@@ -244,21 +244,21 @@
                                     <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                                     <span class="text-sm text-gray-600">Total Penjualan</span>
                                 </div>
-                                <p class="text-lg font-bold text-gray-900" id="totalSales">Rp 15.850.000</p>
+                                <p class="text-lg font-bold text-gray-900" id="totalSales">Rp 0</p>
                             </div>
                             <div class="text-center">
                                 <div class="flex items-center justify-center space-x-2 mb-2">
                                     <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
                                     <span class="text-sm text-gray-600">Rata-rata Harian</span>
                                 </div>
-                                <p class="text-lg font-bold text-gray-900" id="avgDaily">Rp 2.264.000</p>
+                                <p class="text-lg font-bold text-gray-900" id="avgDaily">Rp 0</p>
                             </div>
                             <div class="text-center">
                                 <div class="flex items-center justify-center space-x-2 mb-2">
                                     <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
                                     <span class="text-sm text-gray-600">Transaksi</span>
                                 </div>
-                                <p class="text-lg font-bold text-gray-900" id="totalTransactions">487</p>
+                                <p class="text-lg font-bold text-gray-900" id="totalTransactions">0</p>
                             </div>
                         </div>
                     </div>
@@ -441,13 +441,41 @@
         // Update Sales Statistics
         function updateSalesStats(period) {
             const data = salesData[period];
-            const totalSales = data.sales.reduce((sum, value) => sum + value, 0);
-            const totalTransactions = data.transactions.reduce((sum, value) => sum + value, 0);
-            const avgDaily = period === '7days' ? totalSales / 7 : totalSales / 30;
             
-            document.getElementById('totalSales').textContent = 'Rp ' + totalSales.toLocaleString('id-ID');
-            document.getElementById('avgDaily').textContent = 'Rp ' + Math.round(avgDaily).toLocaleString('id-ID');
-            document.getElementById('totalTransactions').textContent = totalTransactions.toString();
+            // Calculate totals - ensure we're working with numbers
+            const totalSales = data.sales.reduce((sum, value) => {
+                const numValue = parseFloat(value) || 0;
+                return sum + numValue;
+            }, 0);
+            
+            const totalTransactions = data.transactions.reduce((sum, value) => {
+                const numValue = parseInt(value) || 0;
+                return sum + numValue;
+            }, 0);
+            
+            // Calculate average
+            const daysCount = period === '7days' ? 7 : 30;
+            const avgDaily = totalSales / daysCount;
+            
+            // Format with proper Indonesian number format
+            const formattedTotalSales = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(totalSales);
+            
+            const formattedAvgDaily = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(Math.round(avgDaily));
+            
+            // Update DOM
+            document.getElementById('totalSales').textContent = formattedTotalSales;
+            document.getElementById('avgDaily').textContent = formattedAvgDaily;
+            document.getElementById('totalTransactions').textContent = totalTransactions.toLocaleString('id-ID');
         }
 
         // Initialize
@@ -476,26 +504,36 @@
         function createProductsChart() {
             const ctx = document.getElementById('productsChart').getContext('2d');
             
+            // Data produk terlaris dari controller
+            const produkData = @json($produkTerlarisChart);
+            const labels = produkData.map(item => item.produk ? item.produk.nama : 'Produk');
+            const values = produkData.map(item => parseInt(item.total_terjual));
+            
+            // Warna yang bervariasi
+            const colors = [
+                'rgba(34, 197, 94, 0.8)',
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(156, 163, 175, 0.8)'
+            ];
+            
+            const borderColors = [
+                'rgb(34, 197, 94)',
+                'rgb(59, 130, 246)',
+                'rgb(245, 158, 11)',
+                'rgb(239, 68, 68)',
+                'rgb(156, 163, 175)'
+            ];
+            
             new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Roti Tawar', 'Croissant', 'Teh Botol', 'Donat Coklat', 'Lainnya'],
+                    labels: labels.length > 0 ? labels : ['Tidak ada data'],
                     datasets: [{
-                        data: [65, 48, 42, 35, 25],
-                        backgroundColor: [
-                            'rgba(34, 197, 94, 0.8)',
-                            'rgba(59, 130, 246, 0.8)',
-                            'rgba(245, 158, 11, 0.8)',
-                            'rgba(239, 68, 68, 0.8)',
-                            'rgba(156, 163, 175, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgb(34, 197, 94)',
-                            'rgb(59, 130, 246)',
-                            'rgb(245, 158, 11)',
-                            'rgb(239, 68, 68)',
-                            'rgb(156, 163, 175)'
-                        ],
+                        data: values.length > 0 ? values : [1],
+                        backgroundColor: colors.slice(0, labels.length > 0 ? labels.length : 1),
+                        borderColor: borderColors.slice(0, labels.length > 0 ? labels.length : 1),
                         borderWidth: 2
                     }]
                 },
@@ -538,13 +576,17 @@
         function createHourlyChart() {
             const ctx = document.getElementById('hourlyChart').getContext('2d');
             
+            // Data penjualan per jam dari controller
+            const hourlyLabels = @json($labelJam);
+            const hourlyData = @json($penjualanPerJam);
+            
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'],
+                    labels: hourlyLabels,
                     datasets: [{
                         label: 'Transaksi',
-                        data: [2, 5, 8, 12, 18, 25, 15, 12, 8, 5],
+                        data: hourlyData,
                         backgroundColor: 'rgba(59, 130, 246, 0.8)',
                         borderColor: 'rgb(59, 130, 246)',
                         borderWidth: 1,

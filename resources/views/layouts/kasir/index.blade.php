@@ -228,15 +228,23 @@
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                day: 'numeric'
             };
+            const dateStr = now.toLocaleDateString('id-ID', options);
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            
             const dateTimeElement = document.getElementById('currentDateTime');
             if (dateTimeElement) {
-                dateTimeElement.textContent = now.toLocaleDateString('id-ID', options);
+                dateTimeElement.textContent = `${dateStr} pukul ${timeStr}`;
             }
         }
+
+        // Initialize date/time on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            // Update every minute
+            setInterval(updateDateTime, 60000);
+        });
 
         // Handle window resize
         window.addEventListener('resize', function() {

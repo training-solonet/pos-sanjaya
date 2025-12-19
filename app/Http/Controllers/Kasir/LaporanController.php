@@ -51,26 +51,21 @@ class LaporanController extends Controller
         // Transform data untuk view
         $transactions = $transaksi->map(function ($t) {
             $details = $t->detailTransaksi;
-            $totalQty = $details->sum('qty');
+            $totalQty = $details->sum('jumlah'); // Kolom di database adalah 'jumlah'
 
             // Format produk list
             $produkList = $details->map(function ($detail) {
                 $nama = optional($detail->produk)->nama ?? 'Produk Tidak Ditemukan';
 
-                return $nama.' x'.$detail->qty;
+                return $nama.' x'.$detail->jumlah; // Kolom di database adalah 'jumlah'
             })->join(', ');
-
-            // Calculate total
-            $total = $details->sum(function ($detail) {
-                return $detail->qty * $detail->harga;
-            });
 
             return [
                 'invoice' => 'INV-'.str_pad($t->id, 5, '0', STR_PAD_LEFT),
                 'time' => \Carbon\Carbon::parse($t->tgl)->format('H:i'),
                 'products' => $produkList ?: 'Tidak ada produk',
                 'quantity' => $totalQty,
-                'total' => $total,
+                'total' => $t->bayar, // Ambil dari kolom bayar di tabel transaksi
                 'payment' => ucfirst($t->metode),
                 'cashier' => optional($t->user)->name ?? 'Unknown',
             ];
@@ -166,26 +161,21 @@ class LaporanController extends Controller
         // Transform data untuk JSON response
         $transactions = $transaksi->map(function ($t) {
             $details = $t->detailTransaksi;
-            $totalQty = $details->sum('qty');
+            $totalQty = $details->sum('jumlah'); // Kolom di database adalah 'jumlah'
 
             // Format produk list
             $produkList = $details->map(function ($detail) {
                 $nama = optional($detail->produk)->nama ?? 'Produk Tidak Ditemukan';
 
-                return $nama.' x'.$detail->qty;
+                return $nama.' x'.$detail->jumlah; // Kolom di database adalah 'jumlah'
             })->join(', ');
-
-            // Calculate total
-            $total = $details->sum(function ($detail) {
-                return $detail->qty * $detail->harga;
-            });
 
             return [
                 'invoice' => 'INV-'.str_pad($t->id, 5, '0', STR_PAD_LEFT),
                 'time' => \Carbon\Carbon::parse($t->tgl)->format('H:i'),
                 'products' => $produkList ?: 'Tidak ada produk',
                 'quantity' => $totalQty,
-                'total' => $total,
+                'total' => $t->bayar, // Ambil dari kolom bayar di tabel transaksi
                 'payment' => ucfirst($t->metode),
                 'cashier' => optional($t->user)->name ?? 'Unknown',
             ];

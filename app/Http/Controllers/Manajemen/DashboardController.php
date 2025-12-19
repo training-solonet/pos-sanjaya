@@ -9,7 +9,6 @@ use App\Models\Transaksi;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -20,7 +19,7 @@ class DashboardController extends Controller
     {
         // Return JSON if requested (for AJAX updates)
         if ($request->ajax() || $request->has('json')) {
-            return $this->getDashboardData();
+            return response()->json($this->getDashboardData());
         }
 
         // Check if export is requested
@@ -29,14 +28,6 @@ class DashboardController extends Controller
         }
 
         $data = $this->getDashboardData();
-
-        // Debug: Log data untuk memastikan chart data ada
-        Log::info('Dashboard Chart Data:', [
-            'labels7Hari' => $data['labels7Hari'],
-            'penjualan7Hari' => $data['penjualan7Hari'],
-            'penjualan30Hari' => $data['penjualan30Hari'],
-            'todaySales' => $data['todaySales'],
-        ]);
 
         return view('manajemen.dashboard.index', $data);
     }
@@ -170,7 +161,13 @@ class DashboardController extends Controller
                 ];
             });
 
-        // 8. SALES CHART DATA - 7 HARI TERAKHIR
+        // 8. RECENT TRANSACTIONS (Today)
+        $recentTransactions = Transaksi::whereDate('tgl', $today)
+            ->orderBy('created_at', 'DESC')
+            ->limit(10)
+            ->get();
+
+        // 9. SALES CHART DATA - 7 HARI TERAKHIR
         $labels7Hari = [];
         $penjualan7Hari = [];
         $transaksi7Hari = [];
@@ -183,7 +180,7 @@ class DashboardController extends Controller
             $transaksi7Hari[] = Transaksi::whereDate('tgl', $date)->count();
         }
 
-        // 9. SALES CHART DATA - 30 HARI TERAKHIR (per minggu)
+        // 10. SALES CHART DATA - 30 HARI TERAKHIR (per minggu)
         $labels30Hari = ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'];
         $penjualan30Hari = [0, 0, 0, 0];
         $transaksi30Hari = [0, 0, 0, 0];
@@ -198,15 +195,6 @@ class DashboardController extends Controller
             $transaksi30Hari[$week] = Transaksi::whereBetween('tgl', [$startDate->toDateString(), $endDate->toDateString()])
                 ->count();
         }
-
-        // CHART SUMMARY
-        $totalSales7Days = array_sum($penjualan7Hari);
-        $totalTransactions7Days = array_sum($transaksi7Hari);
-        $avgDaily7Days = $totalSales7Days > 0 ? $totalSales7Days / 7 : 0;
-
-        $totalSales30Days = array_sum($penjualan30Hari);
-        $totalTransactions30Days = array_sum($transaksi30Hari);
-        $avgDaily30Days = $totalSales30Days > 0 ? $totalSales30Days / 30 : 0;
 
         // Return data
         return [
@@ -223,6 +211,7 @@ class DashboardController extends Controller
             'lowStockProducts' => $lowStockProducts,
             'lowStockBahanBaku' => $lowStockBahanBaku,
             'topProducts' => $topProducts,
+            'recentTransactions' => $recentTransactions,
 
             // Data chart
             'labels7Hari' => $labels7Hari,
@@ -231,20 +220,6 @@ class DashboardController extends Controller
             'labels30Hari' => $labels30Hari,
             'penjualan30Hari' => $penjualan30Hari,
             'transaksi30Hari' => $transaksi30Hari,
-
-            // Chart summary
-            'chartSummary' => [
-                '7days' => [
-                    'totalSales' => $totalSales7Days,
-                    'totalTransactions' => $totalTransactions7Days,
-                    'avgDaily' => $avgDaily7Days,
-                ],
-                '30days' => [
-                    'totalSales' => $totalSales30Days,
-                    'totalTransactions' => $totalTransactions30Days,
-                    'avgDaily' => $avgDaily30Days,
-                ],
-            ],
         ];
     }
 

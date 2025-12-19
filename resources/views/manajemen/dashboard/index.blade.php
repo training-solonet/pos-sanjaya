@@ -312,7 +312,7 @@
                 </div>
             </div>
 
-            <!-- Top Products & Sales Chart -->
+            <!-- Top Products & Recent Transactions -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Top Products -->
                 <div class="bg-white rounded-lg border border-gray-200">
@@ -350,51 +350,239 @@
                     </div>
                 </div>
 
-                <!-- Sales Chart -->
+                <!-- Recent Transactions -->
                 <div class="bg-white rounded-lg border border-gray-200">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-semibold text-gray-900">
-                                Grafik Penjualan
+                                Transaksi Terbaru
                             </h3>
-                            <div class="flex items-center space-x-2">
-                                <button onclick="changeChartPeriod('7days')" class="chart-period-btn active px-3 py-1 text-xs bg-green-100 text-green-600 rounded-lg">7 Hari</button>
-                                <button onclick="changeChartPeriod('30days')" class="chart-period-btn px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">30 Hari</button>
-                            </div>
+                            <span class="text-xs text-gray-500">Hari ini</span>
                         </div>
                     </div>
                     <div class="p-6">
-                        <div class="h-64 relative">
-                            <canvas id="salesChart"></canvas>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th class="pb-3 px-2">No. Transaksi</th>
+                                        <th class="pb-3 px-2">Waktu</th>
+                                        <th class="pb-3 px-2">Total</th>
+                                        <th class="pb-3 px-2">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    @forelse($recentTransactions as $transaction)
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-3 px-2 whitespace-nowrap">
+                                            <span class="text-sm font-medium text-gray-900">#{{ $transaction->kode_transaksi ?? $transaction->id }}</span>
+                                        </td>
+                                        <td class="py-3 px-2 whitespace-nowrap">
+                                            <span class="text-sm text-gray-600">
+                                                {{ \Carbon\Carbon::parse($transaction->created_at)->format('H:i') }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 px-2 whitespace-nowrap">
+                                            <span class="text-sm font-medium text-green-600">
+                                                Rp {{ number_format($transaction->total ?? $transaction->bayar ?? 0, 0, ',', '.') }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 px-2 whitespace-nowrap">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                Selesai
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="4" class="py-8 text-center">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <i class="fas fa-receipt text-4xl text-gray-300 mb-2"></i>
+                                                <p class="text-gray-500">Belum ada transaksi hari ini</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
-                        <!-- Chart Summary -->
-                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-                            <div class="text-center">
-                                <div class="flex items-center justify-center space-x-2 mb-2">
-                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                                    <span class="text-sm text-gray-600">Total</span>
+                        
+                        <!-- Transaction Summary -->
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                    <div class="flex items-center justify-center space-x-2 mb-1">
+                                        <i class="fas fa-cash-register text-blue-600"></i>
+                                        <span class="text-sm font-medium text-gray-600">Rata-rata/Transaksi</span>
+                                    </div>
+                                    <p class="text-lg font-bold text-gray-900" id="avgTransaction">
+                                        @if($todayTransactions > 0)
+                                            Rp {{ number_format($todaySales / $todayTransactions, 0, ',', '.') }}
+                                        @else
+                                            Rp 0
+                                        @endif
+                                    </p>
                                 </div>
-                                <p class="text-lg font-bold text-gray-900" id="totalSalesDisplay">
-                                    Rp {{ number_format($chartSummary['7days']['totalSales'], 0, ',', '.') }}
-                                </p>
+                                <div class="text-center p-3 bg-green-50 rounded-lg">
+                                    <div class="flex items-center justify-center space-x-2 mb-1">
+                                        <i class="fas fa-clock text-green-600"></i>
+                                        <span class="text-sm font-medium text-gray-600">Transaksi/Jam</span>
+                                    </div>
+                                    <p class="text-lg font-bold text-gray-900" id="transactionsPerHour">
+                                        @php
+                                            $currentHour = now()->hour;
+                                            $hoursOpen = max(1, $currentHour - 6); // Asumsi buka jam 6 pagi
+                                            $perHour = $hoursOpen > 0 ? $todayTransactions / $hoursOpen : 0;
+                                        @endphp
+                                        {{ number_format($perHour, 1) }}
+                                    </p>
+                                </div>
+                                <div class="text-center p-3 bg-purple-50 rounded-lg">
+                                    <div class="flex items-center justify-center space-x-2 mb-1">
+                                        <i class="fas fa-box text-purple-600"></i>
+                                        <span class="text-sm font-medium text-gray-600">Items/Transaksi</span>
+                                    </div>
+                                    <p class="text-lg font-bold text-gray-900" id="itemsPerTransaction">
+                                        @if($todayTransactions > 0)
+                                            {{ number_format($todayProductsSold / $todayTransactions, 1) }}
+                                        @else
+                                            0
+                                        @endif
+                                    </p>
+                                </div>
                             </div>
-                            <div class="text-center">
-                                <div class="flex items-center justify-center space-x-2 mb-2">
-                                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                    <span class="text-sm text-gray-600">Rata-rata</span>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <a href="{{ route("management.laporan.index") }}" class="text-sm text-green-600 hover:text-green-800 font-medium">Lihat Semua Transaksi →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Performance -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Sales by Day (7 Days) -->
+                <div class="bg-white rounded-lg border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                Performa Penjualan (7 Hari)
+                            </h3>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            @php
+                                $maxSales = max($penjualan7Hari) ?: 1;
+                            @endphp
+                            @for($i = 0; $i < count($labels7Hari); $i++)
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="font-medium text-gray-700">{{ $labels7Hari[$i] }}</span>
+                                        <div class="flex items-center space-x-4">
+                                            <span class="text-gray-600">{{ $transaksi7Hari[$i] }} transaksi</span>
+                                            <span class="font-bold text-gray-900">Rp {{ number_format($penjualan7Hari[$i], 0, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div 
+                                            class="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full" 
+                                            style="width: {{ ($penjualan7Hari[$i] / $maxSales) * 100 }}%">
+                                        </div>
+                                    </div>
                                 </div>
-                                <p class="text-lg font-bold text-gray-900" id="avgDailyDisplay">
-                                    Rp {{ number_format($chartSummary['7days']['avgDaily'], 0, ',', '.') }}
-                                </p>
+                            @endfor
+                        </div>
+                        
+                        <!-- Week Summary -->
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="text-center">
+                                    <p class="text-sm text-gray-600 mb-1">Total 7 Hari</p>
+                                    <p class="text-xl font-bold text-gray-900">
+                                        Rp {{ number_format(array_sum($penjualan7Hari), 0, ',', '.') }}
+                                    </p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-sm text-gray-600 mb-1">Rata-rata/Hari</p>
+                                    <p class="text-xl font-bold text-gray-900">
+                                        Rp {{ number_format(array_sum($penjualan7Hari) / 7, 0, ',', '.') }}
+                                    </p>
+                                </div>
                             </div>
-                            <div class="text-center">
-                                <div class="flex items-center justify-center space-x-2 mb-2">
-                                    <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                    <span class="text-sm text-gray-600">Transaksi</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Best Selling Hours -->
+                <div class="bg-white rounded-lg border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                Jam Terbaik Penjualan
+                            </h3>
+                            <span class="text-xs text-gray-500">Berdasarkan rata-rata</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="mb-6">
+                            <div class="grid grid-cols-4 gap-2 mb-2">
+                                @php
+                                    $peakHours = [
+                                        'Pagi' => ['06:00-11:00', 'bg-blue-100 text-blue-800'],
+                                        'Siang' => ['11:00-14:00', 'bg-green-100 text-green-800'],
+                                        'Sore' => ['14:00-18:00', 'bg-amber-100 text-amber-800'],
+                                        'Malam' => ['18:00-21:00', 'bg-purple-100 text-purple-800']
+                                    ];
+                                @endphp
+                                @foreach($peakHours as $period => $data)
+                                <div class="text-center p-2 rounded-lg {{ $data[1] }}">
+                                    <p class="text-xs font-medium">{{ $period }}</p>
+                                    <p class="text-xs">{{ $data[0] }}</p>
                                 </div>
-                                <p class="text-lg font-bold text-gray-900" id="totalTransactionsDisplay">
-                                    {{ number_format($chartSummary['7days']['totalTransactions'], 0, ',', '.') }}
-                                </p>
+                                @endforeach
+                            </div>
+                        </div>
+                        
+                        <!-- Hourly Performance Tips -->
+                        <div class="space-y-4">
+                            <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <div class="flex items-start">
+                                    <i class="fas fa-lightbulb text-blue-600 mt-1 mr-3"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900 mb-1">Tips Optimasi:</p>
+                                        <p class="text-xs text-gray-600">
+                                            • Pastikan stok cukup selama jam sibuk ({{ $busiestHour ?? '11:00-14:00' }})<br>
+                                            • Siapkan promosi untuk jam sepi ({{ $quietHour ?? '14:00-16:00' }})<br>
+                                            • Optimalkan penjualan online di malam hari
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-3 bg-green-50 rounded-lg border border-green-200">
+                                <div class="flex items-start">
+                                    <i class="fas fa-chart-line text-green-600 mt-1 mr-3"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900 mb-1">Target Hari Ini:</p>
+                                        <p class="text-xs text-gray-600">
+                                            @php
+                                                $target = $yesterdaySales * 1.1; // 10% lebih tinggi dari kemarin
+                                                $progress = $todaySales > 0 ? min(100, ($todaySales / $target) * 100) : 0;
+                                            @endphp
+                                            <span class="font-medium">Rp {{ number_format($target, 0, ',', '.') }}</span>
+                                            <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                                <div 
+                                                    class="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full" 
+                                                    style="width: {{ $progress }}%">
+                                                </div>
+                                            </div>
+                                            <span class="text-xs mt-1 block">{{ number_format($progress, 1) }}% tercapai</span>
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -409,234 +597,90 @@
     .relative.group:hover .group-hover\:block {
         display: block !important;
     }
-    
-    .chart-period-btn.active {
-        background-color: #d1fae5 !important;
-        color: #059669 !important;
-    }
 </style>
 @endpush
 
 @push('scripts')
 <script>
-    // Pastikan Chart.js sudah dimuat (sudah ada di layout)
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Dashboard Management Loaded');
         
-        // Debug data dari PHP
-        console.log('PHP Chart Data:', {
-            labels7Hari: @json($labels7Hari),
-            penjualan7Hari: @json($penjualan7Hari),
-            penjualan30Hari: @json($penjualan30Hari)
+        // Export dropdown handling
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.relative.group')) {
+                document.querySelectorAll('.group-hover\\:block').forEach(el => {
+                    el.classList.add('hidden');
+                });
+            }
         });
         
-        // Initialize chart setelah DOM siap
-        setTimeout(function() {
-            initializeDashboardChart();
-        }, 100);
+        // Auto-refresh dashboard every 60 seconds
+        setInterval(function() {
+            refreshDashboardStats();
+        }, 60000);
     });
-
-    // Sales Chart Data
-    const salesChartData = {
-        '7days': {
-            labels: @json($labels7Hari),
-            sales: @json($penjualan7Hari),
-            transactions: @json($transaksi7Hari),
-        },
-        '30days': {
-            labels: @json($labels30Hari),
-            sales: @json($penjualan30Hari),
-            transactions: @json($transaksi30Hari),
-        }
-    };
-
-    let currentChart = null;
-    let currentPeriod = '7days';
-
-    // Initialize Dashboard Chart
-    function initializeDashboardChart() {
-        console.log('Initializing dashboard chart...');
-        
-        // Cek apakah Chart.js tersedia
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js not loaded!');
-            // Coba load Chart.js
-            loadChartJS();
-            return;
-        }
-        
-        createSalesChart('7days');
-    }
-
-    // Load Chart.js jika belum dimuat
-    function loadChartJS() {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-        script.onload = function() {
-            console.log('Chart.js loaded successfully');
-            createSalesChart('7days');
-        };
-        script.onerror = function() {
-            console.error('Failed to load Chart.js');
-        };
-        document.head.appendChild(script);
-    }
-
-    // Create Sales Chart
-    function createSalesChart(period = '7days') {
-        console.log('Creating chart for period:', period);
-        
-        const canvas = document.getElementById('salesChart');
-        if (!canvas) {
-            console.error('Canvas element not found!');
-            return;
-        }
-        
-        const ctx = canvas.getContext('2d');
-        const data = salesChartData[period];
-        
-        console.log('Chart data:', data);
-        
-        // Destroy existing chart if it exists
-        if (currentChart) {
-            currentChart.destroy();
-        }
-
-        // Jika semua data 0, beri placeholder data
-        const allZero = data.sales.every(val => val === 0);
-        if (allZero) {
-            console.log('All sales data is zero, using placeholder');
-            // Buat data dummy untuk testing
-            const dummyData = data.labels.map(() => Math.floor(Math.random() * 1000000) + 500000);
-            data.sales = dummyData;
-        }
-
-        try {
-            currentChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        label: 'Penjualan (Rp)',
-                        data: data.sales,
-                        borderColor: 'rgb(34, 197, 94)',
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: 'rgb(34, 197, 94)',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: 'rgb(34, 197, 94)',
-                            borderWidth: 1,
-                            cornerRadius: 8,
-                            displayColors: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Penjualan: Rp ' + context.parsed.y.toLocaleString('id-ID');
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    if (value >= 1000000) {
-                                        return 'Rp ' + (value / 1000000).toFixed(1) + 'jt';
-                                    } else if (value >= 1000) {
-                                        return 'Rp ' + (value / 1000).toFixed(0) + 'rb';
-                                    } else {
-                                        return 'Rp ' + value;
-                                    }
-                                },
-                                color: 'rgb(107, 114, 128)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: 'rgb(107, 114, 128)'
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    }
+    
+    // Function to refresh dashboard stats via AJAX
+    function refreshDashboardStats() {
+        fetch('{{ route("management.dashboard.index") }}?json=true')
+            .then(response => response.json())
+            .then(data => {
+                // Update stats cards
+                document.getElementById('todaySales').textContent = formatCurrency(data.todaySales);
+                document.getElementById('todayTransactions').textContent = data.todayTransactions;
+                document.getElementById('todayProductsSold').textContent = formatNumber(data.todayProductsSold);
+                document.getElementById('lowStockCount').textContent = data.lowStockCount;
+                
+                // Update growth indicators
+                updateGrowthIndicator('salesGrowth', data.salesGrowth);
+                updateGrowthIndicator('transactionsGrowth', data.transactionsGrowth);
+                updateGrowthIndicator('productsSoldGrowth', data.productsSoldGrowth);
+                
+                // Update average transaction
+                if (data.todayTransactions > 0) {
+                    const avg = data.todaySales / data.todayTransactions;
+                    document.getElementById('avgTransaction').textContent = formatCurrency(avg);
                 }
+                
+                // Update items per transaction
+                if (data.todayTransactions > 0) {
+                    const itemsPer = data.todayProductsSold / data.todayTransactions;
+                    document.getElementById('itemsPerTransaction').textContent = itemsPer.toFixed(1);
+                }
+                
+                console.log('Dashboard stats refreshed');
+            })
+            .catch(error => {
+                console.error('Error refreshing dashboard:', error);
             });
+    }
+    
+    // Helper function to format currency
+    function formatCurrency(amount) {
+        return 'Rp ' + Math.round(amount).toLocaleString('id-ID');
+    }
+    
+    // Helper function to format number
+    function formatNumber(num) {
+        return Math.round(num).toLocaleString('id-ID');
+    }
+    
+    // Helper function to update growth indicators
+    function updateGrowthIndicator(elementId, growthValue) {
+        const element = document.getElementById(elementId);
+        const container = document.getElementById(elementId + 'Text');
+        
+        if (element && container) {
+            element.textContent = Math.abs(growthValue);
             
-            console.log('Chart created successfully');
-            
-            // Update summary
-            updateSalesStats(period);
-            
-        } catch (error) {
-            console.error('Error creating chart:', error);
+            if (growthValue >= 0) {
+                container.innerHTML = '<i class="fas fa-arrow-up mr-1 text-green-600"></i>' +
+                    '<span id="' + elementId + '" class="text-green-600">' + growthValue + '</span>% dari kemarin';
+            } else {
+                container.innerHTML = '<i class="fas fa-arrow-down mr-1 text-red-600"></i>' +
+                    '<span id="' + elementId + '" class="text-red-600">' + Math.abs(growthValue) + '</span>% dari kemarin';
+            }
         }
     }
-
-    // Update Sales Statistics
-    function updateSalesStats(period) {
-        const data = salesChartData[period];
-        const totalSales = data.sales.reduce((sum, value) => sum + value, 0);
-        const totalTransactions = data.transactions.reduce((sum, value) => sum + value, 0);
-        const days = period === '7days' ? 7 : 30;
-        const avgDaily = totalSales / days;
-        
-        document.getElementById('totalSalesDisplay').textContent = 'Rp ' + Math.round(totalSales).toLocaleString('id-ID');
-        document.getElementById('avgDailyDisplay').textContent = 'Rp ' + Math.round(avgDaily).toLocaleString('id-ID');
-        document.getElementById('totalTransactionsDisplay').textContent = totalTransactions.toLocaleString('id-ID');
-    }
-
-    // Change Chart Period
-    function changeChartPeriod(period) {
-        console.log('Changing chart period to:', period);
-        
-        currentPeriod = period;
-        
-        // Update button states
-        document.querySelectorAll('.chart-period-btn').forEach(btn => {
-            btn.classList.remove('active', 'bg-green-100', 'text-green-600');
-            btn.classList.add('bg-gray-100', 'text-gray-600');
-        });
-        
-        event.target.classList.remove('bg-gray-100', 'text-gray-600');
-        event.target.classList.add('active', 'bg-green-100', 'text-green-600');
-        
-        // Update chart
-        createSalesChart(period);
-    }
-
-    // Export dropdown handling
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.relative.group')) {
-            document.querySelectorAll('.group-hover\\:block').forEach(el => {
-                el.classList.add('hidden');
-            });
-        }
-    });
 </script>
 @endpush
