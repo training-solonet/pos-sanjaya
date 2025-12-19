@@ -3,16 +3,14 @@
            transform -translate-x-full transition-transform duration-300 ease-in-out
            flex flex-col">
 
-    <div class="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-        <div class="flex items-center space-x-3 overflow-hidden">
+    <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200 gap-2">
+        <div class="flex items-center space-x-3 flex-1 overflow-hidden">
             <div class="w-10 h-10 bg-gradient-to-r from-green-400 to-green-700 rounded-lg flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-cash-register text-white text-lg"></i>
             </div>
-            <div class="sidebar-title whitespace-nowrap transition-opacity duration-300">
-                <h1 class="text-lg font-bold text-gray-900">Sanjaya Bakery</h1>
-            </div>
+            <h1 class="sidebar-title text-lg font-bold text-gray-900 whitespace-nowrap transition-opacity duration-300">Sanjaya Bakery</h1>
         </div>
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center flex-shrink-0 ml-2">
             <!-- Desktop Toggle Button -->
             <button onclick="toggleSidebar()" title="Toggle Sidebar"
                 class="hidden lg:flex w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 items-center justify-center transition-colors">

@@ -2,7 +2,7 @@
 
 @section('content')
 <!-- Main Content -->
-<div class="content flex-1 lg:flex-1">
+{{-- <div class="content flex-1 lg:flex-1"> --}}
     <!-- Page Content -->
     <main class="p-4 sm:p-6 lg:p-8">
         <div class="space-y-6">
@@ -264,7 +264,7 @@
             </div>
         </div>
     </main>
-</div>
+{{-- </div> --}}
 
 <!-- Count Modal -->
 <div id="countModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
