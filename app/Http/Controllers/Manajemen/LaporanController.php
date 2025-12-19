@@ -101,7 +101,7 @@ class LaporanController extends Controller
 
         // PERHITUNGAN GROWTH (PERTUMBUHAN) BULANAN
         // Menghitung persentase pertumbuhan penjualan bulan ini dibanding bulan lalu
-        
+
         // Monthly report (this month vs previous month)
         $currentMonthStart = Carbon::now()->startOfMonth();
         $previousMonthStart = Carbon::now()->subMonth()->startOfMonth();
@@ -119,7 +119,7 @@ class LaporanController extends Controller
         }
 
         // PERHITUNGAN PROFIT MARGIN (MARGIN KEUNTUNGAN) BULANAN
-       
+
         // Profit Margin mengukur persentase keuntungan dari total penjualan
         // RUMUS: ((Total Penjualan - Total HPP/Biaya) / Total Penjualan) × 100%
         $currentMonthTransactions = Transaksi::whereBetween('tgl', [$currentMonthStart->toDateString(), Carbon::now()->toDateString()])->pluck('id');
@@ -130,7 +130,6 @@ class LaporanController extends Controller
 
         // PERHITUNGAN MARGIN: (Penjualan - HPP) / Penjualan × 100%
         $profitMargin = $totalRevenue > 0 ? round((($totalRevenue - $totalCost) / $totalRevenue) * 100, 1) : null;
-       
 
         $monthlyReport = [
             'monthLabel' => Carbon::now()->format('F Y'),
@@ -140,16 +139,15 @@ class LaporanController extends Controller
             'profitMargin' => $profitMargin,
         ];
 
-       
         // PERHITUNGAN PROFIT MARGIN (MARGIN KEUNTUNGAN) HARIAN
         // Menghitung profit margin untuk hari ini berdasarkan HPP dari resep
         $todayStart = Carbon::today();
         $todayEnd = Carbon::today()->endOfDay();
-        
+
         // Total penjualan hari ini
         $todayTotal = Transaksi::whereBetween('tgl', [$todayStart, $todayEnd])->sum('bayar') ?? 0;
         $todayTransactions = Transaksi::whereBetween('tgl', [$todayStart, $todayEnd])->pluck('id');
-        
+
         // PERHITUNGAN HPP (HARGA POKOK PENJUALAN) HARIAN
         // HPP dihitung dari harga bahan baku yang digunakan dalam resep produk yang terjual
         $todayCost = DB::table('detail_transaksi')
@@ -161,15 +159,15 @@ class LaporanController extends Controller
                 DB::raw('SUM(COALESCE(rincian_resep.harga, detail_transaksi.harga * 0.6) * detail_transaksi.jumlah) as total_cost')
             )
             ->value('total_cost') ?? 0;
-        
+
         // Jika tidak ada data HPP dari resep, gunakan estimasi 60% dari harga jual
         if ($todayCost == 0 && $todayTotal > 0) {
             $todayCost = $todayTotal * 0.6; // Estimasi HPP 60% dari harga jual
         }
-        
+
         // RUMUS PROFIT MARGIN HARIAN: ((Penjualan Hari Ini - HPP Hari Ini) / Penjualan Hari Ini) × 100%
         $todayProfitMargin = $todayTotal > 0 ? round((($todayTotal - $todayCost) / $todayTotal) * 100, 1) : null;
-        
+
         $dailyReport = [
             'date' => Carbon::today()->format('Y-m-d'),
             'totalSales' => (int) $todayTotal,
