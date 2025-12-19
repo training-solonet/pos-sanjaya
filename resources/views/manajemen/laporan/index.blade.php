@@ -229,8 +229,16 @@
 
                 <!-- Monthly Report -->
                 <div class="bg-white rounded-lg border border-gray-200">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">Laporan Bulanan</h3>
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900">Laporan <span id="reportPeriodTitle">Bulanan</span></h3>
+                        <div class="flex gap-2">
+                            <button onclick="changeReportView('monthly')" class="report-view-btn active bg-purple-100 text-purple-600 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:shadow-md">
+                                Bulanan
+                            </button>
+                            <button onclick="changeReportView('daily')" class="report-view-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:shadow-md">
+                                Harian
+                            </button>
+                        </div>
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -238,25 +246,26 @@
                                 <div class="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-calendar text-primary text-2xl"></i>
                                 </div>
-                                <h4 class="text-xl font-bold text-gray-900">{{ $monthlyReport['monthLabel'] ?? now()->format('F Y') }}</h4>
+                                <h4 class="text-xl font-bold text-gray-900" id="reportPeriodLabel">{{ $monthlyReport['monthLabel'] ?? now()->format('F Y') }}</h4>
                                 <p class="text-sm text-gray-500 mb-2">Total Penjualan</p>
-                                <p class="text-2xl font-bold text-primary">Rp {{ number_format($monthlyReport['total'] ?? 0,0,',','.') }}</p>
+                                <p class="text-2xl font-bold text-primary" id="reportTotalSales">Rp {{ number_format($monthlyReport['total'] ?? 0,0,',','.') }}</p>
                             </div>
                             <div class="text-center">
                                 <div class="w-16 h-16 bg-success/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-trending-up text-success text-2xl"></i>
                                 </div>
                                 <h4 class="text-xl font-bold text-gray-900">Growth</h4>
-                                <p class="text-sm text-gray-500 mb-2">Vs Bulan Lalu</p>
-                                <p class="text-2xl font-bold text-success">{{ is_null($monthlyReport['growthPercent']) ? '-' : ($monthlyReport['growthPercent'] > 0 ? '+' : '') . $monthlyReport['growthPercent'] . '%' }}</p>
+                                <p class="text-sm text-gray-500 mb-2" id="reportGrowthLabel">Vs Bulan Lalu</p>
+                                <p class="text-2xl font-bold text-success" id="reportGrowth">{{ is_null($monthlyReport['growthPercent']) ? '-' : ($monthlyReport['growthPercent'] > 0 ? '+' : '') . $monthlyReport['growthPercent'] . '%' }}</p>
                             </div>
                             <div class="text-center">
                                 <div class="w-16 h-16 bg-accent/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-star text-accent text-2xl"></i>
                                 </div>
-                                <h4 class="text-xl font-bold text-gray-900">Profit Margin</h4>
+                                <h4 class="text-xl font-bold text-gray-900">Profit Margin</h4> 
+                                {{-- HPP : Harga Jual --}}
                                 <p class="text-sm text-gray-500 mb-2">Rata-rata</p>
-                                <p class="text-2xl font-bold text-accent">{{ is_null($monthlyReport['profitMargin']) ? '-' : $monthlyReport['profitMargin'] . '%' }}</p>
+                                <p class="text-2xl font-bold text-accent" id="reportProfitMargin">{{ is_null($monthlyReport['profitMargin']) ? '-' : $monthlyReport['profitMargin'] . '%' }}</p>
                             </div>
                         </div>
                     </div>
@@ -290,6 +299,7 @@
     let serverSales = @json($salesChart ?? null);
     let serverProducts = @json($productsChart ?? null);
     let serverMonthly = @json($monthlyReport ?? null);
+    let serverDaily = @json($dailyReport ?? null); // Data harian termasuk HPP dan profit margin
 
     // Get current month and year label in Indonesian
     function getMonthYearLabel() {
@@ -673,6 +683,187 @@
         event.target.classList.remove('bg-gray-100', 'text-gray-600');
 
         createProductsChart(type);
+    }
+
+    // Change report view (Monthly/Daily)
+    function changeReportView(type) {
+        document.querySelectorAll('.report-view-btn').forEach(btn => {
+            btn.classList.remove('active', 'bg-purple-100', 'text-purple-600');
+            btn.classList.add('bg-gray-100', 'text-gray-600');
+        });
+
+        event.target.classList.add('active', 'bg-purple-100', 'text-purple-600');
+        event.target.classList.remove('bg-gray-100', 'text-gray-600');
+
+        // Update title
+        const titleEl = document.getElementById('reportPeriodTitle');
+        if (titleEl) {
+            titleEl.textContent = type === 'monthly' ? 'Bulanan' : 'Harian';
+        }
+
+        if (type === 'monthly') {
+            // Show monthly data from server
+            const periodLabel = document.getElementById('reportPeriodLabel');
+            const totalSales = document.getElementById('reportTotalSales');
+            const growthLabel = document.getElementById('reportGrowthLabel');
+            const growth = document.getElementById('reportGrowth');
+            const profitMargin = document.getElementById('reportProfitMargin');
+
+            if (serverMonthly) {
+                if (periodLabel) periodLabel.textContent = serverMonthly.monthLabel || getMonthYearLabel();
+                if (totalSales) totalSales.textContent = formatCurrency(serverMonthly.total || 0);
+                if (growthLabel) growthLabel.textContent = 'Vs Bulan Lalu';
+                if (growth) {
+                    const growthPercent = serverMonthly.growthPercent;
+                    growth.textContent = growthPercent === null ? '-' : (growthPercent > 0 ? '+' : '') + growthPercent + '%';
+                    
+                    // ========================================
+                    // PEWARNAAN BERDASARKAN GROWTH (PERTUMBUHAN)
+                    // ========================================
+                    // Hijau: Growth >= 50% (Pertumbuhan sangat baik)
+                    // Kuning: Growth 0-49% (Pertumbuhan normal)
+                    // Merah: Growth < 0% (Penurunan penjualan)
+                    growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
+                    if (growthPercent !== null) {
+                        if (growthPercent >= 50) {
+                            growth.classList.add('text-green-600'); // Hijau untuk growth >= 50%
+                        } else if (growthPercent >= 0) {
+                            growth.classList.add('text-yellow-600'); // Kuning untuk growth 0-49%
+                        } else {
+                            growth.classList.add('text-red-600'); // Merah untuk growth negatif
+                        }
+                    } else {
+                        growth.classList.add('text-success');
+                    }
+                    // ========================================
+                }
+                if (profitMargin) {
+                    const marginValue = serverMonthly.profitMargin;
+                    profitMargin.textContent = (marginValue === null || marginValue === undefined) ? '-' : marginValue + '%';
+                }
+            }
+        } else {
+            // Calculate and show daily data (today)
+            calculateDailyReport();
+        }
+    }
+
+    // ========================================
+    // FUNGSI PERHITUNGAN PROFIT MARGIN (MARGIN KEUNTUNGAN)
+    // ========================================
+    // RUMUS: ((Total Penjualan - Total HPP/Biaya) / Total Penjualan) × 100%
+    // Contoh: Penjualan 1.000.000 - HPP 600.000 = Profit 400.000
+    //         Margin = (400.000 / 1.000.000) × 100% = 40%
+    function calculateProfitMargin(totalSales, totalCost) {
+        if (!totalSales || totalSales === 0) return null;
+        if (!totalCost || totalCost < 0) return null;
+        
+        const profit = totalSales - totalCost; // Keuntungan Bersih
+        const margin = (profit / totalSales) * 100; // Persentase Margin
+        return parseFloat(margin.toFixed(1));
+    }
+    // ========================================
+
+    // Calculate daily report from sales data
+    function calculateDailyReport() {
+        const periodLabel = document.getElementById('reportPeriodLabel');
+        const totalSales = document.getElementById('reportTotalSales');
+        const growthLabel = document.getElementById('reportGrowthLabel');
+        const growth = document.getElementById('reportGrowth');
+        const profitMargin = document.getElementById('reportProfitMargin');
+
+        // Get today's date
+        const today = new Date();
+        const day = today.getDate();
+        const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const todayLabel = day + ' ' + months[today.getMonth()] + ' ' + today.getFullYear();
+
+        if (periodLabel) periodLabel.textContent = todayLabel;
+        if (growthLabel) growthLabel.textContent = 'Vs Hari Kemarin';
+
+        // Get today's sales from server data (last element in array)
+        if (serverSales && serverSales.data && serverSales.data.length > 0) {
+            const todaySales = serverSales.data[serverSales.data.length - 1];
+            if (totalSales) totalSales.textContent = formatCurrency(todaySales);
+
+            // ========================================
+            // PERHITUNGAN GROWTH (PERTUMBUHAN) HARIAN
+            // ========================================
+            // Menghitung persentase pertumbuhan penjualan hari ini vs kemarin
+            // RUMUS: ((Penjualan Hari Ini - Penjualan Kemarin) / Penjualan Kemarin) × 100%
+            if (serverSales.data.length > 1) {
+                const yesterdaySales = serverSales.data[serverSales.data.length - 2]; // Penjualan kemarin
+                if (yesterdaySales > 0) {
+                    // Hitung persentase growth
+                    const growthPercent = parseFloat(((todaySales - yesterdaySales) / yesterdaySales * 100).toFixed(1));
+                    if (growth) {
+                        growth.textContent = (growthPercent > 0 ? '+' : '') + growthPercent + '%';
+                        
+                        // PEWARNAAN GROWTH HARIAN
+                        // Hijau >= 50%, Kuning 0-49%, Merah < 0%
+                        growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
+                        if (growthPercent >= 50) {
+                            growth.classList.add('text-green-600'); // Pertumbuhan tinggi
+                        } else if (growthPercent >= 0) {
+                            growth.classList.add('text-yellow-600'); // Pertumbuhan normal
+                        } else {
+                            growth.classList.add('text-red-600'); // Penurunan
+                        }
+                    }
+                } else {
+                    if (growth) {
+                        growth.textContent = '-';
+                        growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
+                        growth.classList.add('text-success');
+                    }
+                }
+            } else {
+                if (growth) {
+                    growth.textContent = '-';
+                    growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
+                    growth.classList.add('text-success');
+                }
+            }
+
+            // ========================================
+            // PERHITUNGAN PROFIT MARGIN (MARGIN KEUNTUNGAN) HARIAN
+            // ========================================
+            // Menggunakan data HPP dari backend untuk perhitungan yang akurat
+            if (profitMargin) {
+                let marginValue = null;
+                
+                // PRIORITAS 1: Gunakan data profit margin dari backend (paling akurat)
+                if (serverDaily && serverDaily.profitMargin !== null && serverDaily.profitMargin !== undefined) {
+                    marginValue = serverDaily.profitMargin;
+                }
+                // PRIORITAS 2: Hitung dari data penjualan dan HPP jika tersedia
+                else if (serverDaily && serverDaily.totalSales && serverDaily.totalCost) {
+                    marginValue = calculateProfitMargin(serverDaily.totalSales, serverDaily.totalCost);
+                }
+                // PRIORITAS 3: Gunakan estimasi dari data bulanan
+                else if (serverMonthly?.profitMargin !== null && serverMonthly?.profitMargin !== undefined) {
+                    marginValue = serverMonthly.profitMargin;
+                }
+                
+                // Tampilkan nilai profit margin
+                if (marginValue !== null && marginValue !== undefined) {
+                    profitMargin.textContent = marginValue + '%';
+                } else {
+                    profitMargin.textContent = '-';
+                }
+            }
+            // ========================================
+        } else {
+            // Fallback if no server data
+            if (totalSales) totalSales.textContent = formatCurrency(0);
+            if (growth) {
+                growth.textContent = '-';
+                growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
+                growth.classList.add('text-success');
+            }
+            if (profitMargin) profitMargin.textContent = '-';
+        }
     }
 
     // Format currency

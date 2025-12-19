@@ -34,7 +34,7 @@
         /* Sidebar base styles */
         .sidebar {
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 16rem !important; /* 256px */
+            width: 18rem !important; /* 288px - Diperbesar agar nama toko tidak terpotong */
         }
         
         /* Sidebar collapsed state */
@@ -70,6 +70,15 @@
             margin-right: 0 !important;
         }
         
+        /* Rotate chevron icon when collapsed */
+        .rotate-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .rotate-icon.rotated {
+            transform: rotate(180deg);
+        }
+        
         /* Main content margin adjustment */
         .content {
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -82,7 +91,7 @@
             }
             
             .content {
-                margin-left: 16rem;
+                margin-left: 18rem;
             }
             
             .content.sidebar-collapsed {
@@ -94,7 +103,7 @@
         @media (max-width: 1023px) {
             .sidebar {
                 transform: translateX(-100%);
-                width: 16rem !important;
+                width: 18rem !important;
             }
             
             .sidebar.-translate-x-full {
@@ -106,7 +115,7 @@
             }
             
             .sidebar.collapsed {
-                width: 16rem !important;
+                width: 18rem !important;
             }
             
             .content {
@@ -132,7 +141,7 @@
     @include('layouts.manajemen.sidebar')
     
     <!-- Sidebar Overlay for Mobile -->
-    <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()"></div>
+    <div id="mobileOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()"></div>
     
     <!-- Main Content -->
     <div class="content flex-1">
