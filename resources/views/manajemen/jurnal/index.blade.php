@@ -6,7 +6,10 @@
         <div class="space-y-6">
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 class="text-2xl font-bold text-gray-900">Jurnal Harian</h2>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Jurnal Harian</h2>
+                    <p class="text-sm text-gray-500 mt-1" id="currentDateTime"></p>
+                </div>
                 <div class="flex space-x-2">
                     <input type="date" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg"
                         value="{{ date('Y-m-d') }}">
@@ -329,7 +332,7 @@
       }
     }
 
-    // Load transactions from server - OPTIMIZED VERSION
+    // Load transactions from server
     async function loadTransactions() {
       try {
         const filterDate = document.getElementById('filterDate').value;
@@ -395,12 +398,44 @@
         const iconClass = transaction.jenis === 'pemasukan' ? 'fa-arrow-up' : 'fa-arrow-down';
         const amountClass = transaction.jenis === 'pemasukan' ? 'text-green-600' : 'text-red-600';
         const amountPrefix = transaction.jenis === 'pemasukan' ? '+' : '-';
+        
+        // Cek apakah ini transaksi dari kasir
+        const isTransaction = transaction.is_transaction || (transaction.id && transaction.id.toString().startsWith('transaksi_'));
+        const transactionId = transaction.id;
+
+        // Format keterangan khusus untuk transaksi kasir
+        let keterangan = transaction.keterangan;
+        if (isTransaction) {
+          keterangan += '<br><small class="text-blue-600 text-xs">Transaksi dari kasir</small>';
+        }
 
         const row = document.createElement('tr');
         row.setAttribute('data-type', transaction.jenis);
         row.setAttribute('data-category', transaction.kategori);
-        row.setAttribute('data-id', transaction.id);
+        row.setAttribute('data-id', transactionId);
+        row.setAttribute('data-is-transaction', isTransaction);
         
+        let actionButtons = '';
+        if (isTransaction) {
+          // Untuk transaksi dari kasir, tampilkan badge khusus
+          actionButtons = `
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              <i class="fas fa-cash-register mr-1"></i>
+              Dari Kasir
+            </span>
+          `;
+        } else {
+          // Hanya tampilkan tombol edit/hapus untuk transaksi manual
+          actionButtons = `
+            <button onclick="editTransaction(${transactionId})" class="text-green-600 hover:text-green-800 mr-2">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="deleteTransaction(${transactionId})" class="text-red-500 hover:text-red-700">
+              <i class="fas fa-trash"></i>
+            </button>
+          `;
+        }
+
         row.innerHTML = `
           <td class="px-6 py-4 text-sm text-gray-500">${formatDate(transaction.tgl)}</td>
           <td class="px-6 py-4 text-sm">
@@ -410,17 +445,12 @@
             </span>
           </td>
           <td class="px-6 py-4 text-sm text-gray-900">${transaction.kategori}</td>
-          <td class="px-6 py-4 text-sm text-gray-900">${transaction.keterangan}</td>
+          <td class="px-6 py-4 text-sm text-gray-900">${keterangan}</td>
           <td class="px-6 py-4 text-sm font-medium ${amountClass}">
             ${amountPrefix} ${formatRupiah(transaction.nominal)}
           </td>
           <td class="px-6 py-4">
-            <button onclick="editTransaction(${transaction.id})" class="text-green-600 hover:text-green-800 mr-2">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button onclick="deleteTransaction(${transaction.id})" class="text-red-500 hover:text-red-700">
-              <i class="fas fa-trash"></i>
-            </button>
+            ${actionButtons}
           </td>
         `;
       
@@ -428,7 +458,7 @@
       });
     }
 
-    // Update summary from server - OPTIMIZED VERSION
+    // Update summary from server
     async function updateSummary() {
       try {
         const filterDate = document.getElementById('filterDate').value;
@@ -485,7 +515,7 @@
       }
     }
 
-    // Open transaction modal - DIUBAH: tanpa parameter type
+    // Open transaction modal
     function openTransactionModal() {
       currentEditId = null;
       const modal = document.getElementById('transactionModal');
@@ -515,9 +545,15 @@
       document.body.style.overflow = 'hidden';
     }
 
-    // Edit transaction - OPTIMIZED VERSION
+    // Edit transaction
     async function editTransaction(id) {
       try {
+        // Cek apakah ini transaksi dari kasir
+        if (id.toString().startsWith('transaksi_')) {
+          alert('Transaksi dari kasir tidak dapat diedit dari halaman ini');
+          return;
+        }
+
         // Gunakan route resource show
         const response = await fetch(`/management/jurnal/${id}`);
         
@@ -564,8 +600,14 @@
       }
     }
 
-    // Delete transaction - OPTIMIZED VERSION
+    // Delete transaction
     async function deleteTransaction(id) {
+      // Cek apakah ini transaksi dari kasir
+      if (id.toString().startsWith('transaksi_')) {
+        alert('Transaksi dari kasir tidak dapat dihapus dari halaman ini');
+        return;
+      }
+
       if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
         return;
       }
@@ -594,7 +636,7 @@
       }
     }
 
-    // Handle form submission - OPTIMIZED VERSION
+    // Handle form submission
     document.getElementById('transactionForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
@@ -738,5 +780,5 @@
         closeTransactionModal();
       }
     });
-  </script>
+</script>
 @endsection
