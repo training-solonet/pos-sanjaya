@@ -106,14 +106,14 @@ class DashboardController extends Controller
         // 8. Data penjualan per jam hari ini
         $penjualanPerJam = [];
         $labelJam = [];
-        
+
         for ($hour = 8; $hour <= 17; $hour++) {
             $labelJam[] = sprintf('%02d:00', $hour);
-            
+
             $count = Transaksi::whereDate('tgl', $today)
                 ->whereRaw('HOUR(created_at) = ?', [$hour])
                 ->count();
-            
+
             $penjualanPerJam[] = $count;
         }
 
