@@ -53,24 +53,36 @@
                       <div class="flex items-start space-x-3">
                         <!-- Icon -->
                         <div class="flex-shrink-0">
-                          @if($notif['color'] === 'red')
-                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                              <i class="fas fa-cookie-bite text-red-600"></i>
-                            </div>
+                          @if($notif['type'] === 'bahan_baku')
+                            @if($notif['color'] === 'red')
+                              <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-box text-red-600"></i>
+                              </div>
+                            @else
+                              <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-box text-yellow-600"></i>
+                              </div>
+                            @endif
                           @else
-                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                              <i class="fas fa-cookie-bite text-yellow-600"></i>
-                            </div>
+                            @if($notif['color'] === 'red')
+                              <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-cookie-bite text-red-600"></i>
+                              </div>
+                            @else
+                              <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-cookie-bite text-yellow-600"></i>
+                              </div>
+                            @endif
                           @endif
                         </div>
 
                         <!-- Content -->
                         <div class="flex-1 min-w-0">
                           <p class="text-sm font-medium text-gray-900 truncate">{{ $notif['nama'] }}</p>
-                          <p class="text-xs text-gray-500 mt-0.5">Produk</p>
+                          <p class="text-xs text-gray-500 mt-0.5">{{ $notif['type'] === 'bahan_baku' ? 'Bahan Baku' : 'Produk' }}</p>
                           <div class="flex items-center mt-1 space-x-2">
                             <span class="text-xs {{ $notif['color'] === 'red' ? 'text-red-600' : 'text-yellow-600' }} font-medium">
-                              Stok: {{ $notif['stok'] }} pcs
+                              Stok: {{ $notif['stok'] }} {{ $notif['satuan'] }}
                             </span>
                             <span class="text-xs text-gray-400">•</span>
                             <span class="text-xs px-2 py-0.5 rounded-full {{ $notif['color'] === 'red' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700' }}">
