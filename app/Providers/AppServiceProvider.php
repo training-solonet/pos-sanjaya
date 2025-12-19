@@ -33,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
                     'notifications' => collect([]),
                     'notificationCount' => 0,
                 ]);
+
                 return;
             }
 
