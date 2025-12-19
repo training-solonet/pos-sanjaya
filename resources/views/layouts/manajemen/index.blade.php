@@ -3,17 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>POS Sanjaya - Management Dashboard</title>
-    
-    <!-- PERBAIKAN: Ganti CDN tailwind dengan yang tepat -->
+    <title>POS Sanjaya - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-    
-    <!-- PERBAIKAN: Pastikan Chart.js dimuat SEBELUM script kita -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    
     <script>
         tailwind.config = {
             theme: {
@@ -30,23 +25,11 @@
             },
         };
     </script>
-    
     <style>
         @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
-        
-        body { 
-            font-family: "Inter", sans-serif; 
-            background-color: #f9fafb;
-        }
-        
-        .scrollbar-hide { 
-            -ms-overflow-style: none; 
-            scrollbar-width: none; 
-        }
-        
-        .scrollbar-hide::-webkit-scrollbar { 
-            display: none; 
-        }
+        body { font-family: "Inter", sans-serif; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
         
         /* Sidebar base styles */
         .sidebar {
@@ -60,9 +43,18 @@
         }
         
         /* Hide text when collapsed */
-        .sidebar.collapsed .sidebar-text,
-        .sidebar.collapsed .sidebar-title,
-        .sidebar.collapsed .sidebar-user-info,
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        
+        .sidebar.collapsed .sidebar-title {
+            display: none;
+        }
+        
+        .sidebar.collapsed .sidebar-user-info {
+            display: none;
+        }
+        
         .sidebar.collapsed .sidebar-logout-btn {
             display: none;
         }
@@ -130,27 +122,6 @@
         .rotate-icon.rotated {
             transform: rotate(180deg);
         }
-        
-        /* PERBAIKAN: Custom styles untuk chart */
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-        }
-        
-        /* PERBAIKAN: Styling untuk tombol chart period */
-        .chart-period-btn.active {
-            background-color: #10b981 !important;
-            color: white !important;
-        }
-        
-        .chart-period-btn {
-            transition: all 0.2s ease;
-        }
-        
-        .chart-period-btn:hover {
-            transform: translateY(-1px);
-        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -160,21 +131,25 @@
     <!-- Sidebar -->
     @include('layouts.manajemen.sidebar')
     
+    <!-- Sidebar Overlay for Mobile -->
+    <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()"></div>
+    
     <!-- Main Content -->
     <div class="content flex-1">
         <!-- Header -->
         @include('layouts.manajemen.header')
         
         <!-- Page Content -->
-        <div class="min-h-screen bg-gray-50">
-            @yield('content')
-        </div>
+        <main class="p-4 sm:p-6 lg:p-8">
+            <div class="space-y-6">
+                @yield('content')
+            </div>
+        </main>
     </div>
     
-    <!-- PERBAIKAN: Pastikan script dashboard di-load di sini -->
     @yield('js')
     
-    <!-- PERBAIKAN: Script umum untuk semua halaman management -->
+    <!-- PERBAIKAN: Tambahkan script untuk update waktu di layout utama -->
     <script>
         let sidebarOpen = false;
         let sidebarCollapsed = false;
@@ -185,6 +160,8 @@
             const overlay = document.getElementById("mobileOverlay");
             const content = document.querySelector('.content');
             const toggleIcon = document.getElementById('desktopToggleIcon');
+            
+            console.log('Toggle sidebar clicked, width:', window.innerWidth);
             
             if (!sidebar) {
                 console.error('Sidebar element not found!');
@@ -198,6 +175,7 @@
                     overlay.classList.toggle("hidden");
                 }
                 sidebarOpen = !sidebar.classList.contains("-translate-x-full");
+                console.log('Mobile: sidebar open:', sidebarOpen);
             } else {
                 // Desktop behavior - collapse/expand
                 sidebar.classList.toggle('collapsed');
@@ -208,6 +186,7 @@
                     toggleIcon.classList.toggle('rotated');
                 }
                 sidebarCollapsed = sidebar.classList.contains('collapsed');
+                console.log('Desktop: sidebar collapsed:', sidebarCollapsed);
                 
                 // Save state to localStorage
                 localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
@@ -222,9 +201,13 @@
             const savedState = localStorage.getItem('sidebarCollapsed');
             
             if (savedState === 'true' && window.innerWidth >= 1024) {
-                if (sidebar) sidebar.classList.add('collapsed');
-                if (content) content.classList.add('sidebar-collapsed');
-                if (toggleIcon) toggleIcon.classList.add('rotated');
+                sidebar.classList.add('collapsed');
+                if (content) {
+                    content.classList.add('sidebar-collapsed');
+                }
+                if (toggleIcon) {
+                    toggleIcon.classList.add('rotated');
+                }
                 sidebarCollapsed = true;
             }
         }
@@ -241,6 +224,7 @@
             const year = now.getFullYear();
             const hours = now.getHours().toString().padStart(2, '0');
             const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
             
             const dateTimeElement = document.getElementById('currentDateTime');
             if (dateTimeElement) {
@@ -249,28 +233,26 @@
         }
         
         // Handle window resize
-        function handleWindowResize() {
+        window.addEventListener("resize", function() {
             const sidebar = document.getElementById("sidebar");
             const overlay = document.getElementById("mobileOverlay");
             const content = document.querySelector('.content');
             
             if (window.innerWidth >= 1024) {
-                if (sidebar) sidebar.classList.remove("-translate-x-full");
-                if (overlay) overlay.classList.add("hidden");
+                sidebar.classList.remove("-translate-x-full");
+                overlay.classList.add("hidden");
                 sidebarOpen = false;
                 // Restore collapsed state on desktop
                 restoreSidebarState();
             } else {
-                if (sidebar) {
-                    sidebar.classList.add("-translate-x-full");
-                    sidebar.classList.remove('collapsed');
-                }
-                if (content) content.classList.remove('sidebar-collapsed');
-                if (overlay) overlay.classList.add("hidden");
+                sidebar.classList.add("-translate-x-full");
+                sidebar.classList.remove('collapsed');
+                content.classList.remove('sidebar-collapsed');
+                overlay.classList.add("hidden");
                 sidebarOpen = false;
                 sidebarCollapsed = false;
             }
-        }
+        });
         
         // Close sidebar when clicking outside on mobile
         document.addEventListener("click", function(e) {
@@ -286,28 +268,26 @@
             });
             
             if (window.innerWidth < 1024 &&
-                sidebar &&
                 !sidebar.contains(e.target) &&
                 !clickedMenuButton &&
                 !sidebar.classList.contains("-translate-x-full")) {
                 sidebar.classList.add("-translate-x-full");
-                if (overlay) overlay.classList.add("hidden");
+                overlay.classList.add("hidden");
                 sidebarOpen = false;
             }
         });
         
-        // Initialize on page load
+        // Initialize datetime on page load
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing...');
             updateDateTime();
-            // Update waktu setiap menit
-            setInterval(updateDateTime, 60000);
-            restoreSidebarState();
+            setInterval(updateDateTime, 1000); // Update setiap 1 detik
+            restoreSidebarState(); // Restore sidebar state
             
-            // Add window resize listener
-            window.addEventListener('resize', handleWindowResize);
-            
-            // Initialize handle on load
-            handleWindowResize();
+            // Debug: check if sidebar element exists
+            const sidebar = document.getElementById("sidebar");
+            console.log('Sidebar element:', sidebar);
+            console.log('Initial sidebar classes:', sidebar ? sidebar.className : 'not found');
         });
     </script>
 </body>
