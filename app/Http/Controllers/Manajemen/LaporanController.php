@@ -122,7 +122,7 @@ class LaporanController extends Controller
         // RUMUS: ((Total Penjualan - Total HPP/Biaya) / Total Penjualan) × 100%
         $currentMonthTransactions = Transaksi::whereBetween('tgl', [$currentMonthStart->toDateString(), Carbon::now()->toDateString()])->pluck('id');
         $totalRevenue = $currentTotal; // Total Penjualan Bulanan
-        
+
         // Hitung HPP dari resep produk yang terjual
         $totalCost = DB::table('detail_transaksi')
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
@@ -139,7 +139,7 @@ class LaporanController extends Controller
                 ) as total_cost')
             )
             ->value('total_cost') ?? 0;
-            
+
         // Jika tidak ada data HPP dari resep, gunakan estimasi 60% dari harga jual
         if ($totalCost == 0 && $totalRevenue > 0) {
             $totalCost = $totalRevenue * 0.6;
