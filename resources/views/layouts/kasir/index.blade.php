@@ -158,7 +158,7 @@
         @include('layouts.kasir.header')
 
         <!-- Scrollable page content area; header is sticky so we subtract its height (4rem) -->
-        <div style="height: calc(100vh - 4rem);" class="overflow-auto">
+        <div style="min-height: calc(100vh - 4rem);" class="overflow-auto">
             <main class="p-4 sm:p-6 lg:p-8">
                 <div class="space-y-6">
                     @yield('content')
