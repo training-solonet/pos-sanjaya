@@ -570,7 +570,7 @@
                                         <p class="text-xs text-gray-600">
                                             @php
                                                 $target = $yesterdaySales * 1.1; // 10% lebih tinggi dari kemarin
-                                                $progress = $todaySales > 0 ? min(100, ($todaySales / $target) * 100) : 0;
+                                                $progress = ($target > 0 && $todaySales > 0) ? min(100, ($todaySales / $target) * 100) : 0;
                                             @endphp
                                             <span class="font-medium">Rp {{ number_format($target, 0, ',', '.') }}</span>
                                             <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
