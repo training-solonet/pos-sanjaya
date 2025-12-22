@@ -101,7 +101,6 @@ class LaporanController extends Controller
 
         // PERHITUNGAN GROWTH (PERTUMBUHAN) BULANAN
         // Menghitung persentase pertumbuhan penjualan bulan ini dibanding bulan lalu
-
         // Monthly report (this month vs previous month)
         $currentMonthStart = Carbon::now()->startOfMonth();
         $previousMonthStart = Carbon::now()->subMonth()->startOfMonth();
@@ -109,7 +108,6 @@ class LaporanController extends Controller
         $previousTotal = Transaksi::whereBetween('tgl', [$previousMonthStart->toDateString(), $currentMonthStart->copy()->subDay()->toDateString()])->sum('bayar');
 
         // RUMUS GROWTH: ((Penjualan Bulan Ini - Penjualan Bulan Lalu) / Penjualan Bulan Lalu) × 100%
-        // Calculate growth: if previous month has data, calculate percentage, otherwise show as new growth
         if ($previousTotal > 0) {
             $growth = round((($currentTotal - $previousTotal) / $previousTotal) * 100, 1);
         } elseif ($currentTotal > 0) {
@@ -124,9 +122,28 @@ class LaporanController extends Controller
         // RUMUS: ((Total Penjualan - Total HPP/Biaya) / Total Penjualan) × 100%
         $currentMonthTransactions = Transaksi::whereBetween('tgl', [$currentMonthStart->toDateString(), Carbon::now()->toDateString()])->pluck('id');
         $totalRevenue = $currentTotal; // Total Penjualan Bulanan
-        $totalCost = DB::table('detail_transaksi') // Total HPP/Biaya Bulanan
-            ->whereIn('id_transaksi', $currentMonthTransactions)
-            ->sum(DB::raw('harga * jumlah'));
+        
+        // Hitung HPP dari resep produk yang terjual
+        $totalCost = DB::table('detail_transaksi')
+            ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
+            ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
+            ->whereIn('detail_transaksi.id_transaksi', $currentMonthTransactions)
+            ->select(
+                DB::raw('SUM(
+                    COALESCE(
+                        (SELECT SUM(rr.harga * rr.qty) 
+                         FROM rincian_resep rr 
+                         WHERE rr.id_resep = resep.id),
+                        detail_transaksi.harga * 0.6
+                    ) * detail_transaksi.jumlah
+                ) as total_cost')
+            )
+            ->value('total_cost') ?? 0;
+            
+        // Jika tidak ada data HPP dari resep, gunakan estimasi 60% dari harga jual
+        if ($totalCost == 0 && $totalRevenue > 0) {
+            $totalCost = $totalRevenue * 0.6;
+        }
 
         // PERHITUNGAN MARGIN: (Penjualan - HPP) / Penjualan × 100%
         $profitMargin = $totalRevenue > 0 ? round((($totalRevenue - $totalCost) / $totalRevenue) * 100, 1) : null;
@@ -149,14 +166,20 @@ class LaporanController extends Controller
         $todayTransactions = Transaksi::whereBetween('tgl', [$todayStart, $todayEnd])->pluck('id');
 
         // PERHITUNGAN HPP (HARGA POKOK PENJUALAN) HARIAN
-        // HPP dihitung dari harga bahan baku yang digunakan dalam resep produk yang terjual
+        // HPP dihitung dari total biaya bahan baku dalam resep produk yang terjual
         $todayCost = DB::table('detail_transaksi')
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
             ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
-            ->leftJoin('rincian_resep', 'resep.id', '=', 'rincian_resep.id_resep')
             ->whereIn('detail_transaksi.id_transaksi', $todayTransactions)
             ->select(
-                DB::raw('SUM(COALESCE(rincian_resep.harga, detail_transaksi.harga * 0.6) * detail_transaksi.jumlah) as total_cost')
+                DB::raw('SUM(
+                    COALESCE(
+                        (SELECT SUM(rr.harga * rr.qty) 
+                         FROM rincian_resep rr 
+                         WHERE rr.id_resep = resep.id),
+                        detail_transaksi.harga * 0.6
+                    ) * detail_transaksi.jumlah
+                ) as total_cost')
             )
             ->value('total_cost') ?? 0;
 

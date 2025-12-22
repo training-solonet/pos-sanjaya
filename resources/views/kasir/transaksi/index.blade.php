@@ -4,11 +4,8 @@
 @section('page-description', 'Sistem kasir dan penjualan')
 
 @section('content')
-    <!-- Main Content -->
-    {{-- <div class="main-content min-h-screen flex flex-col"> --}}
-        <!-- Page Content -->
-        <main class="flex-1 p-4 sm:p-6 bg-gray-50">
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 h-full">
+    <!-- Transaksi Page Content -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 h-full">
                 <!-- Card Katalog Produk -->
                 <div class="xl:col-span-2">
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 h-full flex flex-col">
@@ -372,10 +369,9 @@
                     </div>
                 </div>
             </div>
-        </main>
 
         <!-- Mobile Cart Toggle (Hidden on desktop) -->
-        <div class="lg:hidden fixed bottom-4 right-4">
+        <div class="lg:hidden fixed bottom-4 right-4 z-40">
             <button
                 class="bg-gradient-to-r from-green-400 to-green-700 hover:from-green-500 hover:to-green-800 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center"
                 onclick="toggleMobileCart()">
@@ -795,7 +791,6 @@
                 overlay.classList.remove('show');
                 hamburger.classList.remove('active');
             }
-            */
 
             // Header action functions
             function showTransactionHistory() {

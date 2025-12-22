@@ -717,12 +717,6 @@
                     const growthPercent = serverMonthly.growthPercent;
                     growth.textContent = growthPercent === null ? '-' : (growthPercent > 0 ? '+' : '') + growthPercent + '%';
                     
-                    // ========================================
-                    // PEWARNAAN BERDASARKAN GROWTH (PERTUMBUHAN)
-                    // ========================================
-                    // Hijau: Growth >= 50% (Pertumbuhan sangat baik)
-                    // Kuning: Growth 0-49% (Pertumbuhan normal)
-                    // Merah: Growth < 0% (Penurunan penjualan)
                     growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
                     if (growthPercent !== null) {
                         if (growthPercent >= 50) {
@@ -735,7 +729,7 @@
                     } else {
                         growth.classList.add('text-success');
                     }
-                    // ========================================
+                   
                 }
                 if (profitMargin) {
                     const marginValue = serverMonthly.profitMargin;
