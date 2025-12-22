@@ -119,34 +119,31 @@ class LaporanController extends Controller
         // PERHITUNGAN PROFIT MARGIN (MARGIN KEUNTUNGAN) BULANAN
 
         // Profit Margin mengukur persentase keuntungan dari total penjualan
-        // RUMUS: ((Total Penjualan - Total HPP/Biaya) / Total Penjualan) × 100%
+        // RUMUS: ((Total Penjualan - Total HPP/FoodCost) / Total Penjualan) × 100%
         $currentMonthTransactions = Transaksi::whereBetween('tgl', [$currentMonthStart->toDateString(), Carbon::now()->toDateString()])->pluck('id');
         $totalRevenue = $currentTotal; // Total Penjualan Bulanan
 
-        // Hitung HPP dari resep produk yang terjual
+        // Hitung Total HPP (FoodCost) dari rincian_resep untuk produk yang terjual bulan ini
+        // FoodCost per produk = SUM(qty * harga) dari rincian_resep
         $totalCost = DB::table('detail_transaksi')
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
             ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
             ->whereIn('detail_transaksi.id_transaksi', $currentMonthTransactions)
             ->select(
                 DB::raw('SUM(
+                    detail_transaksi.jumlah * 
                     COALESCE(
-                        (SELECT SUM(rr.harga * rr.qty) 
+                        (SELECT SUM(rr.qty * rr.harga) 
                          FROM rincian_resep rr 
                          WHERE rr.id_resep = resep.id),
-                        detail_transaksi.harga * 0.6
-                    ) * detail_transaksi.jumlah
+                        0
+                    )
                 ) as total_cost')
             )
             ->value('total_cost') ?? 0;
 
-        // Jika tidak ada data HPP dari resep, gunakan estimasi 60% dari harga jual
-        if ($totalCost == 0 && $totalRevenue > 0) {
-            $totalCost = $totalRevenue * 0.6;
-        }
-
-        // PERHITUNGAN MARGIN: (Penjualan - HPP) / Penjualan × 100%
-        $profitMargin = $totalRevenue > 0 ? round((($totalRevenue - $totalCost) / $totalRevenue) * 100, 1) : null;
+        // PERHITUNGAN MARGIN: (Penjualan - FoodCost) / Penjualan × 100%
+        $profitMargin = $totalRevenue > 0 && $totalCost > 0 ? round((($totalRevenue - $totalCost) / $totalRevenue) * 100, 1) : null;
 
         $monthlyReport = [
             'monthLabel' => Carbon::now()->format('F Y'),
@@ -157,7 +154,7 @@ class LaporanController extends Controller
         ];
 
         // PERHITUNGAN PROFIT MARGIN (MARGIN KEUNTUNGAN) HARIAN
-        // Menghitung profit margin untuk hari ini berdasarkan HPP dari resep
+        // Menghitung profit margin untuk hari ini berdasarkan FoodCost dari resep
         $todayStart = Carbon::today();
         $todayEnd = Carbon::today()->endOfDay();
 
@@ -165,31 +162,32 @@ class LaporanController extends Controller
         $todayTotal = Transaksi::whereBetween('tgl', [$todayStart, $todayEnd])->sum('bayar') ?? 0;
         $todayTransactions = Transaksi::whereBetween('tgl', [$todayStart, $todayEnd])->pluck('id');
 
-        // PERHITUNGAN HPP (HARGA POKOK PENJUALAN) HARIAN
-        // HPP dihitung dari total biaya bahan baku dalam resep produk yang terjual
+        // PERHITUNGAN FOODCOST (HARGA POKOK PENJUALAN) HARIAN
+        // FoodCost dihitung dari SUM(qty * harga) di rincian_resep untuk produk yang terjual
         $todayCost = DB::table('detail_transaksi')
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
             ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
             ->whereIn('detail_transaksi.id_transaksi', $todayTransactions)
             ->select(
                 DB::raw('SUM(
+                    detail_transaksi.jumlah * 
                     COALESCE(
-                        (SELECT SUM(rr.harga * rr.qty) 
+                        (SELECT SUM(rr.qty * rr.harga) 
                          FROM rincian_resep rr 
                          WHERE rr.id_resep = resep.id),
-                        detail_transaksi.harga * 0.6
-                    ) * detail_transaksi.jumlah
+                        0
+                    )
                 ) as total_cost')
             )
             ->value('total_cost') ?? 0;
 
-        // Jika tidak ada data HPP dari resep, gunakan estimasi 60% dari harga jual
-        if ($todayCost == 0 && $todayTotal > 0) {
-            $todayCost = $todayTotal * 0.6; // Estimasi HPP 60% dari harga jual
+        // RUMUS PROFIT MARGIN HARIAN: ((Penjualan Hari Ini - FoodCost Hari Ini) / Penjualan Hari Ini) × 100%
+        // Jika ada penjualan tapi foodcost = 0, berarti margin 100% (tidak ada biaya produksi atau resep belum diinput)
+        if ($todayTotal > 0) {
+            $todayProfitMargin = round((($todayTotal - $todayCost) / $todayTotal) * 100, 1);
+        } else {
+            $todayProfitMargin = null; // Tidak ada penjualan
         }
-
-        // RUMUS PROFIT MARGIN HARIAN: ((Penjualan Hari Ini - HPP Hari Ini) / Penjualan Hari Ini) × 100%
-        $todayProfitMargin = $todayTotal > 0 ? round((($todayTotal - $todayCost) / $todayTotal) * 100, 1) : null;
 
         $dailyReport = [
             'date' => Carbon::today()->format('Y-m-d'),
@@ -197,6 +195,63 @@ class LaporanController extends Controller
             'totalCost' => (int) $todayCost,
             'profit' => (int) ($todayTotal - $todayCost),
             'profitMargin' => $todayProfitMargin,
+        ];
+
+        // PERHITUNGAN LAPORAN MINGGUAN (WEEKLY REPORT)
+        // Menghitung penjualan minggu ini vs minggu lalu
+        $thisWeekStart = Carbon::now()->startOfWeek(); // Senin minggu ini
+        $thisWeekEnd = Carbon::now()->endOfWeek(); // Minggu minggu ini
+        $lastWeekStart = Carbon::now()->subWeek()->startOfWeek(); // Senin minggu lalu
+        $lastWeekEnd = Carbon::now()->subWeek()->endOfWeek(); // Minggu minggu lalu
+
+        // Total penjualan minggu ini
+        $thisWeekTotal = Transaksi::whereBetween('tgl', [$thisWeekStart, $thisWeekEnd])->sum('bayar') ?? 0;
+
+        // Total penjualan minggu lalu
+        $lastWeekTotal = Transaksi::whereBetween('tgl', [$lastWeekStart, $lastWeekEnd])->sum('bayar') ?? 0;
+
+        // RUMUS GROWTH MINGGUAN: ((Penjualan Minggu Ini - Penjualan Minggu Lalu) / Penjualan Minggu Lalu) × 100%
+        if ($lastWeekTotal > 0) {
+            $weeklyGrowth = round((($thisWeekTotal - $lastWeekTotal) / $lastWeekTotal) * 100, 1);
+        } elseif ($thisWeekTotal > 0) {
+            $weeklyGrowth = 100; // 100% growth from zero
+        } else {
+            $weeklyGrowth = null; // No data at all
+        }
+
+        // Hitung FoodCost minggu ini untuk profit margin
+        $thisWeekTransactions = Transaksi::whereBetween('tgl', [$thisWeekStart, $thisWeekEnd])->pluck('id');
+        $thisWeekCost = DB::table('detail_transaksi')
+            ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
+            ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
+            ->whereIn('detail_transaksi.id_transaksi', $thisWeekTransactions)
+            ->select(
+                DB::raw('SUM(
+                    detail_transaksi.jumlah * 
+                    COALESCE(
+                        (SELECT SUM(rr.qty * rr.harga) 
+                         FROM rincian_resep rr 
+                         WHERE rr.id_resep = resep.id),
+                        0
+                    )
+                ) as total_cost')
+            )
+            ->value('total_cost') ?? 0;
+
+        // RUMUS PROFIT MARGIN MINGGUAN: ((Penjualan Minggu Ini - FoodCost Minggu Ini) / Penjualan Minggu Ini) × 100%
+        // Jika ada penjualan tapi foodcost = 0, berarti margin 100% (tidak ada biaya produksi atau resep belum diinput)
+        if ($thisWeekTotal > 0) {
+            $weeklyProfitMargin = round((($thisWeekTotal - $thisWeekCost) / $thisWeekTotal) * 100, 1);
+        } else {
+            $weeklyProfitMargin = null; // Tidak ada penjualan
+        }
+
+        $weeklyReport = [
+            'weekLabel' => $thisWeekStart->format('d M').' - '.$thisWeekEnd->format('d M Y'),
+            'total' => (int) $thisWeekTotal,
+            'growthPercent' => $weeklyGrowth,
+            'lastWeekTotal' => (int) $lastWeekTotal,
+            'profitMargin' => $weeklyProfitMargin,
         ];
 
         return view('manajemen.laporan.index', compact(
@@ -209,6 +264,7 @@ class LaporanController extends Controller
             'productsChart',
             'monthlyReport',
             'dailyReport',
+            'weeklyReport',
             'topSellerName',
             'topSellerQty',
             'highestRevenueName',

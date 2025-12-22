@@ -1,321 +1,338 @@
 @extends('layouts.kasir.index')
 
 @section('content')
-    <!-- Mobile Overlay -->
-    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+    <!-- Page Content -->
+    <div class="px-4 sm:px-6 lg:px-8 py-6">
+        <div class="space-y-6">
+            <!-- Welcome Section -->
+            <div class="bg-gradient-to-r from-green-400 to-green-700 rounded-xl shadow-lg p-8 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-2">Selamat Datang di POS Sanjaya</h2>
+                    </div>
+                    <div class="hidden md:block">
+                        <i class="fas fa-cash-register text-7xl text-white/20"></i>
+                    </div> 
+                </div>
+            </div>
 
-    <!-- Sidebar Overlay for Mobile -->
-    <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()"></div>
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Total Penjualan Hari Ini -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-600 mb-1">Penjualan Hari Ini</p>
+                            <p class="text-2xl font-bold text-gray-900 mb-2">Rp {{ number_format($penjualanHariIni, 0, ',', '.') }}</p>
+                            @if($persenPenjualan >= 0)
+                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>{{ abs($persenPenjualan) }}% dari kemarin</p>
+                            @else
+                                <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>{{ abs($persenPenjualan) }}% dari kemarin</p>
+                            @endif
+                        </div>
+                        <div class="w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-cash-register text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Main Content -->
-    <div class="content flex-1 lg:flex-1">
+                <!-- Total Transaksi -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-600 mb-1">Total Transaksi</p>
+                            <p class="text-2xl font-bold text-gray-900 mb-2">{{ $totalTransaksiHariIni }}</p>
+                            @if($persenTransaksi >= 0)
+                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>{{ abs($persenTransaksi) }}% dari kemarin</p>
+                            @else
+                                <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>{{ abs($persenTransaksi) }}% dari kemarin</p>
+                            @endif
+                        </div>
+                        <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-receipt text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
 
-                    <!-- Header Actions -->
-                    <div class="flex items-center space-x-4">
+                <!-- Produk Terjual -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-600 mb-1">Produk Terjual</p>
+                            <p class="text-2xl font-bold text-gray-900 mb-2">{{ $produkTerjualHariIni }}</p>
+                            @if($persenProdukTerjual >= 0)
+                                <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>{{ abs($persenProdukTerjual) }}% dari kemarin</p>
+                            @else
+                                <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>{{ abs($persenProdukTerjual) }}% dari kemarin</p>
+                            @endif
+                        </div>
+                        <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-box text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stok Rendah -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-600 mb-1">Stok Rendah</p>
+                            <p class="text-2xl font-bold text-gray-900 mb-2">{{ $stokRendah }}</p>
+                            <p class="text-sm text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Perlu restok</p>
+                        </div>
+                        <div class="w-14 h-14 bg-gradient-to-br from-red-400 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </header>
 
-        <!-- Page Content -->
-        <main class="px-4 sm:px-6 lg:px-8 pb-4">
-            <div class="space-y-4">
-                <!-- Welcome Section -->
-                <div class="bg-gradient-to-r from-green-400 to-green-700 rounded-lg p-6 text-white">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h2 class="text-2xl font-bold mb-2">Selamat Datang di POS Sanjaya</h2>
-                        </div>
-                        <div class="hidden md:block">
-                            <i class="fas fa-cash-register text-6xl text-black-200"></i>
-                        </div> 
-                    </div>
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">
+                        <i class="fas fa-bolt text-yellow-500 mr-2"></i>Aksi Cepat
+                    </h3>
                 </div>
-
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- Total Penjualan Hari Ini -->
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Penjualan Hari Ini</p>
-                                <p class="text-lg font-bold text-gray-900">Rp {{ number_format($penjualanHariIni, 0, ',', '.') }}</p>
-                                @if($persenPenjualan >= 0)
-                                    <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>{{ abs($persenPenjualan) }}% dari kemarin</p>
-                                @else
-                                    <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>{{ abs($persenPenjualan) }}% dari kemarin</p>
-                                @endif
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <!-- Transaksi Penjualan -->
+                    <a href="{{ route('kasir.transaksi.index') }}" class="group relative bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-6 hover:from-green-100 hover:to-green-200 hover:border-green-400 transition-all duration-300 hover:shadow-xl hover:scale-105">
+                        <div class="flex flex-col items-center text-center">
+                            <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                                <i class="fas fa-cash-register text-white text-2xl"></i>
                             </div>
-                            <div class="w-12 h-12 bg-gradient-to-r from-green-400 to-green-700 bg-opacity-10 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-cash-register text-white text-xl"></i>
+                            <h4 class="text-lg font-bold text-gray-900 mb-2">Transaksi Penjualan</h4>
+                            <p class="text-sm text-gray-600 mb-4 leading-relaxed">Proses penjualan produk dan cetak struk pembayaran</p>
+                            <div class="flex items-center space-x-2 text-green-600 font-semibold">
+                                <span class="text-sm">Mulai Transaksi</span>
+                                <i class="fas fa-arrow-right text-sm group-hover:translate-x-2 transition-transform"></i>
                             </div>
                         </div>
-                    </div>
+                    </a>
 
-                    <!-- Total Transaksi -->
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Total Transaksi</p>
-                                <p class="text-lg font-bold text-gray-900">{{ $totalTransaksiHariIni }}</p>
-                                @if($persenTransaksi >= 0)
-                                    <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>{{ abs($persenTransaksi) }}% dari kemarin</p>
-                                @else
-                                    <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>{{ abs($persenTransaksi) }}% dari kemarin</p>
-                                @endif
+                    <!-- Jurnal Harian -->
+                    <a href="{{ route('kasir.jurnal.index') }}" class="group relative bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-6 hover:from-blue-100 hover:to-blue-200 hover:border-blue-400 transition-all duration-300 hover:shadow-xl hover:scale-105">
+                        <div class="flex flex-col items-center text-center">
+                            <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                                <i class="fas fa-book text-white text-2xl"></i>
                             </div>
-                            <div class="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-receipt text-success text-xl"></i>
+                            <h4 class="text-lg font-bold text-gray-900 mb-2">Jurnal Harian</h4>
+                            <p class="text-sm text-gray-600 mb-4 leading-relaxed">Riwayat transaksi dan laporan penjualan harian</p>
+                            <div class="flex items-center space-x-2 text-blue-600 font-semibold">
+                                <span class="text-sm">Buka Jurnal</span>
+                                <i class="fas fa-arrow-right text-sm group-hover:translate-x-2 transition-transform"></i>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Produk Terjual -->
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Produk Terjual</p>
-                                <p class="text-lg font-bold text-gray-900">{{ $produkTerjualHariIni }}</p>
-                                @if($persenProdukTerjual >= 0)
-                                    <p class="text-sm text-success"><i class="fas fa-arrow-up mr-1"></i>{{ abs($persenProdukTerjual) }}% dari kemarin</p>
-                                @else
-                                    <p class="text-sm text-danger"><i class="fas fa-arrow-down mr-1"></i>{{ abs($persenProdukTerjual) }}% dari kemarin</p>
-                                @endif
-                            </div>
-                            <div class="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-box text-accent text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Stok Rendah -->
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Stok Rendah</p>
-                                <p class="text-lg font-bold text-gray-900">{{ $stokRendah }}</p>
-                                <p class="text-sm text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Perlu restok</p>
-                            </div>
-                            <div class="w-12 h-12 bg-danger/10 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-exclamation-triangle text-danger text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
+                    </a>
                 </div>
+            </div>
 
-                <!-- Quick Actions -->
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Aksi Cepat</h3>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Transaksi Penjualan -->
-                        <a href="{{ route('kasir.transaksi.index') }}" class="group relative bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4 hover:from-green-100 hover:to-green-200 transition-all duration-300 hover:shadow-md hover:scale-102">
-                            <div class="flex flex-col items-center text-center">
-                                <div class="w-12 h-12 bg-gradient-to-r from-green-400 to-green-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 shadow-md">
-                                    <i class="fas fa-cash-register text-white text-lg"></i>
-                                </div>
-                                <h4 class="text-base font-bold text-gray-900 mb-2">Transaksi Penjualan</h4>
-                                <p class="text-xs text-gray-600 mb-3 leading-relaxed">Proses penjualan produk dan cetak struk pembayaran</p>
-                                <div class="flex items-center space-x-2 text-green-600 font-medium">
-                                    <span class="text-xs">Mulai Transaksi</span>
-                                    <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
-                                </div>
-                            </div>
-                        </a>
-
-                        <!-- Jurnal Harian -->
-                        <a href="{{ route('kasir.jurnal.index') }}" class="group relative bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4 hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover:shadow-md hover:scale-102">
-                            <div class="flex flex-col items-center text-center">
-                                <div class="w-12 h-12 bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 shadow-md">
-                                    <i class="fas fa-book text-white text-lg"></i>
-                                </div>
-                                <h4 class="text-base font-bold text-gray-900 mb-2">Jurnal Harian</h4>
-                                <p class="text-xs text-gray-600 mb-3 leading-relaxed">Riwayat transaksi dan laporan penjualan harian</p>
-                                <div class="flex items-center space-x-2 text-blue-600 font-medium">
-                                    <span class="text-xs">Buka Jurnal</span>
-                                    <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Recent Transactions & Top Products -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Recent Transactions -->
-                    <div class="bg-white rounded-lg border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Transaksi Terakhir</h3>
-                        </div>
-                        <div class="p-6">
-                            <div class="space-y-4">
-                                @forelse($transaksiTerakhir as $index => $transaksi)
-                                    @php
-                                        $bgColors = [
-                                            'bg-gradient-to-r from-green-400 to-green-700 bg-opacity-10',
-                                            'bg-success/10',
-                                            'bg-accent/10'
-                                        ];
-                                        $iconColors = ['text-white', 'text-success', 'text-accent'];
-                                        $bgColor = $bgColors[$index % 3];
-                                        $iconColor = $iconColors[$index % 3];
-                                        $totalItem = $transaksi->detailTransaksi->sum('jumlah');
-                                    @endphp
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 {{ $bgColor }} rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-receipt {{ $iconColor }}"></i>
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-900">#TRX-{{ str_pad($transaksi->id, 3, '0', STR_PAD_LEFT) }}</p>
-                                                <p class="text-xs text-gray-500">{{ $totalItem }} item • {{ $transaksi->created_at->format('H:i') }}</p>
-                                            </div>
-                                        </div>
-                                        <p class="text-sm font-bold text-gray-900">Rp {{ number_format($transaksi->bayar, 0, ',', '.') }}</p>
-                                    </div>
-                                @empty
-                                    <div class="text-center py-4">
-                                        <p class="text-sm text-gray-500">Belum ada transaksi hari ini</p>
-                                    </div>
-                                @endforelse
-                            </div>
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <a href="{{ route('kasir.jurnal.index') }}" class="text-sm text-green-600 hover:text-green-800 font-medium">Lihat Semua Transaksi →</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Top Products -->
-                    <div class="bg-white rounded-lg border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Produk Terlaris</h3>
-                        </div>
-                        <div class="p-6">
-                            <div class="space-y-4">
-                                @forelse($produkTerlaris as $item)
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-box text-gray-400"></i>
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-900">{{ $item->produk->nama }}</p>
-                                                <p class="text-xs text-gray-500">{{ $item->total_terjual }} terjual</p>
-                                            </div>
-                                        </div>
-                                        <p class="text-sm font-bold text-gray-900">Rp {{ number_format($item->produk->harga, 0, ',', '.') }}</p>
-                                    </div>
-                                @empty
-                                    <div class="text-center py-4">
-                                        <p class="text-sm text-gray-500">Belum ada produk terjual hari ini</p>
-                                    </div>
-                                @endforelse
-                            </div>
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <a href="{{ route('kasir.jurnal.index') }}" class="text-sm text-green-600 hover:text-green-800 font-medium">Lihat Laporan Lengkap →</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sales Chart -->
-                <div class="bg-white rounded-lg border border-gray-200">
-                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Grafik Penjualan</h3>
-                            <p class="text-sm text-gray-500">Ringkasan penjualan 7 hari terakhir</p>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <button onclick="changeChartPeriod('7days')" class="chart-period-btn active px-3 py-1 text-xs bg-green-100 text-green-600 rounded-lg">7 Hari</button>
-                            <button onclick="changeChartPeriod('30days')" class="chart-period-btn px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">30 Hari</button>
-                        </div>
+            <!-- Recent Transactions & Top Products -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Recent Transactions -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                        <h3 class="text-xl font-bold text-gray-900">
+                            <i class="fas fa-history text-green-600 mr-2"></i>Transaksi Terakhir
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Daftar transaksi terbaru hari ini</p>
                     </div>
                     <div class="p-6">
-                        <div class="h-80 relative">
-                            <canvas id="salesChart"></canvas>
+                        <div class="space-y-4">
+                            @forelse($transaksiTerakhir as $index => $transaksi)
+                                @php
+                                    $bgColors = [
+                                        'bg-gradient-to-br from-green-100 to-green-50',
+                                        'bg-gradient-to-br from-blue-100 to-blue-50',
+                                        'bg-gradient-to-br from-purple-100 to-purple-50'
+                                    ];
+                                    $iconColors = ['text-green-600', 'text-blue-600', 'text-purple-600'];
+                                    $bgColor = $bgColors[$index % 3];
+                                    $iconColor = $iconColors[$index % 3];
+                                    $totalItem = $transaksi->detailTransaksi->sum('jumlah');
+                                @endphp
+                                <div class="flex items-center justify-between p-4 {{ $bgColor }} rounded-xl hover:shadow-md transition-shadow">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                                            <i class="fas fa-receipt {{ $iconColor }} text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-900">#TRX-{{ str_pad($transaksi->id, 3, '0', STR_PAD_LEFT) }}</p>
+                                            <p class="text-xs text-gray-600">{{ $totalItem }} item • {{ $transaksi->created_at->format('H:i') }}</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-base font-bold text-gray-900">Rp {{ number_format($transaksi->bayar, 0, ',', '.') }}</p>
+                                </div>
+                            @empty
+                                <div class="text-center py-12">
+                                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-inbox text-gray-400 text-3xl"></i>
+                                    </div>
+                                    <p class="text-sm text-gray-500 font-medium">Belum ada transaksi hari ini</p>
+                                </div>
+                            @endforelse
                         </div>
-                        <!-- Chart Summary -->
-                        <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-                            <div class="text-center">
-                                <div class="flex items-center justify-center space-x-2 mb-2">
-                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                                    <span class="text-sm text-gray-600">Total Penjualan</span>
-                                </div>
-                                <p class="text-lg font-bold text-gray-900" id="totalSales">Rp 0</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="flex items-center justify-center space-x-2 mb-2">
-                                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                    <span class="text-sm text-gray-600">Rata-rata Harian</span>
-                                </div>
-                                <p class="text-lg font-bold text-gray-900" id="avgDaily">Rp 0</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="flex items-center justify-center space-x-2 mb-2">
-                                    <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                    <span class="text-sm text-gray-600">Transaksi</span>
-                                </div>
-                                <p class="text-lg font-bold text-gray-900" id="totalTransactions">0</p>
-                            </div>
+                        @if($transaksiTerakhir->count() > 0)
+                        <div class="mt-6 pt-4 border-t border-gray-200">
+                            <a href="{{ route('kasir.jurnal.index') }}" class="flex items-center justify-center text-sm text-green-600 hover:text-green-800 font-semibold group">
+                                <span>Lihat Semua Transaksi</span>
+                                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                            </a>
                         </div>
+                        @endif
                     </div>
                 </div>
 
-                <!-- Additional Analytics Charts -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Top Products Chart -->
-                    <div class="bg-white rounded-lg border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Produk Terlaris</h3>
-                            <p class="text-sm text-gray-500">Berdasarkan jumlah penjualan</p>
+                <!-- Top Products -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                        <h3 class="text-xl font-bold text-gray-900">
+                            <i class="fas fa-chart-line text-blue-600 mr-2"></i>Produk Terlaris
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Top produk dengan penjualan tertinggi</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            @forelse($produkTerlaris as $index => $item)
+                                @php
+                                    $badgeColors = [
+                                        'bg-yellow-100 text-yellow-800',
+                                        'bg-gray-100 text-gray-800',
+                                        'bg-orange-100 text-orange-800'
+                                    ];
+                                    $badgeIcons = ['fa-crown', 'fa-medal', 'fa-award'];
+                                    $badgeColor = $badgeColors[$index] ?? 'bg-gray-100 text-gray-800';
+                                    $badgeIcon = $badgeIcons[$index] ?? 'fa-box';
+                                @endphp
+                                <div class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl hover:shadow-md transition-shadow border border-gray-100">
+                                    <div class="flex items-center space-x-4 flex-1">
+                                        <div class="flex items-center justify-center">
+                                            <span class="w-8 h-8 {{ $badgeColor }} rounded-lg flex items-center justify-center font-bold text-sm">
+                                                <i class="fas {{ $badgeIcon }}"></i>
+                                            </span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-bold text-gray-900">{{ $item->produk->nama }}</p>
+                                            <p class="text-xs text-gray-600 mt-1">
+                                                <span class="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded-md font-medium">
+                                                    {{ $item->total_terjual }} terjual
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-base font-bold text-gray-900">Rp {{ number_format($item->produk->harga, 0, ',', '.') }}</p>
+                                        <p class="text-xs text-gray-500">per unit</p>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-center py-12">
+                                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-box-open text-gray-400 text-3xl"></i>
+                                    </div>
+                                    <p class="text-sm text-gray-500 font-medium">Belum ada produk terjual hari ini</p>
+                                </div>
+                            @endforelse
                         </div>
-                        <div class="p-6">
-                            <div class="h-64 relative">
-                                <canvas id="productsChart"></canvas>
-                            </div>
+                        @if($produkTerlaris->count() > 0)
+                        <div class="mt-6 pt-4 border-t border-gray-200">
+                            <a href="{{ route('kasir.jurnal.index') }}" class="flex items-center justify-center text-sm text-blue-600 hover:text-blue-800 font-semibold group">
+                                <span>Lihat Laporan Lengkap</span>
+                                <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                            </a>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Chart -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">
+                                <i class="fas fa-chart-area text-purple-600 mr-2"></i>Grafik Penjualan
+                            </h3>
+                            <p class="text-sm text-gray-500 mt-1">Ringkasan penjualan 7 hari terakhir</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeChartPeriod('7days')" class="chart-period-btn active px-4 py-2 text-sm font-semibold bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">7 Hari</button>
+                            <button onclick="changeChartPeriod('30days')" class="chart-period-btn px-4 py-2 text-sm font-semibold bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">30 Hari</button>
                         </div>
                     </div>
-
-                    <!-- Sales by Hour -->
-                    <div class="bg-white rounded-lg border border-gray-200">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Penjualan per Jam</h3>
-                            <p class="text-sm text-gray-500">Distribusi penjualan hari ini</p>
-                        </div>
-                        <div class="p-6">
-                            <div class="h-64 relative">
-                                <canvas id="hourlyChart"></canvas>
+                </div>
+                <div class="p-6">
+                    <div class="h-80 relative">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                    <!-- Chart Summary -->
+                    <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-gray-200">
+                        <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
+                            <div class="flex items-center justify-center space-x-2 mb-2">
+                                <div class="w-4 h-4 bg-green-500 rounded-full shadow-sm"></div>
+                                <span class="text-sm font-semibold text-gray-700">Total Penjualan</span>
                             </div>
+                            <p class="text-xl font-bold text-gray-900" id="totalSales">Rp 0</p>
+                        </div>
+                        <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+                            <div class="flex items-center justify-center space-x-2 mb-2">
+                                <div class="w-4 h-4 bg-blue-500 rounded-full shadow-sm"></div>
+                                <span class="text-sm font-semibold text-gray-700">Rata-rata Harian</span>
+                            </div>
+                            <p class="text-xl font-bold text-gray-900" id="avgDaily">Rp 0</p>
+                        </div>
+                        <div class="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl">
+                            <div class="flex items-center justify-center space-x-2 mb-2">
+                                <div class="w-4 h-4 bg-yellow-500 rounded-full shadow-sm"></div>
+                                <span class="text-sm font-semibold text-gray-700">Total Transaksi</span>
+                            </div>
+                            <p class="text-xl font-bold text-gray-900" id="totalTransactions">0</p>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
+
+            <!-- Additional Analytics Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Top Products Chart -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                        <h3 class="text-xl font-bold text-gray-900">
+                            <i class="fas fa-trophy text-amber-500 mr-2"></i>Produk Terlaris
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Berdasarkan jumlah penjualan</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="h-64 relative">
+                            <canvas id="productsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales by Hour -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                        <h3 class="text-xl font-bold text-gray-900">
+                            <i class="fas fa-clock text-indigo-600 mr-2"></i>Penjualan per Jam
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Distribusi penjualan hari ini</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="h-64 relative">
+                            <canvas id="hourlyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+@endsection
 
-    <script>
-        // Update current date and time
-        function updateDateTime() {
-            const now = new Date();
-            const options = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            const dateTimeElement = document.getElementById('currentDateTime');
-            if (dateTimeElement) {
-                dateTimeElement.textContent = now.toLocaleDateString('id-ID', options);
-            }
-        }
-
-        // Sales Chart Data
-        const salesData = {
+@section('scripts')
+<script>
+    // Sales Chart Data
+    const salesData = {
             '7days': {
                 labels: @json($labels7Hari),
                 sales: @json($penjualan7Hari),
@@ -638,7 +655,5 @@
                 }
             });
         }
-    </script>
-</body>
-</html>  
+</script>
 @endsection

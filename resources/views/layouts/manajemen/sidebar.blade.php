@@ -34,47 +34,69 @@
             <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Dashboard Manajemen</span>
         </a>
 
-        <a href="{{ route('management.jurnal.index') }}"
-            class="nav-item group flex items-center px-3 py-3 text-sm font-medium
-            {{ request()->routeIs('management.jurnal.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Jurnal Harian">
-            <i class="sidebar-icon fas fa-book {{ request()->routeIs('management.jurnal.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
-            <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Jurnal Harian</span>
-        </a>
+        <!-- Master Data Section -->
+        <div class="pt-4 pb-2">
+            <div class="flex items-center space-x-2 px-3 mb-2">
+                <span class="sidebar-text text-xs font-bold text-gray-500 uppercase tracking-wider transition-opacity duration-300">Master Data</span>
+                <span class="sidebar-text bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full transition-opacity duration-300">Isi Dulu!</span>
+            </div>
+            <div class="space-y-1 border-l-2 border-red-200 ml-3 pl-2">
+                <a href="{{ route('management.konversi.index') }}"
+                    class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
+                    {{ request()->routeIs('management.konversi.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="1. Konversi Satuan - Atur satuan terlebih dahulu">
+                    <span class="sidebar-icon w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.konversi.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">1</span>
+                    <i class="sidebar-icon fas fa-exchange-alt {{ request()->routeIs('management.konversi.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-2 transition-all duration-300"></i>
+                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Konversi Satuan</span>
+                </a>
 
-        <a href="{{ route('management.bahanbaku.index') }}"
-            class="nav-item group flex items-center px-3 py-3 text-sm font-medium
-            {{ request()->routeIs('management.bahanbaku.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Stok Bahan Baku">
-            <i class="sidebar-icon fas fa-boxes {{ request()->routeIs('management.bahanbaku.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
-            <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Stok Bahan Baku</span>
-        </a>
+                <a href="{{ route('management.bahanbaku.index') }}"
+                    class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
+                    {{ request()->routeIs('management.bahanbaku.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="2. Bahan Baku - Kelola bahan baku">
+                    <span class="sidebar-icon w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.bahanbaku.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">2</span>
+                    <i class="sidebar-icon fas fa-boxes {{ request()->routeIs('management.bahanbaku.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-2 transition-all duration-300"></i>
+                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Bahan Baku</span>
+                </a>
 
-        <a href="{{ route('management.produk.index') }}"
-            class="nav-item group flex items-center px-3 py-3 text-sm font-medium
-            {{ request()->routeIs('management.produk.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Stok Produk">
-            <i class="sidebar-icon fas fa-cookie-bite {{ request()->routeIs('management.produk.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
-            <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Stok Produk</span>
-        </a>
+                <a href="{{ route('management.produk.index') }}"
+                    class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
+                    {{ request()->routeIs('management.produk.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="3. Produk - Kelola produk jadi">
+                    <span class="sidebar-icon w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.produk.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">3</span>
+                    <i class="sidebar-icon fas fa-cookie-bite {{ request()->routeIs('management.produk.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-2 transition-all duration-300"></i>
+                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Produk</span>
+                </a>
 
-        <a href="{{ route('management.konversi.index') }}"
-            class="nav-item group flex items-center px-3 py-3 text-sm font-medium
-            {{ request()->routeIs('management.konversi.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Konversi Satuan">
-            <i class="sidebar-icon fas fa-exchange-alt {{ request()->routeIs('management.konversi.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
-            <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Konversi Satuan</span>
-        </a>
+                <a href="{{ route('management.resep.index') }}"
+                    class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
+                    {{ request()->routeIs('management.resep.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="4. Resep - Buat resep produk">
+                    <span class="sidebar-icon w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.resep.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">4</span>
+                    <i class="sidebar-icon fas fa-utensils {{ request()->routeIs('management.resep.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-2 transition-all duration-300"></i>
+                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Resep & Produksi</span>
+                </a>
+            </div>
+        </div>
 
-        <a href="{{ route('management.resep.index') }}"
-            class="nav-item group flex items-center px-3 py-3 text-sm font-medium
-            {{ request()->routeIs('management.resep.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Resep & Produksi">
-            <i class="sidebar-icon fas fa-utensils {{ request()->routeIs('management.resep.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
-            <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Resep & Produksi</span>
-        </a>
+        <!-- Operational Section -->
+        <div class="pt-4 pb-2">
+            <div class="flex items-center space-x-2 px-3 mb-2">
+                <span class="sidebar-text text-xs font-bold text-gray-500 uppercase tracking-wider transition-opacity duration-300">Operasional</span>
+                <span class="sidebar-text bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full transition-opacity duration-300">Harian</span>
+            </div>
+            <div class="space-y-1 border-l-2 border-blue-200 ml-3 pl-2">
+                <a href="{{ route('management.jurnal.index') }}"
+                    class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
+                    {{ request()->routeIs('management.jurnal.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Jurnal Harian">
+                    <i class="sidebar-icon fas fa-book {{ request()->routeIs('management.jurnal.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
+                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Jurnal Harian</span>
+                </a>
 
-        <a href="{{ route('management.laporan.index') }}"
-            class="nav-item group flex items-center px-3 py-3 text-sm font-medium
-            {{ request()->routeIs('management.laporan.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Laporan">
-            <i class="sidebar-icon fas fa-chart-line {{ request()->routeIs('management.laporan.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
-            <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Laporan</span>
-        </a>
+                <a href="{{ route('management.laporan.index') }}"
+                    class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
+                    {{ request()->routeIs('management.laporan.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Laporan">
+                    <i class="sidebar-icon fas fa-chart-line {{ request()->routeIs('management.laporan.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
+                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Laporan</span>
+                </a>
+            </div>
+        </div>
     </nav>
 
     <!-- USER PROFILE -->

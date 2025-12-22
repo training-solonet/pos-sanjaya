@@ -538,6 +538,20 @@
         }
     }
 
+    // Toggle individual export menu for each recipe
+    function toggleExportMenu(recipeId) {
+        const menu = document.getElementById('exportMenu' + recipeId);
+        if (menu) {
+            // Close all other export menus first
+            document.querySelectorAll('[id^="exportMenu"]').forEach(m => {
+                if (m.id !== 'exportMenu' + recipeId) {
+                    m.classList.add('hidden');
+                }
+            });
+            menu.classList.toggle('hidden');
+        }
+    }
+
     // Close dropdown when clicking outside
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('exportDropdown');
@@ -545,6 +559,16 @@
         
         if (dropdown && button && !button.contains(event.target) && !dropdown.contains(event.target)) {
             dropdown.classList.add('hidden');
+        }
+
+        // Close export menus when clicking outside
+        const isExportButton = event.target.closest('[onclick*="toggleExportMenu"]');
+        const isExportMenu = event.target.closest('[id^="exportMenu"]');
+        
+        if (!isExportButton && !isExportMenu) {
+            document.querySelectorAll('[id^="exportMenu"]').forEach(menu => {
+                menu.classList.add('hidden');
+            });
         }
     });
 
@@ -653,6 +677,22 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center space-x-2">
+                            <button onclick="viewRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Lihat Detail">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <div class="relative inline-block">
+                                <button onclick="toggleExportMenu(${recipe.id})" class="text-purple-600 hover:text-purple-700" title="Export">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <div id="exportMenu${recipe.id}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                    <a href="/management/resep/${recipe.id}?export=excel" class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-file-excel text-green-600 mr-1"></i>Excel
+                                    </a>
+                                    <a href="/management/resep/${recipe.id}?export=pdf" class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-file-pdf text-red-600 mr-1"></i>PDF
+                                    </a>
+                                </div>
+                            </div>
                             <button onclick="editRecipe(${recipe.id})" class="text-green-600 hover:text-green-700" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </button>
@@ -717,7 +757,19 @@
                                 <button onclick="event.stopPropagation(); editRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <!-- duplicate removed -->
+                                <div class="relative inline-block">
+                                    <button onclick="event.stopPropagation(); toggleExportMenu(${recipe.id})" class="text-purple-600 hover:text-purple-700" title="Export">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <div id="exportMenu${recipe.id}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                        <a href="/management/resep/${recipe.id}?export=excel" class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-file-excel text-green-600 mr-1"></i>Excel
+                                        </a>
+                                        <a href="/management/resep/${recipe.id}?export=pdf" class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-file-pdf text-red-600 mr-1"></i>PDF
+                                        </a>
+                                    </div>
+                                </div>
                                 <button onclick="event.stopPropagation(); deleteRecipe(${recipe.id})" class="text-red-600 hover:text-red-700" title="Hapus">
                                     <i class="fas fa-trash"></i>
                                 </button>

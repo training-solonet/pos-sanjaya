@@ -234,11 +234,15 @@
             const year = now.getFullYear();
             const hours = now.getHours().toString().padStart(2, '0');
             const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
             
-            const dateTimeElement = document.getElementById('currentDateTime');
-            if (dateTimeElement) {
-                dateTimeElement.textContent = `${dayName}, ${date} ${monthName} ${year} ${hours}:${minutes}`;
+            const dateElement = document.getElementById('currentDate');
+            const timeElement = document.getElementById('currentTime');
+            
+            if (dateElement) {
+                dateElement.textContent = `${dayName}, ${date} ${monthName} ${year}`;
+            }
+            if (timeElement) {
+                timeElement.textContent = `${hours}:${minutes}`;
             }
         }
         
