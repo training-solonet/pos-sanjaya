@@ -139,7 +139,7 @@
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No Invoice</th>
+                                <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu</th>
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th>
@@ -183,6 +183,7 @@
         let autoRefreshEnabled = true;
         let refreshInterval = null;
         const REFRESH_INTERVAL_MS = 5000; // 5 seconds
+        let isInitialLoad = true; // Flag untuk initial load
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -474,10 +475,10 @@
                 );
             }
 
-            // Add fade-in animation for new rows
+            // Add fade-in animation for new rows (hanya jika bukan initial load)
             const currentCount = tbody.querySelectorAll('tr').length;
             const newCount = transactions.length;
-            const hasNewData = newCount > currentCount;
+            const hasNewData = !isInitialLoad && newCount > currentCount;
 
             if (transactions.length === 0) {
                 tbody.innerHTML = `
@@ -532,6 +533,11 @@
                         firstRow.classList.remove('bg-green-50');
                     }
                 }, 2000);
+            }
+
+            // Set initial load flag to false after first render
+            if (isInitialLoad) {
+                isInitialLoad = false;
             }
         }
 
@@ -602,7 +608,7 @@
 
         // Export to Excel (simplified version - in production use a library like SheetJS)
         function exportToExcel() {
-            let csv = 'No Invoice,Waktu,Produk,Jumlah,Total,Pembayaran,Kasir\n';
+            let csv = 'ID,Waktu,Produk,Jumlah,Total,Pembayaran,Kasir\n';
             salesData.transactions.forEach(t => {
                 csv += `${t.invoice},${t.time},"${t.products}",${t.quantity},${t.total},${t.payment},${t.cashier}\n`;
             });

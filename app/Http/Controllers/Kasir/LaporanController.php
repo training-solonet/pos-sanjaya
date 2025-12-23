@@ -61,7 +61,7 @@ class LaporanController extends Controller
             })->join(', ');
 
             return [
-                'invoice' => 'INV-'.str_pad($t->id, 5, '0', STR_PAD_LEFT),
+                'invoice' => $t->id,
                 'time' => \Carbon\Carbon::parse($t->tgl)->format('H:i'),
                 'products' => $produkList ?: 'Tidak ada produk',
                 'quantity' => $totalQty,
@@ -171,7 +171,7 @@ class LaporanController extends Controller
             })->join(', ');
 
             return [
-                'invoice' => 'INV-'.str_pad($t->id, 5, '0', STR_PAD_LEFT),
+                'invoice' => $t->id,
                 'time' => \Carbon\Carbon::parse($t->tgl)->format('H:i'),
                 'products' => $produkList ?: 'Tidak ada produk',
                 'quantity' => $totalQty,

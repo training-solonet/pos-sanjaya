@@ -95,10 +95,26 @@ class TransaksiController extends Controller
                 $produk->decrement('stok', $item['quantity']);
             }
 
-            // Catat ke jurnal (sudah ada di Controller Transaksi)
-            // Catatan: Data jurnal ini akan dibaca oleh JurnalController manajemen
-            // TIDAK PERLU membuat entry di tabel jurnal lagi
-            // Karena kita akan membaca langsung dari tabel transaksi
+            // Catat ke jurnal secara otomatis
+            $invoiceNumber = 'INV-'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT);
+            
+            // Buat deskripsi produk yang dibeli
+            $keterangan = 'Penjualan ';
+            $itemDescriptions = [];
+            foreach ($validated['items'] as $item) {
+                $produk = Produk::find($item['id']);
+                $itemDescriptions[] = $produk->nama . ' x' . $item['quantity'];
+            }
+            $keterangan .= implode(', ', $itemDescriptions);
+            
+            Jurnal::create([
+                'tgl' => now(),
+                'jenis' => 'pemasukan',
+                'kategori' => 'Penjualan',
+                'keterangan' => $keterangan,
+                'nominal' => $total,
+                'role' => 'kasir',
+            ]);
 
             DB::commit();
 
@@ -161,5 +177,20 @@ class TransaksiController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    /**
+     * Get next transaction ID
+     */
+    public function getNextId()
+    {
+        // Get the last transaction ID and increment by 1
+        $lastTransaction = Transaksi::latest('id')->first();
+        $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
+
+        return response()->json([
+            'success' => true,
+            'next_id' => $nextId,
+        ]);
     }
 }

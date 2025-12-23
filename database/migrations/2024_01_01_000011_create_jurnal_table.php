@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('keterangan')->nullable();
             $table->integer('nominal')->default(0);
             $table->enum('kategori', ['Operasional', 'Utilitas', 'Bahan Baku', 'Penjualan', 'Transportasi', 'lainnya'])->nullable();
-            $table->enum('role', ['admin', 'manajemen'])->nullable();
+            $table->enum('role', ['admin', 'manajemen', 'kasir'])->nullable();
             $table->timestamps();
         });
     }
