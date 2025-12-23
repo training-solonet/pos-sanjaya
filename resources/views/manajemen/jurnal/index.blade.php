@@ -7,12 +7,29 @@
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-900">Jurnal Harian</h2>
+                    <h2 class="text-2xl font-bold text-gray-900">Jurnal Transaksi</h2>
                     <p class="text-sm text-gray-500 mt-1" id="currentDateTime"></p>
+                    <div class="flex items-center mt-2 space-x-2" id="periodInfo">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                            <i class="fas fa-calendar-day mr-1"></i>Hari Ini
+                        </span>
+                        <span class="text-sm text-gray-600" id="periodDateRange"></span>
+                    </div>
                 </div>
-                <div class="flex space-x-2">
+                <div class="flex flex-wrap gap-2">
+                    <!-- Filter Waktu -->
+                    <select id="filterPeriod" onchange="changePeriod()"
+                        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200">
+                        <option value="daily" selected>Harian</option>
+                        <option value="weekly">Mingguan</option>
+                        <option value="monthly">Bulanan</option>
+                    </select>
+                    
+                    <!-- Tanggal -->
                     <input type="date" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg"
                         value="{{ date('Y-m-d') }}">
+                    
+                    <!-- Tombol Export -->
                     <button onclick="exportData()"
                         class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
                         <i class="fas fa-download mr-2"></i>Export
@@ -36,7 +53,7 @@
                         <p id="summaryTotalRevenue" class="text-3xl font-bold text-green-600">Rp 0</p>
                         <p id="revenueCount" class="text-sm text-gray-500 flex items-center">
                             <i class="fas fa-receipt mr-2"></i>
-                            <span id="revenueCountText">0 transaksi hari ini</span>
+                            <span id="revenueCountText">0 transaksi</span>
                         </p>
                     </div>
                 </div>
@@ -55,7 +72,7 @@
                         <p id="summaryTotalExpense" class="text-3xl font-bold text-red-600">Rp 0</p>
                         <p id="expenseCount" class="text-sm text-gray-500 flex items-center">
                             <i class="fas fa-calendar-day mr-2"></i>
-                            <span id="expenseCountText">0 transaksi hari ini</span>
+                            <span id="expenseCountText">0 transaksi</span>
                         </p>
                     </div>
                 </div>
@@ -85,11 +102,12 @@
                 <div class="p-6 border-b">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Jurnal Transaksi</h3>
-                            <p class="text-sm text-gray-500 mt-1">Catatan pemasukan dan pengeluaran</p>
+                            <h3 class="text-lg font-semibold text-gray-900">Daftar Transaksi</h3>
+                            <p class="text-sm text-gray-500 mt-1" id="dataInfoText">
+                                <!-- Pesan info akan diisi JavaScript -->
+                            </p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <!-- TOMBOL TAMBAH TRANSAKSI YANG DISATUKAN -->
                             <button onclick="openTransactionModal()"
                                 class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
                                 <i class="fas fa-plus"></i>
@@ -279,6 +297,17 @@
         return `Rp ${formatCurrency(amount)}`;
     }
 
+    // Fungsi untuk format tanggal Indonesia
+    function formatIndonesianDate(dateString) {
+        const date = new Date(dateString);
+        const options = { 
+            day: '2-digit', 
+            month: 'long', 
+            year: 'numeric' 
+        };
+        return date.toLocaleDateString('id-ID', options);
+    }
+
     let currentEditId = null;
     let allTransactions = [];
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -332,9 +361,79 @@
       }
     }
 
+    // Change period filter
+    function changePeriod() {
+        const period = document.getElementById('filterPeriod').value;
+        const date = document.getElementById('filterDate').value;
+        
+        // Update period badge
+        const periodBadge = document.querySelector('#periodInfo span');
+        let periodLabel = '';
+        let periodIcon = '';
+        
+        switch(period) {
+            case 'daily':
+                periodLabel = 'Harian';
+                periodIcon = 'calendar-day';
+                break;
+            case 'weekly':
+                periodLabel = 'Mingguan';
+                periodIcon = 'calendar-week';
+                break;
+            case 'monthly':
+                periodLabel = 'Bulanan';
+                periodIcon = 'calendar-month';
+                break;
+        }
+        
+        if (periodBadge) {
+            periodBadge.innerHTML = `<i class="fas fa-${periodIcon} mr-1"></i>${periodLabel}`;
+            periodBadge.className = `px-3 py-1 text-sm font-medium rounded-full ${
+                period === 'daily' ? 'bg-blue-100 text-blue-800' :
+                period === 'weekly' ? 'bg-purple-100 text-purple-800' :
+                'bg-green-100 text-green-800'
+            }`;
+        }
+        
+        loadTransactions();
+        updateSummary();
+    }
+
+    // Update period date range display
+    function updatePeriodDateRange(startDate, endDate, period) {
+        const periodDateRange = document.getElementById('periodDateRange');
+        
+        if (periodDateRange) {
+            if (period === 'daily') {
+                periodDateRange.textContent = formatIndonesianDate(startDate);
+            } else if (period === 'weekly') {
+                periodDateRange.textContent = `${formatIndonesianDate(startDate)} - ${formatIndonesianDate(endDate)}`;
+            } else if (period === 'monthly') {
+                const date = new Date(startDate);
+                const monthName = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                periodDateRange.textContent = `Bulan ${monthName}`;
+            }
+        }
+    }
+
+    // Update data info text
+    function updateDataInfoText(count, period) {
+        const dataInfoText = document.getElementById('dataInfoText');
+        if (dataInfoText) {
+            let periodText = '';
+            switch(period) {
+                case 'daily': periodText = 'hari ini'; break;
+                case 'weekly': periodText = 'minggu ini'; break;
+                case 'monthly': periodText = 'bulan ini'; break;
+            }
+            dataInfoText.textContent = `Menampilkan ${count} transaksi untuk ${periodText}`;
+        }
+    }
+
     // Load transactions from server
     async function loadTransactions() {
       try {
+        const filterPeriod = document.getElementById('filterPeriod').value;
         const filterDate = document.getElementById('filterDate').value;
         const filterType = document.getElementById('filterType').value;
         const filterCategory = document.getElementById('filterCategory').value;
@@ -343,6 +442,7 @@
         // Build query parameters
         const params = new URLSearchParams({
           data: '1',
+          period: filterPeriod,
           date: filterDate
         });
 
@@ -367,7 +467,8 @@
         const data = await response.json();
         allTransactions = data;
         renderTransactions(allTransactions);
-        updateSummary();
+        updateDataInfoText(allTransactions.length, filterPeriod);
+        
       } catch (error) {
         console.error('Error loading transactions:', error);
         showErrorMessage('Gagal memuat data transaksi');
@@ -385,7 +486,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
-              Tidak ada data transaksi
+              Tidak ada data transaksi untuk periode ini
             </td>
           </tr>
         `;
@@ -405,8 +506,9 @@
 
         // Format keterangan khusus untuk transaksi kasir
         let keterangan = transaction.keterangan;
+        let transactionBadge = '';
         if (isTransaction) {
-          keterangan += '<br><small class="text-blue-600 text-xs">Transaksi dari kasir</small>';
+          transactionBadge = '<br><small class="text-blue-600 text-xs">Transaksi dari kasir</small>';
         }
 
         const row = document.createElement('tr');
@@ -427,10 +529,10 @@
         } else {
           // Hanya tampilkan tombol edit/hapus untuk transaksi manual
           actionButtons = `
-            <button onclick="editTransaction(${transactionId})" class="text-green-600 hover:text-green-800 mr-2">
+            <button onclick="editTransaction('${transactionId}')" class="text-green-600 hover:text-green-800 mr-2">
               <i class="fas fa-edit"></i>
             </button>
-            <button onclick="deleteTransaction(${transactionId})" class="text-red-500 hover:text-red-700">
+            <button onclick="deleteTransaction('${transactionId}')" class="text-red-500 hover:text-red-700">
               <i class="fas fa-trash"></i>
             </button>
           `;
@@ -445,7 +547,7 @@
             </span>
           </td>
           <td class="px-6 py-4 text-sm text-gray-900">${transaction.kategori}</td>
-          <td class="px-6 py-4 text-sm text-gray-900">${keterangan}</td>
+          <td class="px-6 py-4 text-sm text-gray-900">${transaction.keterangan}${transactionBadge}</td>
           <td class="px-6 py-4 text-sm font-medium ${amountClass}">
             ${amountPrefix} ${formatRupiah(transaction.nominal)}
           </td>
@@ -461,9 +563,10 @@
     // Update summary from server
     async function updateSummary() {
       try {
+        const filterPeriod = document.getElementById('filterPeriod').value;
         const filterDate = document.getElementById('filterDate').value;
         
-        const response = await fetch(`/management/jurnal?summary=1&date=${filterDate}`);
+        const response = await fetch(`/management/jurnal?summary=1&period=${filterPeriod}&date=${filterDate}`);
         
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -479,10 +582,19 @@
         document.getElementById('summaryNetBalance').textContent = 
           formatRupiah(data.net_balance);
         
+        // Update transaction counts
+        const period = document.getElementById('filterPeriod').value;
+        let periodText = '';
+        switch(period) {
+            case 'daily': periodText = 'hari ini'; break;
+            case 'weekly': periodText = 'minggu ini'; break;
+            case 'monthly': periodText = 'bulan ini'; break;
+        }
+        
         document.getElementById('revenueCountText').textContent = 
-          `${data.revenue_count} transaksi hari ini`;
+          `${data.revenue_count} transaksi ${periodText}`;
         document.getElementById('expenseCountText').textContent = 
-          `${data.expense_count} transaksi hari ini`;
+          `${data.expense_count} transaksi ${periodText}`;
         
         // Update footer dengan format baru
         document.getElementById('footerTotalRevenue').textContent = 
@@ -500,7 +612,7 @@
         
         netBalanceElements.forEach(el => {
           if (el) {
-            el.classList.remove('text-blue-600', 'text-green-600', 'text-red-600');
+            el.classList.remove('text-green-600', 'text-red-600', 'text-blue-600');
             if (data.net_balance > 0) {
               el.classList.add('text-green-600');
             } else if (data.net_balance < 0) {
@@ -510,8 +622,15 @@
             }
           }
         });
+        
+        // Update period date range display
+        if (data.period_start && data.period_end) {
+            updatePeriodDateRange(data.period_start, data.period_end, data.period_type);
+        }
+        
       } catch (error) {
         console.error('Error loading summary:', error);
+        showErrorMessage('Gagal memuat summary');
       }
     }
 
@@ -627,6 +746,7 @@
         if (data.success) {
           showSuccessMessage(data.message);
           await loadTransactions();
+          await updateSummary();
         } else {
           showErrorMessage(data.message);
         }
@@ -684,6 +804,7 @@
           closeTransactionModal();
           showSuccessMessage(data.message);
           await loadTransactions();
+          await updateSummary();
         } else {
           showErrorMessage(data.message);
         }
@@ -695,7 +816,9 @@
 
     // Filter transactions
     function filterTransactions() {
-      loadTransactions(); // Sekarang semua filter dilakukan di server
+      loadTransactions();
+      // Note: Summary tidak difilter berdasarkan jenis/kategori
+      // karena summary harus menunjukkan total semua transaksi
     }
 
     // Helper functions
@@ -741,8 +864,14 @@
     }
 
     function showNotification(message, color) {
+      // Cek apakah sudah ada notifikasi sebelumnya
+      const existingNotification = document.querySelector('.fixed-notification');
+      if (existingNotification) {
+        existingNotification.remove();
+      }
+      
       const notification = document.createElement('div');
-      notification.className = `fixed top-4 right-4 bg-${color}-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+      notification.className = `fixed-notification fixed top-4 right-4 bg-${color}-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
       notification.innerHTML = `
         <div class="flex items-center">
           <i class="fas fa-${color === 'green' ? 'check' : 'exclamation'}-circle mr-2"></i>
@@ -765,13 +894,19 @@
     // Event listener for date filter
     document.getElementById('filterDate').addEventListener('change', function() {
       loadTransactions();
+      updateSummary();
     });
 
     // Export function
     function exportData() {
+      const filterPeriod = document.getElementById('filterPeriod').value;
       const filterDate = document.getElementById('filterDate').value;
-      // Anda bisa menambahkan fungsi export di controller jika diperlukan
-      alert('Fitur export akan segera tersedia');
+      
+      // Buat URL export dengan parameter periode
+      const exportUrl = `/management/jurnal/export?period=${filterPeriod}&date=${filterDate}`;
+      
+      // Redirect ke URL export (akan dihandle oleh controller)
+      window.open(exportUrl, '_blank');
     }
 
     // Close modal when clicking outside

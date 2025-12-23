@@ -6,235 +6,256 @@
 
 @section('content')
     <!-- Main Content -->
-    {{-- <div class="content flex-1 lg:flex-1"> --}}
-
-        <!-- Page Content -->
-        <main class="p-4 sm:p-6 lg:p-8">
-            <div class="space-y-6">
-                <!-- Header -->
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h2 class="text-2xl font-bold text-gray-900">Stok Produk Jadi</h2>
-                    <div class="flex gap-2">
-                        <a href="{{ route('management.updateproduk.index') }}"
-                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
-                            <i class="fas fa-clipboard-check mr-2"></i>Stok Produk
-                        </a>
-                        <button onclick="openAddProductModal()"
-                            class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 transition-all flex items-center">
-                            <i class="fas fa-plus mr-2"></i> Produk Baru
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Search & Filter -->
-                <div class="bg-white rounded-lg border border-gray-200 p-4">
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <div class="flex-1">
-                            <input type="text" id="searchInput" placeholder="Cari produk..."
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                        </div>
-                        <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg">
-                            <option value="">Semua Status</option>
-                            <option value="tersedia">Tersedia</option>
-                            <option value="rendah">Stok Rendah</option>
-                            <option value="habis">Habis</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Product Table -->
-                <div class="bg-white rounded-lg border border-gray-200">
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Stok
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expired Date</th>
-                                    <th class="px6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200" id="productTableBody">
-                                @foreach ($produk as $item)
-                                    @php
-                                        // PERBAIKAN 1: Bulatkan sisa_hari ke bawah (floor)
-                                        $daysUntilExpired = floor($item->sisa_hari);
-                                        $isExpired = $daysUntilExpired < 0;
-                                        $isExpiredToday = $daysUntilExpired === 0;
-                                        $isExpiredSoon = $daysUntilExpired > 0 && $daysUntilExpired <= 7;
-                                        $stockStatus = $item->status_stok;
-                                        
-                                        // Tentukan warna dan ikon berdasarkan status stok
-                                        if ($stockStatus === 'habis') {
-                                            $stockColor = 'text-red-600 font-medium';
-                                            $stockBg = 'bg-red-100';
-                                            $stockIcon = 'fas fa-times-circle';
-                                            $stockText = 'Habis';
-                                        } elseif ($stockStatus === 'rendah') {
-                                            $stockColor = 'text-orange-600 font-medium';
-                                            $stockBg = 'bg-orange-100';
-                                            $stockIcon = 'fas fa-exclamation-triangle';
-                                            $stockText = 'Rendah';
-                                        } else {
-                                            $stockColor = 'text-green-600 font-medium';
-                                            $stockBg = 'bg-green-100';
-                                            $stockIcon = 'fas fa-check-circle';
-                                            $stockText = 'Aman';
-                                        }
-                                        
-                                        // Tentukan warna dan ikon berdasarkan status kadaluarsa
-                                        if ($isExpired) {
-                                            $expiryColor = 'text-red-600 font-medium';
-                                            $expiryBg = 'bg-red-100';
-                                            $expiryIcon = 'fas fa-exclamation-triangle';
-                                            $expiryText = 'Expired';
-                                        } elseif ($isExpiredToday) {
-                                            $expiryColor = 'text-orange-600 font-medium';
-                                            $expiryBg = 'bg-orange-100';
-                                            $expiryIcon = 'fas fa-exclamation-circle';
-                                            $expiryText = 'Hari Ini';
-                                        } elseif ($isExpiredSoon) {
-                                            $expiryColor = 'text-orange-600 font-medium';
-                                            $expiryBg = 'bg-orange-100';
-                                            $expiryIcon = 'fas fa-clock';
-                                            // PERBAIKAN 2: Format sederhana "X hari"
-                                            $expiryText = $daysUntilExpired . ' hari';
-                                        } else {
-                                            $expiryColor = 'text-green-600 font-medium';
-                                            $expiryBg = 'bg-green-100';
-                                            $expiryIcon = 'fas fa-check-circle';
-                                            // PERBAIKAN 2: Format sederhana "X hari"
-                                            $expiryText = $daysUntilExpired . ' hari';
-                                        }
-                                    @endphp
-                                    
-                                    <tr class="product-row"
-                                        data-status="{{ $stockStatus }}"
-                                        data-expiry="{{ $isExpired ? 'expired' : ($isExpiredToday ? 'today' : ($isExpiredSoon ? 'soon' : 'safe')) }}">
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center space-x-3">
-                                                @php
-                                                    $iconColor = 'amber';
-                                                    $iconClass = 'fas fa-bread-slice';
-
-                                                    // Determine icon based on product name
-                                                    if (
-                                                        str_contains(strtolower($item->nama), 'cokelat') ||
-                                                        str_contains(strtolower($item->nama), 'chocolate')
-                                                    ) {
-                                                        $iconColor = 'orange';
-                                                        $iconClass = 'fas fa-cookie-bite';
-                                                    } elseif (
-                                                        str_contains(strtolower($item->nama), 'keju') ||
-                                                        str_contains(strtolower($item->nama), 'cheese')
-                                                    ) {
-                                                        $iconColor = 'yellow';
-                                                        $iconClass = 'fas fa-cheese';
-                                                    } elseif (str_contains(strtolower($item->nama), 'strawberry')) {
-                                                        $iconColor = 'pink';
-                                                        $iconClass = 'fas fa-ice-cream';
-                                                    } elseif (
-                                                        str_contains(strtolower($item->nama), 'kismis') ||
-                                                        str_contains(strtolower($item->nama), 'raisin')
-                                                    ) {
-                                                        $iconColor = 'purple';
-                                                        $iconClass = 'fas fa-candy-cane';
-                                                    } elseif (
-                                                        str_contains(strtolower($item->nama), 'pisang') ||
-                                                        str_contains(strtolower($item->nama), 'banana')
-                                                    ) {
-                                                        $iconColor = 'yellow';
-                                                        $iconClass = 'fas fa-drumstick-bite';
-                                                    } elseif (
-                                                        str_contains(strtolower($item->nama), 'donat') ||
-                                                        str_contains(strtolower($item->nama), 'donut')
-                                                    ) {
-                                                        $iconColor = 'brown';
-                                                        $iconClass = 'fas fa-circle';
-                                                    } elseif (str_contains(strtolower($item->nama), 'abon')) {
-                                                        $iconColor = 'red';
-                                                        $iconClass = 'fas fa-hotdog';
-                                                    } elseif (str_contains(strtolower($item->nama), 'sobek')) {
-                                                        $iconColor = 'amber';
-                                                        $iconClass = 'fas fa-bread-slice';
-                                                    } elseif (str_contains(strtolower($item->nama), 'croissant')) {
-                                                        $iconColor = 'orange';
-                                                        $iconClass = 'fas fa-moon';
-                                                    }
-                                                @endphp
-                                                <div
-                                                    class="w-10 h-10 bg-{{ $iconColor }}-100 rounded-lg flex items-center justify-center">
-                                                    <i class="{{ $iconClass }} text-{{ $iconColor }}-600"></i>
-                                                </div>
-                                                <div>
-                                                    <!-- PERBAIKAN 3: Hapus ID di bawah nama produk -->
-                                                    <span class="font-medium text-gray-900 block">{{ $item->nama }}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="{{ $stockColor }}">{{ $item->stok }}</span>
-                                                <span class="px-2 py-1 text-xs rounded-full {{ $stockBg }} {{ $stockColor }}">
-                                                    <i class="{{ $stockIcon }} mr-1"></i>{{ $stockText }}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-gray-500">{{ $item->min_stok }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center space-x-2">
-                                                <div>
-                                                    <span class="text-sm {{ $expiryColor }}">
-                                                        {{ \Carbon\Carbon::parse($item->kadaluarsa)->format('d M Y') }}
-                                                    </span>
-                                                    <div class="text-xs {{ $expiryColor }}">
-                                                        @if($isExpired)
-                                                            Sudah expired
-                                                        @elseif($isExpiredToday)
-                                                            Kadaluarsa hari ini
-                                                        @else
-                                                            <!-- PERBAIKAN 4: Format sederhana "X hari lagi" -->
-                                                            {{ $daysUntilExpired }} hari lagi
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                                <span class="px-2 py-1 text-xs rounded-full {{ $expiryBg }} {{ $expiryColor }}">
-                                                    <i class="{{ $expiryIcon }}"></i>
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex space-x-2">
-                                                <!-- Tombol Detail -->
-                                                <button onclick="showProductDetail({{ $item->id }})"
-                                                    class="text-blue-600 hover:text-blue-700" title="Lihat Detail">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <!-- Tombol Edit -->
-                                                <button onclick="openEditProductModal({{ $item->id }})"
-                                                    class="text-green-600 hover:text-green-700" title="Edit Produk">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <!-- Tombol Hapus -->
-                                                <button onclick="deleteProduct({{ $item->id }})"
-                                                    class="text-red-600 hover:text-red-700" title="Hapus Produk">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+    <main class="p-4 sm:p-6 lg:p-8">
+        <div class="space-y-6">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 class="text-2xl font-bold text-gray-900">Stok Produk Jadi</h2>
+                <div class="flex gap-2">
+                    <a href="{{ route('management.updateproduk.index') }}"
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+                        <i class="fas fa-clipboard-check mr-2"></i>Stok Produk
+                    </a>
+                    <button onclick="openAddProductModal()"
+                        class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 transition-all flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Produk Baru
+                    </button>
                 </div>
             </div>
-        </main>
-    {{-- </div> --}}
+
+            <!-- Search & Filter -->
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1">
+                        <input type="text" id="searchInput" placeholder="Cari produk..."
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Semua Status</option>
+                        <option value="">Tersedia</option>
+                        <option value="rendah">Stok Rendah</option>
+                        <option value="habis">Habis</option>
+                    </select>
+                    <select id="expiryFilter" class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Semua</option>
+                        <option value="expired_sangat_dekat">Expired < 3 Hari</option>
+                        <option value="expired_dekat">Expired < 7 Hari</option>
+                        <option value="expired">Sudah Expired</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Product Table -->
+            <div class="bg-white rounded-lg border border-gray-200">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Stok</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expired Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200" id="productTableBody">
+                            @foreach ($produk as $item)
+                                @php
+                                    // Generate SKU
+                                    $sku = 'PROD-' . str_pad($item->id, 6, '0', STR_PAD_LEFT);
+                                    
+                                    // Hitung sisa hari dengan benar
+                                    $kadaluarsa = \Carbon\Carbon::parse($item->kadaluarsa);
+                                    $today = \Carbon\Carbon::today();
+                                    $daysUntilExpired = $today->diffInDays($kadaluarsa, false);
+                                    
+                                    // Tentukan status expired
+                                    $isExpired = $daysUntilExpired < 0;
+                                    $isExpiredToday = $daysUntilExpired === 0;
+                                    $isExpiredVerySoon = $daysUntilExpired > 0 && $daysUntilExpired <= 3; // Kurang dari 3 hari
+                                    $isExpiredSoon = $daysUntilExpired > 3 && $daysUntilExpired <= 7;
+                                    
+                                    $stockStatus = $item->status_stok;
+                                    
+                                    // Warna untuk stok
+                                    if ($stockStatus === 'habis') {
+                                        $stockColor = 'text-red-600 font-medium';
+                                        $stockBg = 'bg-red-100';
+                                        $stockIcon = 'fas fa-times-circle';
+                                        $stockText = 'Habis';
+                                    } elseif ($stockStatus === 'rendah') {
+                                        $stockColor = 'text-orange-600 font-medium';
+                                        $stockBg = 'bg-orange-100';
+                                        $stockIcon = 'fas fa-exclamation-triangle';
+                                        $stockText = 'Rendah';
+                                    } else {
+                                        $stockColor = 'text-green-600 font-medium';
+                                        $stockBg = 'bg-green-100';
+                                        $stockIcon = 'fas fa-check-circle';
+                                        $stockText = 'Aman';
+                                    }
+                                    
+                                    // Warna untuk expired - PERUBAHAN UTAMA
+                                    if ($isExpired) {
+                                        $expiryColor = 'text-red-600 font-medium';
+                                        $expiryBg = 'bg-red-100';
+                                        $expiryIcon = 'fas fa-exclamation-triangle';
+                                        $expiryText = 'Expired';
+                                        $rowBgColor = 'bg-red-50'; // Warna merah untuk baris
+                                    } elseif ($isExpiredVerySoon) {
+                                        $expiryColor = 'text-red-600 font-medium';
+                                        $expiryBg = 'bg-red-100';
+                                        $expiryIcon = 'fas fa-exclamation-circle';
+                                        $expiryText = $daysUntilExpired . ' hari';
+                                        $rowBgColor = 'bg-red-50'; // Warna merah untuk baris
+                                    } elseif ($isExpiredToday) {
+                                        $expiryColor = 'text-orange-600 font-medium';
+                                        $expiryBg = 'bg-orange-100';
+                                        $expiryIcon = 'fas fa-exclamation-circle';
+                                        $expiryText = 'Hari Ini';
+                                        $rowBgColor = '';
+                                    } elseif ($isExpiredSoon) {
+                                        $expiryColor = 'text-orange-600 font-medium';
+                                        $expiryBg = 'bg-orange-100';
+                                        $expiryIcon = 'fas fa-clock';
+                                        $expiryText = $daysUntilExpired . ' hari';
+                                        $rowBgColor = '';
+                                    } else {
+                                        $expiryColor = 'text-green-600 font-medium';
+                                        $expiryBg = 'bg-green-100';
+                                        $expiryIcon = 'fas fa-check-circle';
+                                        $expiryText = $daysUntilExpired . ' hari';
+                                        $rowBgColor = '';
+                                    }
+                                @endphp
+                                
+                                <tr class="product-row {{ $rowBgColor }}"
+                                    data-status="{{ $stockStatus }}"
+                                    data-expiry="{{ $isExpired ? 'expired' : ($isExpiredVerySoon ? 'expired_very_soon' : ($isExpiredToday ? 'today' : ($isExpiredSoon ? 'soon' : 'safe'))) }}"
+                                    data-expiry-days="{{ $daysUntilExpired }}">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-3">
+                                            @php
+                                                $iconColor = 'amber';
+                                                $iconClass = 'fas fa-bread-slice';
+
+                                                // Determine icon based on product name
+                                                if (
+                                                    str_contains(strtolower($item->nama), 'cokelat') ||
+                                                    str_contains(strtolower($item->nama), 'chocolate')
+                                                ) {
+                                                    $iconColor = 'orange';
+                                                    $iconClass = 'fas fa-cookie-bite';
+                                                } elseif (
+                                                    str_contains(strtolower($item->nama), 'keju') ||
+                                                    str_contains(strtolower($item->nama), 'cheese')
+                                                ) {
+                                                    $iconColor = 'yellow';
+                                                    $iconClass = 'fas fa-cheese';
+                                                } elseif (str_contains(strtolower($item->nama), 'strawberry')) {
+                                                    $iconColor = 'pink';
+                                                    $iconClass = 'fas fa-ice-cream';
+                                                } elseif (
+                                                    str_contains(strtolower($item->nama), 'kismis') ||
+                                                    str_contains(strtolower($item->nama), 'raisin')
+                                                ) {
+                                                    $iconColor = 'purple';
+                                                    $iconClass = 'fas fa-candy-cane';
+                                                } elseif (
+                                                    str_contains(strtolower($item->nama), 'pisang') ||
+                                                    str_contains(strtolower($item->nama), 'banana')
+                                                ) {
+                                                    $iconColor = 'yellow';
+                                                    $iconClass = 'fas fa-drumstick-bite';
+                                                } elseif (
+                                                    str_contains(strtolower($item->nama), 'donat') ||
+                                                    str_contains(strtolower($item->nama), 'donut')
+                                                ) {
+                                                    $iconColor = 'brown';
+                                                    $iconClass = 'fas fa-circle';
+                                                } elseif (str_contains(strtolower($item->nama), 'abon')) {
+                                                    $iconColor = 'red';
+                                                    $iconClass = 'fas fa-hotdog';
+                                                } elseif (str_contains(strtolower($item->nama), 'sobek')) {
+                                                    $iconColor = 'amber';
+                                                    $iconClass = 'fas fa-bread-slice';
+                                                } elseif (str_contains(strtolower($item->nama), 'croissant')) {
+                                                    $iconColor = 'orange';
+                                                    $iconClass = 'fas fa-moon';
+                                                }
+                                            @endphp
+                                            <div
+                                                class="w-10 h-10 bg-{{ $iconColor }}-100 rounded-lg flex items-center justify-center">
+                                                <i class="{{ $iconClass }} text-{{ $iconColor }}-600"></i>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium text-gray-900 block">{{ $item->nama }}</span>
+                                                <!-- SKU Display -->
+                                                <span class="text-xs text-gray-500">{{ $sku }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="{{ $stockColor }}">{{ $item->stok }}</span>
+                                            <span class="px-2 py-1 text-xs rounded-full {{ $stockBg }} {{ $stockColor }}">
+                                                <i class="{{ $stockIcon }} mr-1"></i>{{ $stockText }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ $item->min_stok }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <div>
+                                                <span class="text-sm {{ $expiryColor }}">
+                                                    {{ \Carbon\Carbon::parse($item->kadaluarsa)->format('d M Y') }}
+                                                </span>
+                                                <div class="text-xs {{ $expiryColor }}">
+                                                    @if($isExpired)
+                                                        Sudah expired
+                                                    @elseif($isExpiredToday)
+                                                        Kadaluarsa hari ini
+                                                    @elseif($isExpiredVerySoon)
+                                                        <strong>Hanya {{ $daysUntilExpired }} hari lagi!</strong>
+                                                    @else
+                                                        {{ $daysUntilExpired }} hari lagi
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <span class="px-2 py-1 text-xs rounded-full {{ $expiryBg }} {{ $expiryColor }}">
+                                                <i class="{{ $expiryIcon }}"></i>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex space-x-2">
+                                            <!-- Tombol Detail -->
+                                            <button onclick="showProductDetail({{ $item->id }})"
+                                                class="text-blue-600 hover:text-blue-700" title="Lihat Detail">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <!-- Tombol Edit -->
+                                            <button onclick="openEditProductModal({{ $item->id }})"
+                                                class="text-green-600 hover:text-green-700" title="Edit Produk">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <!-- Tombol Hapus -->
+                                            <button onclick="deleteProduct({{ $item->id }})"
+                                                class="text-red-600 hover:text-red-700" title="Hapus Produk">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <!-- Add Product Modal -->
     <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
@@ -328,7 +349,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Kedaluwarsa</label>
-                        <input type="date" name="kadaluarsa" id="edit_kadaluarsa" required min="{{ date('Y-m-d') }}"
+                        <input type="date" name="kadaluarsa" id="edit_kadaluarsa" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                     </div>
                     <div class="flex space-x-3 pt-4">
@@ -346,17 +367,17 @@
         </div>
     </div>
 
-    <!-- Modal Detail Produk -->
-    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <!-- Enhanced Modal Detail Produk -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
                 <div class="flex items-center justify-between p-6 border-b">
-                    <h3 class="text-lg font-semibold">Detail Produk</h3>
+                    <h3 class="text-xl font-semibold text-gray-900">Detail Produk - Log Stok</h3>
                     <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div id="detailContent" class="p-6">
+                <div id="detailContent" class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
                     <!-- Content will be loaded here -->
                 </div>
             </div>
@@ -368,7 +389,12 @@
 <script>
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    // Format date function untuk modal detail
+    // Generate SKU function
+    function generateSKU(id) {
+        return 'PROD-' + id.toString().padStart(6, '0');
+    }
+
+    // Format date function
     function formatDateForDetail(dateString) {
         if (!dateString) return '-';
         const date = new Date(dateString);
@@ -388,7 +414,7 @@
         return `${dayName}, ${day} ${monthName} ${year} ${hours}:${minutes}`;
     }
 
-    // Format simple date untuk riwayat
+    // Format simple date
     function formatSimpleDate(dateString) {
         if (!dateString) return '-';
         const date = new Date(dateString);
@@ -403,12 +429,14 @@
         return `${day} ${monthName} ${year}`;
     }
 
+    // Format number
+    function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-        // Tampilkan notifikasi jika ada
         showNotifications();
-        
-        // Filter products
         filterProducts();
     });
 
@@ -446,11 +474,13 @@
     // Modal functions
     function openAddProductModal() {
         document.getElementById('addModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
     }
 
     function closeAddModal() {
         document.getElementById('addModal').classList.add('hidden');
         document.getElementById('addProductForm').reset();
+        document.body.style.overflow = 'auto';
     }
 
     function openEditProductModal(productId) {
@@ -474,6 +504,7 @@
                 document.getElementById('edit_kadaluarsa').value = data.kadaluarsa;
 
                 document.getElementById('editModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -483,223 +514,191 @@
 
     function closeEditModal() {
         document.getElementById('editModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
     }
 
     function closeDetailModal() {
         document.getElementById('detailModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
     }
 
-    // Show product detail - PERBAIKAN BESAR DI SINI
-    function showProductDetail(productId) {
-        // Show loading
-        Swal.fire({
-            title: 'Memuat...',
-            text: 'Sedang memuat detail produk...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
+    // Enhanced Show Product Detail dengan log detail sesuai permintaan
+    async function showProductDetail(productId) {
+        try {
+            Swal.fire({
+                title: 'Memuat...',
+                text: 'Sedang memuat detail produk...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            const response = await fetch(`/management/produk/${productId}`);
+            const product = await response.json();
+            
+            Swal.close();
+            
+            if (product.error) {
+                Swal.fire('Error', product.error, 'error');
+                return;
             }
-        });
-        
-        fetch(`/management/produk/${productId}`)
-            .then(response => response.json())
-            .then(data => {
-                Swal.close();
-                if (data.error) {
-                    Swal.fire('Error', data.error, 'error');
-                    return;
-                }
-                
-                const product = data;
-                // PERBAIKAN: Bulatkan sisa_hari untuk modal detail
-                const sisaHariBulat = Math.floor(product.sisa_hari);
-                
-                let content = `
-                    <div class="space-y-6">
-                        <!-- Product Header - PERBAIKAN: Hapus ID Produk -->
-                        <div class="bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg p-6 text-white">
-                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                <div>
-                                    <h2 class="text-2xl font-bold">${product.nama}</h2>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-3xl font-bold">${product.stok} pcs</p>
-                                    <p class="text-blue-100">Stok Tersedia</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Product Info Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div class="bg-white border border-gray-200 rounded-lg p-4">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                        <i class="fas fa-box text-blue-600"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">Stok Minimum</p>
-                                        <p class="text-lg font-bold text-gray-900">${product.min_stok} pcs</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-white border border-gray-200 rounded-lg p-4">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                                        <i class="fas fa-tag text-green-600"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">Harga Jual</p>
-                                        <p class="text-lg font-bold text-gray-900">Rp ${parseInt(product.harga).toLocaleString('id-ID')}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-white border border-gray-200 rounded-lg p-4">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                                        <i class="fas fa-calendar-times text-orange-600"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">Kadaluarsa</p>
-                                        <p class="text-lg font-bold ${sisaHariBulat < 0 ? 'text-red-600' : (sisaHariBulat <= 7 ? 'text-orange-600' : 'text-gray-900')}">
-                                            ${formatSimpleDate(product.kadaluarsa)}
-                                            <br>
-                                            <span class="text-sm ${sisaHariBulat < 0 ? 'text-red-500' : (sisaHariBulat <= 7 ? 'text-orange-500' : 'text-gray-500')}">
-                                                ${sisaHariBulat < 0 ? 'Sudah kadaluarsa' : (sisaHariBulat == 0 ? 'Kadaluarsa hari ini' : `${sisaHariBulat} hari lagi`)}
-                                            </span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-white border border-gray-200 rounded-lg p-4">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 bg-${product.status_stok === 'habis' ? 'red' : (product.status_stok === 'rendah' ? 'orange' : 'green')}-100 rounded-lg flex items-center justify-center mr-3">
-                                        <i class="fas ${product.status_stok === 'habis' ? 'fa-times-circle' : (product.status_stok === 'rendah' ? 'fa-exclamation-triangle' : 'fa-check-circle')} text-${product.status_stok === 'habis' ? 'red' : (product.status_stok === 'rendah' ? 'orange' : 'green')}-600"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">Status Stok</p>
-                                        <p class="text-lg font-bold text-${product.status_stok === 'habis' ? 'red' : (product.status_stok === 'rendah' ? 'orange' : 'green')}-600">
-                                            ${product.status_stok === 'habis' ? 'Habis' : (product.status_stok === 'rendah' ? 'Rendah' : 'Aman')}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                `;
-                
-                // Add stock history if available
-                if (product.update_stok_history && product.update_stok_history.length > 0) {
-                    content += `
-                        <!-- Stock History -->
-                        <div class="bg-white border border-gray-200 rounded-lg p-6">
-                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Riwayat Stok Masuk</h4>
-                            <div class="overflow-x-auto">
-                                <table class="w-full">
-                                    <thead>
-                                        <tr class="bg-gray-50">
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok Awal</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok Masuk</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Stok</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kadaluarsa</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                    `;
-                    
-                    product.update_stok_history.forEach(history => {
-                        // PERBAIKAN: Format tanggal dengan benar dan bulatkan hari
-                        const kadaluarsaDate = new Date(history.kadaluarsa);
-                        const now = new Date();
-                        const diffTime = kadaluarsaDate - now;
-                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                        
-                        content += `
-                            <tr class="border-t border-gray-100 hover:bg-gray-50">
-                                <td class="px-4 py-3 text-sm">
-                                    ${formatDateForDetail(history.tanggal_update)}
-                                </td>
-                                <td class="px-4 py-3 text-sm">${history.stok_awal} pcs</td>
-                                <td class="px-4 py-3 text-sm text-green-600 font-medium">+${history.stok_baru} pcs</td>
-                                <td class="px-4 py-3 text-sm font-bold">${history.total_stok} pcs</td>
-                                <td class="px-4 py-3 text-sm">
-                                    <div>
-                                        ${formatSimpleDate(history.kadaluarsa)}
-                                        <div class="text-xs ${diffDays < 0 ? 'text-red-500' : (diffDays <= 7 ? 'text-orange-500' : 'text-gray-500')}">
-                                            ${diffDays < 0 ? 'Expired' : (diffDays === 0 ? 'Hari ini' : diffDays + ' hari')}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 text-sm">${history.keterangan || '-'}</td>
-                            </tr>
-                        `;
-                    });
-                    
-                    content += `
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    content += `
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-                            <i class="fas fa-info-circle text-yellow-500 text-3xl mb-3"></i>
-                            <p class="text-yellow-700">Belum ada riwayat stok untuk produk ini.</p>
-                        </div>
-                    `;
-                }
-                
-                // Tambahkan footer dengan timestamp
-                content += `
-                    <div class="pt-6 border-t border-gray-200">
-                        <div class="flex justify-between items-center">
+            
+            const sku = generateSKU(product.id);
+            const history = product.update_stok_history || [];
+            
+            // Urutkan history berdasarkan tanggal terbaru
+            history.sort((a, b) => new Date(b.tanggal_update) - new Date(a.tanggal_update));
+            
+            let content = `
+                <div class="space-y-6">
+                    <!-- Product Header -->
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg p-6 text-white">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
-                                <p class="text-sm text-gray-500">Terakhir diperbarui: ${formatDateForDetail(product.updated_at || new Date())}</p>
+                                <h2 class="text-2xl font-bold mb-2">${product.nama}</h2>
+                                <div class="flex items-center space-x-3">
+                                    <span class="bg-blue-800 bg-opacity-30 px-3 py-1 rounded-full text-sm">
+                                        <i class="fas fa-barcode mr-2"></i>${sku}
+                                    </span>
+                                    <span class="text-blue-200 text-sm">ID: ${product.id}</span>
+                                </div>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm text-gray-500">Manager: Admin</p>
-                                <p class="text-xs text-gray-400" id="detailTimestamp"></p>
+                                <p class="text-3xl font-bold">${product.stok} pcs</p>
+                                <p class="text-blue-100">Stok Akhir</p>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Stock History -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Log Perubahan Stok (FEFO System)</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok Awal</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Perubahan</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok Akhir</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sumber</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kadaluarsa</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+            
+            if (history.length > 0) {
+                history.forEach(record => {
+                    const isIncrease = record.stok_baru > 0;
+                    const changeColor = isIncrease ? 'text-green-600' : 'text-red-600';
+                    const changeIcon = isIncrease ? 'fas fa-arrow-up' : 'fas fa-arrow-down';
+                    const changeSign = isIncrease ? '+' : '';
+                    
+                    // Tentukan warna badge berdasarkan sumber - PERBAIKAN UNTUK TRANSAKSI
+                    let badgeClass = 'bg-gray-100 text-gray-800';
+                    if (record.sumber === 'Penambahan dari halaman stok produk') {
+                        badgeClass = 'bg-green-100 text-green-800';
+                    } else if (record.sumber === 'Update dari halaman produk') {
+                        badgeClass = 'bg-blue-100 text-blue-800';
+                    } else if (record.sumber === 'Update dari halaman update stok produk') {
+                        badgeClass = 'bg-purple-100 text-purple-800';
+                    } else if (record.sumber === 'Pengurangan dari transaksi') {
+                        badgeClass = 'bg-red-100 text-red-800';
+                    } else if (record.sumber === 'Penambahan dari daily update') {
+                        badgeClass = 'bg-yellow-100 text-yellow-800';
+                    } else if (record.sumber === 'Update stok manual') {
+                        badgeClass = 'bg-indigo-100 text-indigo-800';
+                    }
+                    
+                    content += `
+                        <tr class="border-t border-gray-100">
+                            <td class="px-4 py-3 text-sm">
+                                ${formatDateForDetail(record.tanggal_update)}
+                            </td>
+                            <td class="px-4 py-3 text-sm">${record.stok_awal} pcs</td>
+                            <td class="px-4 py-3 text-sm font-bold ${changeColor}">
+                                <i class="${changeIcon} mr-1"></i>
+                                ${changeSign}${record.stok_baru} pcs
+                            </td>
+                            <td class="px-4 py-3 text-sm font-bold">${record.total_stok} pcs</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="px-2 py-1 text-xs rounded-full ${badgeClass}">
+                                    ${record.sumber}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                ${record.kadaluarsa ? formatSimpleDate(record.kadaluarsa) : '-'}
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                content += `
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fas fa-history text-3xl mb-3 text-gray-300"></i>
+                            <p>Belum ada riwayat stok untuk produk ini.</p>
+                            <p class="text-sm mt-1">Riwayat akan muncul setelah ada penambahan atau perubahan stok.</p>
+                        </td>
+                    </tr>
                 `;
-                
-                content += `</div>`;
-                
-                document.getElementById('detailContent').innerHTML = content;
-                document.getElementById('detailModal').classList.remove('hidden');
-                
-                // Update timestamp in realtime
-                updateDetailTimestamp();
-            })
-            .catch(error => {
-                Swal.close();
-                console.error('Error:', error);
-                Swal.fire('Error', 'Terjadi kesalahan saat memuat detail produk', 'error');
-            });
-    }
-
-    // Function untuk update timestamp di modal detail
-    function updateDetailTimestamp() {
-        const timestampElement = document.getElementById('detailTimestamp');
-        if (timestampElement) {
-            const now = new Date();
-            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 
-                           'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            }
             
-            const dayName = days[now.getDay()];
-            const date = now.getDate();
-            const monthName = months[now.getMonth()];
-            const year = now.getFullYear();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
+            content += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Stock Summary -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Ringkasan Stok</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="text-center p-4 bg-green-50 rounded-lg">
+                                <div class="text-2xl font-bold text-green-600">+${product.total_increase || 0}</div>
+                                <div class="text-sm text-gray-600">Total Masuk</div>
+                                <div class="text-xs text-gray-500">Penambahan stok</div>
+                            </div>
+                            <div class="text-center p-4 bg-red-50 rounded-lg">
+                                <div class="text-2xl font-bold text-red-600">-${product.total_decrease || 0}</div>
+                                <div class="text-sm text-gray-600">Total Keluar</div>
+                                <div class="text-xs text-gray-500">Pengurangan stok</div>
+                            </div>
+                            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                <div class="text-2xl font-bold ${product.net_change >= 0 ? 'text-green-600' : 'text-red-600'}">
+                                    ${product.net_change >= 0 ? '+' : ''}${product.net_change || 0}
+                                </div>
+                                <div class="text-sm text-gray-600">Perubahan Bersih</div>
+                                <div class="text-xs text-gray-500">Net change</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500">Sistem: FEFO (First Expired First Out)</p>
+                                <p class="text-xs text-gray-400">Produk dengan kadaluarsa terdekat akan diprioritaskan</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-500">Total Riwayat: ${history.length} perubahan</p>
+                                <p class="text-xs text-gray-400">${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
             
-            timestampElement.textContent = `${dayName}, ${date} ${monthName} ${year} ${hours}:${minutes}`;
+            document.getElementById('detailContent').innerHTML = content;
+            document.getElementById('detailModal').classList.remove('hidden');
+            
+        } catch (error) {
+            Swal.close();
+            console.error('Error:', error);
+            Swal.fire('Error', 'Terjadi kesalahan saat memuat detail produk', 'error');
         }
     }
 
@@ -899,19 +898,36 @@
         filterProducts();
     });
 
+    document.getElementById('expiryFilter').addEventListener('change', function() {
+        filterProducts();
+    });
+
     function filterProducts() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const statusFilter = document.getElementById('statusFilter').value;
+        const expiryFilter = document.getElementById('expiryFilter').value;
         const rows = document.querySelectorAll('.product-row');
 
         rows.forEach(row => {
             const productName = row.querySelector('td:first-child .font-medium').textContent.toLowerCase();
+            const sku = row.querySelector('td:first-child .text-xs').textContent.toLowerCase();
             const productStatus = row.getAttribute('data-status');
+            const expiryStatus = row.getAttribute('data-expiry');
+            const expiryDays = parseInt(row.getAttribute('data-expiry-days'));
 
-            const matchesSearch = productName.includes(searchTerm);
+            const matchesSearch = productName.includes(searchTerm) || sku.includes(searchTerm);
             const matchesStatus = !statusFilter || productStatus === statusFilter;
+            
+            let matchesExpiry = true;
+            if (expiryFilter === 'expired_sangat_dekat') {
+                matchesExpiry = expiryDays > 0 && expiryDays <= 3;
+            } else if (expiryFilter === 'expired_dekat') {
+                matchesExpiry = expiryDays > 0 && expiryDays <= 7;
+            } else if (expiryFilter === 'expired') {
+                matchesExpiry = expiryDays < 0;
+            }
 
-            if (matchesSearch && matchesStatus) {
+            if (matchesSearch && matchesStatus && matchesExpiry) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
