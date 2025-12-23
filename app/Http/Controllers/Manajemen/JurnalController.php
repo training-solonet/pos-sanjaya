@@ -188,49 +188,61 @@ class JurnalController extends Controller
     private function getData(Request $request)
     {
         $query = Jurnal::where('role', 'manajemen');
+        $transaksiQuery = Transaksi::query();
 
-        // Filter by date
-        if ($request->has('date') && $request->date) {
-            $query->whereDate('tgl', $request->date);
+        // Tentukan tanggal yang akan digunakan
+        $date = $request->has('date') && $request->date ? $request->date : now()->format('Y-m-d');
+        $period = $request->has('period') ? $request->period : 'daily';
+
+        // Filter berdasarkan periode waktu
+        switch ($period) {
+            case 'daily':
+                // Filter harian
+                $query->whereDate('tgl', $date);
+                $transaksiQuery->whereDate('tgl', $date);
+                break;
+
+            case 'weekly':
+                // Filter mingguan (Senin - Minggu)
+                $startOfWeek = date('Y-m-d', strtotime('monday this week', strtotime($date)));
+                $endOfWeek = date('Y-m-d', strtotime('sunday this week', strtotime($date)));
+
+                $query->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
+                $transaksiQuery->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
+                break;
+
+            case 'monthly':
+                // Filter bulanan
+                $startOfMonth = date('Y-m-01', strtotime($date));
+                $endOfMonth = date('Y-m-t', strtotime($date));
+
+                $query->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
+                $transaksiQuery->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
+                break;
+
+            default:
+                // Default harian
+                $query->whereDate('tgl', $date);
+                $transaksiQuery->whereDate('tgl', $date);
         }
 
         // Filter by jenis
         if ($request->has('jenis') && $request->jenis != 'semua') {
             $query->where('jenis', $request->jenis);
+
+            // Untuk transaksi, hanya ambil jika filter pemasukan
+            if ($request->jenis == 'pemasukan') {
+                $transaksiQuery->whereRaw('1=1');
+            } else {
+                $transaksiQuery->whereRaw('1=0');
+            }
         }
 
         // Filter by kategori
         if ($request->has('kategori') && $request->kategori != 'semua') {
             $query->where('kategori', $request->kategori);
-        }
 
-        // Search
-        if ($request->has('search') && $request->search) {
-            $query->where('keterangan', 'like', '%'.$request->search.'%');
-        }
-
-        $jurnalsManual = $query->orderBy('tgl', 'desc')->get();
-
-        // Ambil transaksi berdasarkan filter yang sama
-        $transaksiQuery = Transaksi::query();
-
-        if ($request->has('date') && $request->date) {
-            $transaksiQuery->whereDate('tgl', $request->date);
-        }
-
-        // Untuk jenis, transaksi selalu pemasukan
-        if ($request->has('jenis') && $request->jenis != 'semua') {
-            if ($request->jenis == 'pemasukan') {
-                // Hanya ambil jika filter pemasukan
-                $transaksiQuery->whereRaw('1=1');
-            } else {
-                // Jika filter pengeluaran, jangan ambil transaksi
-                $transaksiQuery->whereRaw('1=0');
-            }
-        }
-
-        // Untuk kategori, transaksi selalu Penjualan
-        if ($request->has('kategori') && $request->kategori != 'semua') {
+            // Untuk transaksi, hanya ambil jika filter Penjualan
             if ($request->kategori == 'Penjualan') {
                 $transaksiQuery->whereRaw('1=1');
             } else {
@@ -238,10 +250,19 @@ class JurnalController extends Controller
             }
         }
 
+        // Search
         if ($request->has('search') && $request->search) {
-            $transaksiQuery->where('id', 'like', '%'.$request->search.'%');
+            $query->where(function ($q) use ($request) {
+                $q->where('keterangan', 'like', '%'.$request->search.'%')
+                    ->orWhere('id', 'like', '%'.$request->search.'%');
+            });
+
+            $transaksiQuery->where(function ($q) use ($request) {
+                $q->where('id', 'like', '%'.$request->search.'%');
+            });
         }
 
+        $jurnalsManual = $query->orderBy('tgl', 'desc')->get();
         $transaksis = $transaksiQuery->orderBy('tgl', 'desc')->get();
 
         // Konversi transaksi ke format jurnal
@@ -255,36 +276,93 @@ class JurnalController extends Controller
         return response()->json($allJurnals);
     }
 
-    // Method untuk mendapatkan summary - sekarang termasuk transaksi
+    // Method untuk mendapatkan summary - sekarang termasuk transaksi (DIPERBAIKI)
     private function getSummary(Request $request)
     {
         $date = $request->has('date') && $request->date ? $request->date : now()->format('Y-m-d');
+        $period = $request->has('period') ? $request->period : 'daily';
 
-        // Summary dari jurnal manual
-        $manualQuery = Jurnal::where('role', 'manajemen')
-            ->whereDate('tgl', $date);
+        // Inisialisasi query terpisah untuk manual dan transaksi
+        $manualQuery = Jurnal::where('role', 'manajemen');
+        $transaksiQuery = Transaksi::query();
 
-        $manualData = $manualQuery->select(
-            DB::raw('COUNT(*) as total_transaksi'),
-            DB::raw('SUM(CASE WHEN jenis = "pemasukan" THEN nominal ELSE 0 END) as total_pemasukan'),
-            DB::raw('SUM(CASE WHEN jenis = "pengeluaran" THEN nominal ELSE 0 END) as total_pengeluaran'),
-            DB::raw('COUNT(CASE WHEN jenis = "pemasukan" THEN 1 END) as jumlah_pemasukan'),
-            DB::raw('COUNT(CASE WHEN jenis = "pengeluaran" THEN 1 END) as jumlah_pengeluaran')
-        )->first();
+        // Gunakan logika filter yang SAMA PERSIS dengan getData()
+        switch ($period) {
+            case 'daily':
+                // Filter harian
+                $manualQuery->whereDate('tgl', $date);
+                $transaksiQuery->whereDate('tgl', $date);
+                break;
+
+            case 'weekly':
+                // Filter mingguan (Senin - Minggu)
+                $startOfWeek = date('Y-m-d', strtotime('monday this week', strtotime($date)));
+                $endOfWeek = date('Y-m-d', strtotime('sunday this week', strtotime($date)));
+
+                $manualQuery->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
+                $transaksiQuery->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
+                break;
+
+            case 'monthly':
+                // Filter bulanan
+                $startOfMonth = date('Y-m-01', strtotime($date));
+                $endOfMonth = date('Y-m-t', strtotime($date));
+
+                $manualQuery->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
+                $transaksiQuery->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
+                break;
+
+            default:
+                // Default harian
+                $manualQuery->whereDate('tgl', $date);
+                $transaksiQuery->whereDate('tgl', $date);
+        }
+
+        // Summary dari jurnal manual - gunakan cara yang lebih akurat
+        $manualData = $manualQuery->get();
+
+        $manualTotalPemasukan = $manualData->where('jenis', 'pemasukan')->sum('nominal');
+        $manualTotalPengeluaran = $manualData->where('jenis', 'pengeluaran')->sum('nominal');
+        $manualJumlahPemasukan = $manualData->where('jenis', 'pemasukan')->count();
+        $manualJumlahPengeluaran = $manualData->where('jenis', 'pengeluaran')->count();
+        $manualTotalTransaksi = $manualData->count();
 
         // Summary dari transaksi
-        $transaksiQuery = Transaksi::whereDate('tgl', $date);
-        $transaksiData = $transaksiQuery->select(
-            DB::raw('COUNT(*) as jumlah_transaksi'),
-            DB::raw('SUM(bayar - kembalian) as total_penjualan')
-        )->first();
+        $transaksiData = $transaksiQuery->get();
 
-        // Gabungkan data
-        $totalPemasukan = ($manualData->total_pemasukan ?? 0) + ($transaksiData->total_penjualan ?? 0);
-        $totalPengeluaran = $manualData->total_pengeluaran ?? 0;
-        $jumlahPemasukan = ($manualData->jumlah_pemasukan ?? 0) + ($transaksiData->jumlah_transaksi ?? 0);
-        $jumlahPengeluaran = $manualData->jumlah_pengeluaran ?? 0;
-        $totalTransaksi = ($manualData->total_transaksi ?? 0) + ($transaksiData->jumlah_transaksi ?? 0);
+        $transaksiTotalPenjualan = $transaksiData->sum(function ($transaksi) {
+            return $transaksi->bayar - $transaksi->kembalian;
+        });
+        $transaksiJumlah = $transaksiData->count();
+
+        // Gabungkan data dengan BENAR
+        $totalPemasukan = $manualTotalPemasukan + $transaksiTotalPenjualan;
+        $totalPengeluaran = $manualTotalPengeluaran;
+        $jumlahPemasukan = $manualJumlahPemasukan + $transaksiJumlah;
+        $jumlahPengeluaran = $manualJumlahPengeluaran;
+        $totalTransaksi = $manualTotalTransaksi + $transaksiJumlah;
+
+        // Tentukan rentang tanggal untuk display
+        switch ($period) {
+            case 'daily':
+                $startDate = $date;
+                $endDate = $date;
+                break;
+
+            case 'weekly':
+                $startDate = date('Y-m-d', strtotime('monday this week', strtotime($date)));
+                $endDate = date('Y-m-d', strtotime('sunday this week', strtotime($date)));
+                break;
+
+            case 'monthly':
+                $startDate = date('Y-m-01', strtotime($date));
+                $endDate = date('Y-m-t', strtotime($date));
+                break;
+
+            default:
+                $startDate = $date;
+                $endDate = $date;
+        }
 
         return response()->json([
             'total_revenue' => $totalPemasukan,
@@ -293,6 +371,9 @@ class JurnalController extends Controller
             'revenue_count' => $jumlahPemasukan,
             'expense_count' => $jumlahPengeluaran,
             'total_transactions' => $totalTransaksi,
+            'period_start' => $startDate,
+            'period_end' => $endDate,
+            'period_type' => $period,
         ]);
     }
 
