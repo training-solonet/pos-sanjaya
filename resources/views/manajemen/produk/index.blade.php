@@ -60,7 +60,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200" id="productTableBody">
-                            @foreach ($produk as $item)
+                            @forelse ($produk as $item)
                                 @php
                                     // Generate SKU
                                     $sku = 'PROD-' . str_pad($item->id, 6, '0', STR_PAD_LEFT);
@@ -161,7 +161,7 @@
                                                     str_contains(strtolower($item->nama), 'raisin')
                                                 ) {
                                                     $iconColor = 'purple';
-                                                    $iconIcon = 'fas fa-candy-cane';
+                                                    $iconClass = 'fas fa-candy-cane';
                                                 } elseif (
                                                     str_contains(strtolower($item->nama), 'pisang') ||
                                                     str_contains(strtolower($item->nama), 'banana')
@@ -249,71 +249,108 @@
                                         </div>
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                        <i class="fas fa-box-open text-3xl mb-3 text-gray-300"></i>
+                                        <p>Tidak ada produk ditemukan.</p>
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Pagination -->
-            @if ($produk->hasPages())
-            <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-                <div class="flex flex-col sm:flex-row items-center justify-between">
-                    <div class="mb-2 sm:mb-0">
-                        <p class="text-sm text-gray-700">
-                            Menampilkan
-                            <span class="font-medium">{{ $produk->firstItem() }}</span>
-                            -
-                            <span class="font-medium">{{ $produk->lastItem() }}</span>
-                            dari
-                            <span class="font-medium">{{ $produk->total() }}</span>
-                            hasil
-                        </p>
-                    </div>
-                    <div>
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                            {{-- Tombol Previous --}}
-                            @if ($produk->onFirstPage())
-                                <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
-                                    <span class="sr-only">Sebelumnya</span>
-                                    <i class="fas fa-chevron-left"></i>
-                                </span>
-                            @else
-                                <a href="{{ $produk->previousPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                    <span class="sr-only">Sebelumnya</span>
-                                    <i class="fas fa-chevron-left"></i>
-                                </a>
-                            @endif
-
-                            {{-- Tombol Halaman --}}
-                            @foreach ($produk->getUrlRange(max(1, $produk->currentPage() - 2), min($produk->lastPage(), $produk->currentPage() + 2)) as $page => $url)
-                                @if ($page == $produk->currentPage())
-                                    <span class="relative inline-flex items-center px-4 py-2 border border-green-500 bg-green-50 text-sm font-medium text-green-600">
-                                        {{ $page }}
+            <!-- PERBAIKAN: Tambahkan ini untuk debugging pagination -->
+            @if($produk->count() > 0)
+                <!-- Pagination -->
+                <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+                    <div class="flex flex-col sm:flex-row items-center justify-between">
+                        <div class="mb-2 sm:mb-0">
+                            <p class="text-sm text-gray-700">
+                                Menampilkan
+                                <span class="font-medium">{{ $produk->firstItem() }}</span>
+                                -
+                                <span class="font-medium">{{ $produk->lastItem() }}</span>
+                                dari
+                                <span class="font-medium">{{ $produk->total() }}</span>
+                                produk
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                {{-- Tombol Previous --}}
+                                @if ($produk->onFirstPage())
+                                    <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                        <span class="sr-only">Sebelumnya</span>
+                                        <i class="fas fa-chevron-left"></i>
                                     </span>
                                 @else
-                                    <a href="{{ $url }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        {{ $page }}
+                                    <a href="{{ $produk->previousPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Sebelumnya</span>
+                                        <i class="fas fa-chevron-left"></i>
                                     </a>
                                 @endif
-                            @endforeach
 
-                            {{-- Tombol Next --}}
-                            @if ($produk->hasMorePages())
-                                <a href="{{ $produk->nextPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                    <span class="sr-only">Berikutnya</span>
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                            @else
-                                <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
-                                    <span class="sr-only">Berikutnya</span>
-                                    <i class="fas fa-chevron-right"></i>
-                                </span>
-                            @endif
-                        </nav>
+                                {{-- Tombol Halaman --}}
+                                @php
+                                    $current = $produk->currentPage();
+                                    $last = $produk->lastPage();
+                                    $start = max(1, $current - 2);
+                                    $end = min($last, $current + 2);
+                                @endphp
+
+                                @if($start > 1)
+                                    <a href="{{ $produk->url(1) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        1
+                                    </a>
+                                    @if($start > 2)
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                                            ...
+                                        </span>
+                                    @endif
+                                @endif
+
+                                @for ($page = $start; $page <= $end; $page++)
+                                    @if ($page == $current)
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-green-500 bg-green-50 text-sm font-medium text-green-600">
+                                            {{ $page }}
+                                        </span>
+                                    @else
+                                        <a href="{{ $produk->url($page) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            {{ $page }}
+                                        </a>
+                                    @endif
+                                @endfor
+
+                                @if($end < $last)
+                                    @if($end < $last - 1)
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                                            ...
+                                        </span>
+                                    @endif
+                                    <a href="{{ $produk->url($last) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        {{ $last }}
+                                    </a>
+                                @endif
+
+                                {{-- Tombol Next --}}
+                                @if ($produk->hasMorePages())
+                                    <a href="{{ $produk->nextPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Berikutnya</span>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                @else
+                                    <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                        <span class="sr-only">Berikutnya</span>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                @endif
+                            </nav>
+                        </div>
                     </div>
                 </div>
-            </div>
             @endif
         </div>
     </main>
