@@ -15,10 +15,11 @@ class BahanbakuController extends Controller
      */
     public function index()
     {
-        // PERBAIKAN: Menambahkan orderBy untuk mengurutkan dari yang terbaru
+        // Menggunakan pagination dengan 12 data per halaman
         $bahan_baku = BahanBaku::with('konversi')
-            ->orderBy('tglupdate', 'desc') // Urutkan berdasarkan tglupdate terbaru
-            ->get();
+            ->orderBy('tglupdate', 'desc')
+            ->paginate(12); // Ubah get() menjadi paginate(12)
+
         $konversi = Konversi::all();
 
         return view('manajemen.bahanbaku.index', compact('bahan_baku', 'konversi'));
@@ -221,10 +222,10 @@ class BahanbakuController extends Controller
     public function apiBahanBaku()
     {
         try {
-            // PERBAIKAN: Menambahkan orderBy untuk API juga
+            // Menambahkan orderBy untuk API juga
             $bahan_baku = BahanBaku::with('konversi')
                 ->select('id', 'nama', 'id_konversi')
-                ->orderBy('tglupdate', 'desc') // Urutkan berdasarkan tglupdate terbaru
+                ->orderBy('tglupdate', 'desc')
                 ->get();
 
             return response()->json($bahan_baku);

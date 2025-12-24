@@ -161,7 +161,7 @@
                                                     str_contains(strtolower($item->nama), 'raisin')
                                                 ) {
                                                     $iconColor = 'purple';
-                                                    $iconClass = 'fas fa-candy-cane';
+                                                    $iconIcon = 'fas fa-candy-cane';
                                                 } elseif (
                                                     str_contains(strtolower($item->nama), 'pisang') ||
                                                     str_contains(strtolower($item->nama), 'banana')
@@ -254,6 +254,67 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Pagination -->
+            @if ($produk->hasPages())
+            <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+                <div class="flex flex-col sm:flex-row items-center justify-between">
+                    <div class="mb-2 sm:mb-0">
+                        <p class="text-sm text-gray-700">
+                            Menampilkan
+                            <span class="font-medium">{{ $produk->firstItem() }}</span>
+                            -
+                            <span class="font-medium">{{ $produk->lastItem() }}</span>
+                            dari
+                            <span class="font-medium">{{ $produk->total() }}</span>
+                            hasil
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            {{-- Tombol Previous --}}
+                            @if ($produk->onFirstPage())
+                                <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                    <span class="sr-only">Sebelumnya</span>
+                                    <i class="fas fa-chevron-left"></i>
+                                </span>
+                            @else
+                                <a href="{{ $produk->previousPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Sebelumnya</span>
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            @endif
+
+                            {{-- Tombol Halaman --}}
+                            @foreach ($produk->getUrlRange(max(1, $produk->currentPage() - 2), min($produk->lastPage(), $produk->currentPage() + 2)) as $page => $url)
+                                @if ($page == $produk->currentPage())
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-green-500 bg-green-50 text-sm font-medium text-green-600">
+                                        {{ $page }}
+                                    </span>
+                                @else
+                                    <a href="{{ $url }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        {{ $page }}
+                                    </a>
+                                @endif
+                            @endforeach
+
+                            {{-- Tombol Next --}}
+                            @if ($produk->hasMorePages())
+                                <a href="{{ $produk->nextPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Berikutnya</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            @else
+                                <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                    <span class="sr-only">Berikutnya</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </span>
+                            @endif
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </main>
 
