@@ -93,27 +93,26 @@
                                 
                                 @forelse($produks as $produk)
                                 <!-- Product Card: {{ $produk->nama }} -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+                                <div class="product-card group bg-white border border-gray-100 rounded-2xl p-4 hover:shadow-xl hover:border-green-300 transition-all duration-300 cursor-pointer relative"
                                      data-nama="{{ strtolower($produk->nama) }}"
                                      data-id="{{ $produk->id }}"
                                      data-price="{{ $produk->harga }}"
                                      data-stock="{{ $produk->stok }}"
                                      onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg', {{ $produk->stok }})">  
-                                    <div class="relative product-image-wrapper">
-                                        <div class="aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-bread-slice text-green-500 text-2xl group-hover:scale-110 transition-transform"></i>
-                                        </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold product-stock-badge">{{ $produk->stok }}</div>
+                                    <!-- Stock Badge - Top Left -->
+                                    <div class="absolute -top-2 -left-2 w-10 h-10 bg-success text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg product-stock-badge z-10">
+                                        {{ $produk->stok }}
                                     </div>
-                                    <div class="product-details">
-                                        <div class="product-info space-y-1">
-                                            <h3 class="font-semibold text-gray-900 text-sm product-name">{{ $produk->nama }}</h3>
-                                            <p class="text-green-600 font-bold text-lg product-price">Rp {{ number_format($produk->harga, 0, ',', '.') }}</p>
-                                            <div class="flex items-center justify-between product-meta">
-                                                <span class="text-xs text-gray-500">Produk</span>
+                                    
+                                    <div class="product-details pt-2">
+                                        <div class="product-info space-y-2">
+                                            <h3 class="font-bold text-gray-900 text-base product-name leading-tight min-h-[40px]">{{ $produk->nama }}</h3>
+                                            <p class="text-gray-900 font-bold text-xl product-price">Rp {{ number_format($produk->harga, 0, ',', '.') }}</p>
+                                            <div class="flex items-center space-x-1.5 product-meta pt-1">
+                                                <span class="text-xs text-gray-600">Produk</span>
                                                 <div class="flex items-center space-x-1 product-status">
                                                     <div class="w-2 h-2 {{ $produk->stok > 0 ? 'bg-success' : 'bg-red-500' }} rounded-full"></div>
-                                                    <span class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-medium">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
+                                                    <span class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-semibold">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -559,7 +558,6 @@
         }
 
         let cart = [];
-        let sidebarOpen = false;
         let currentCategory = 'semua';
         let currentView = 'grid'; // Default view
         let currentOrderNumber = null;
@@ -989,36 +987,6 @@
             });
         }
 
-        // Toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const hamburger = document.getElementById('hamburgerBtn');
-            
-            sidebarOpen = !sidebarOpen;
-            
-            if (sidebarOpen) {
-                sidebar.classList.add('show');
-                overlay.classList.add('show');
-                hamburger.classList.add('active');
-            } else {
-                sidebar.classList.remove('show');
-                overlay.classList.remove('show');
-                hamburger.classList.remove('active');
-            }
-        }
-
-            // Close sidebar
-            function closeSidebar() {
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                const hamburger = document.getElementById('hamburgerBtn');
-
-                sidebarOpen = false;
-                sidebar.classList.remove('show');
-                overlay.classList.remove('show');
-                hamburger.classList.remove('active');
-            }
 
             // Header action functions
             function showTransactionHistory() {
