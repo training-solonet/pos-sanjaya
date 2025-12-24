@@ -32,7 +32,7 @@ class ResepController extends Controller
             })->toArray();
 
             $foodCost = array_sum(array_column($ingredients, 'subtotal'));
-            
+
             // Calculate margin if selling price exists
             $margin = 0;
             if ($r->harga_jual && $r->harga_jual > 0 && $foodCost > 0) {
@@ -54,10 +54,10 @@ class ResepController extends Controller
                 'notes' => $r->catatan ?? '',
             ];
         });
-        
+
         // Replace the collection in paginator with mapped data
         $resep->setCollection($recipes);
-        
+
         // Convert to array for JavaScript
         $recipesArray = $recipes->toArray();
 

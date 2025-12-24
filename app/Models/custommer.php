@@ -12,10 +12,11 @@ class custommer extends Model
     protected $fillable = [
         'nama',
         'telepon',
-        'email'
+        'email',
     ];
 
-    public function DetailTransaksi(){
+    public function DetailTransaksi()
+    {
         return $this->belongsTo(DetailTransaksi::class, 'id_customer');
     }
 }
