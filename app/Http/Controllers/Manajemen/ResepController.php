@@ -16,10 +16,10 @@ class ResepController extends Controller
         // Load resep with rincian bahan to pass to the view
         $resep = \App\Models\Resep::with('rincianResep.bahanBaku')->paginate(10);
 
-        $recipes = $resep->map(function ($r) {
+        $recipes = $resep->getCollection()->map(function ($r) {
             $ingredients = $r->rincianResep->map(function ($ir) {
-                $qty = (int) ($ir->qty ?? 0);
-                $price = (int) ($ir->harga ?? 0);
+                $qty = (float) ($ir->qty ?? 0);
+                $price = (float) ($ir->harga ?? 0);
                 $subtotal = $qty * $price;
 
                 return [
@@ -33,21 +33,33 @@ class ResepController extends Controller
 
             $foodCost = array_sum(array_column($ingredients, 'subtotal'));
 
+            // Calculate margin if selling price exists
+            $margin = 0;
+            if ($r->harga_jual && $r->harga_jual > 0 && $foodCost > 0) {
+                $margin = round((($r->harga_jual - $foodCost) / $r->harga_jual) * 100, 2);
+            }
+
             return [
                 'id' => $r->id,
-                'name' => $r->nama,
+                'name' => $r->nama ?? '',
                 'category' => $r->kategori ?? '',
                 'yield' => $r->porsi ?? 1,
                 'duration' => $r->waktu_pembuatan ?? '',
                 'foodCost' => $foodCost,
-                'sellingPrice' => $r->harga_jual ?? null,
-                'margin' => $r->margin ?? 0,
-                'status' => ucfirst($r->status ?? 'draft'), // Capitalize first letter untuk display
+                'sellingPrice' => $r->harga_jual ?? 0,
+                'margin' => $margin,
+                'status' => ucfirst($r->status ?? 'draft'),
                 'ingredients' => $ingredients,
                 'instructions' => $r->langkah ?? '',
                 'notes' => $r->catatan ?? '',
             ];
-        })->toArray();
+        });
+
+        // Replace the collection in paginator with mapped data
+        $resep->setCollection($recipes);
+
+        // Convert to array for JavaScript
+        $recipesArray = $recipes->toArray();
 
         // also provide bahan baku list to view for ingredient selection
         $bahans = DB::table('bahan_baku')
@@ -63,17 +75,17 @@ class ResepController extends Controller
             $format = $request->input('export'); // 'excel' or 'pdf'
 
             if ($format === 'excel') {
-                return $this->exportExcel($recipes);
+                return $this->exportExcel($recipesArray);
             } elseif ($format === 'pdf') {
-                return $this->exportPdf($recipes);
+                return $this->exportPdf($recipesArray);
             }
         }
 
         if ($request->wantsJson() || $request->ajax()) {
-            return response()->json(['success' => true, 'recipes' => $recipes, 'bahans' => $bahans, 'produks' => $produks], 200);
+            return response()->json(['success' => true, 'recipes' => $recipesArray, 'bahans' => $bahans, 'produks' => $produks], 200);
         }
 
-        return view('manajemen.resep.index', compact('resep', 'recipes', 'bahans', 'produks'));
+        return view('manajemen.resep.index', compact('resep', 'recipesArray', 'bahans', 'produks'));
     }
 
     /**

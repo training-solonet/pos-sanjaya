@@ -147,32 +147,32 @@
                     <!-- Table View -->
                     <div id="tableView" class="overflow-x-auto">
                         <table class="w-full">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                                 <tr>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Resep</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Kategori</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Porsi</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Food Cost</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Harga Jual</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Margin</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Resep
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Kategori
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Porsi
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Food Cost
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Harga Jual
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Margin
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Status
+                                    </th>
+                                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Aksi
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="recipeTableBody" class="bg-white divide-y divide-gray-200">
@@ -540,7 +540,7 @@
     // --- Data yang di-inject dari server ---
     // `recipes`: array objek resep yang disiapkan controller
     // `bahans`: daftar bahan baku (id, nama, stok) untuk dipakai di select bahan
-    let recipes = @json($recipes ?? []);
+    let recipes = @json($recipesArray ?? []);
     // Bahan baku list (id, nama, stok)
     let bahanList = @json($bahans ?? []);
     
@@ -674,6 +674,10 @@
 
     // Inisialisasi ketika halaman selesai dimuat
     window.addEventListener('DOMContentLoaded', function() {
+        // Debug: log loaded recipes
+        console.log('Loaded recipes:', recipes.length, 'Total in DB:', total);
+        console.log('Current page:', currentPage, 'Last page:', lastPage);
+        
         // populate product select if produk provided
         populateProductSelect();
         updateDateTime();
@@ -736,39 +740,54 @@
         }
 
         tbody.innerHTML = recipesToRender.map(recipe => `
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-blue-50 transition-colors duration-150">
                     <td class="px-6 py-4">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 bg-gradient-to-r ${getCategoryGradient(recipe.category)} rounded-lg flex items-center justify-center mr-3">
-                                <i class="fas ${getCategoryIcon(recipe.category)} text-white text-sm"></i>
+                            <div class="w-12 h-12 bg-gradient-to-r ${getCategoryGradient(recipe.category)} rounded-lg flex items-center justify-center mr-3 shadow-sm">
+                                <i class="fas ${getCategoryIcon(recipe.category)} text-white"></i>
                             </div>
                             <div>
-                                <div class="text-sm font-medium text-gray-900 cursor-pointer text-blue-600" onclick="viewRecipe(${recipe.id})">${recipe.name}</div>
-                                <div class="text-xs text-gray-500">${recipe.yield} porsi • ${formatDuration(recipe.duration)}</div>
+                                <div class="text-sm font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors" onclick="viewRecipe(${recipe.id})">${recipe.name}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">
+                                    <i class="fas fa-utensils mr-1"></i>${recipe.yield} porsi • 
+                                    <i class="fas fa-clock mr-1 ml-1"></i>${formatDuration(recipe.duration)}
+                                </div>
                             </div>
                         </div>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">${recipe.category}</span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-900">${recipe.yield}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">Rp ${((Number(recipe.foodCost) || 0)).toLocaleString('id-ID')}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">Rp ${((Number(recipe.sellingPrice) || 0)).toLocaleString('id-ID')}</td>
-                    <td class="px-6 py-4">
-                        <span class="inline-block px-2 py-1 text-xs font-medium ${getMarginColor(recipe.margin)} rounded-full">${recipe.margin}%</span>
+                        <span class="inline-flex items-center px-3 py-1.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full shadow-sm">
+                            <i class="fas fa-tag mr-1.5"></i>${recipe.category}
+                        </span>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="inline-block px-2 py-1 text-xs font-medium ${getStatusColor(recipe.status)} rounded-full">${recipe.status}</span>
+                        <span class="text-sm font-semibold text-gray-900">${recipe.yield}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="flex items-center space-x-2">
-                            <button onclick="viewRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Lihat Detail">
+                        <span class="text-sm font-bold text-green-700">Rp ${((Number(recipe.foodCost) || 0)).toLocaleString('id-ID')}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm font-bold text-blue-700">Rp ${((Number(recipe.sellingPrice) || 0)).toLocaleString('id-ID')}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-3 py-1.5 text-xs font-bold ${getMarginColor(recipe.margin)} rounded-full shadow-sm">
+                            <i class="fas fa-percentage mr-1"></i>${recipe.margin}%
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-3 py-1.5 text-xs font-bold ${getStatusColor(recipe.status)} rounded-full shadow-sm">
+                            ${recipe.status === 'Aktif' ? '<i class="fas fa-check-circle mr-1"></i>' : recipe.status === 'Draft' ? '<i class="fas fa-edit mr-1"></i>' : '<i class="fas fa-times-circle mr-1"></i>'}${recipe.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="viewRecipe(${recipe.id})" class="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all" title="Lihat Detail">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button onclick="editRecipe(${recipe.id})" class="text-green-600 hover:text-green-700" title="Edit">
+                            <button onclick="editRecipe(${recipe.id})" class="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button onclick="deleteRecipe(${recipe.id})" class="text-red-600 hover:text-red-700" title="Hapus">
+                            <button onclick="deleteRecipe(${recipe.id})" class="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all" title="Hapus">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -1094,7 +1113,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Harga/unit</label>
-                        <input type="number" step="0.01" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
+                        <input type="number" step="0.01" value="0" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
                     </div>
                     <div class="md:col-span-1">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Subtotal</label>
@@ -1158,18 +1177,55 @@
                     </button>
                 </div>
             `;
-            // set bahan selection and apply auto-fill satuan & harga (match by name -> id)
+            // set bahan selection and apply auto-fill satuan (tapi jangan override harga)
             const nameSelect = newIngredient.querySelector('.ingredient-name');
+            const priceInput = newIngredient.querySelector('.ingredient-price');
+            const unitSelect = newIngredient.querySelector('.ingredient-unit');
+            
             if (nameSelect) {
                 const found = (bahanList || []).find(b => b.nama === (ing.name || ''));
                 if (found) {
                     nameSelect.value = found.id;
-                    onBahanSelected(nameSelect); // ini akan auto-set satuan & harga
+                    
+                    // Simpan harga yang sudah ada sebelum memanggil onBahanSelected
+                    const savedPrice = ing.price;
+                    
+                    // Set satuan berdasarkan data bahan (tanpa memanggil onBahanSelected yang akan override harga)
+                    if (unitSelect && found.satuan_kecil) {
+                        const satuan = String(found.satuan_kecil).toLowerCase().trim();
+                        
+                        if (satuan === 'kg') {
+                            unitSelect.innerHTML = `
+                                <option value="kg">kg</option>
+                                <option value="gram">gram</option>
+                            `;
+                        } else if (satuan === 'gram' || satuan === 'g') {
+                            unitSelect.innerHTML = `<option value="gram">gram</option>`;
+                        } else if (satuan === 'liter' || satuan === 'l') {
+                            unitSelect.innerHTML = `
+                                <option value="liter">liter</option>
+                                <option value="ml">ml</option>
+                            `;
+                        } else if (satuan === 'ml') {
+                            unitSelect.innerHTML = `<option value="ml">ml</option>`;
+                        } else if (satuan === 'pcs') {
+                            unitSelect.innerHTML = `<option value="pcs">pcs</option>`;
+                        } else if (satuan === 'slice') {
+                            unitSelect.innerHTML = `<option value="slice">slice</option>`;
+                        } else {
+                            unitSelect.innerHTML = `<option value="${satuan}">${satuan}</option>`;
+                        }
+                    }
+                    
+                    // Set satuan yang tersimpan di resep
+                    if (unitSelect) unitSelect.value = ing.unit || 'gram';
+                    
+                    // Kembalikan harga yang sudah ada (dari resep, bukan dari database bahan)
+                    if (priceInput) priceInput.value = savedPrice;
                 } else {
                     nameSelect.value = '';
                     // jika bahan tidak ditemukan, set manual dari data resep
-                    const sel = newIngredient.querySelector('.ingredient-unit');
-                    if (sel) sel.value = ing.unit || 'gram';
+                    if (unitSelect) unitSelect.value = ing.unit || 'gram';
                 }
             }
             list.appendChild(newIngredient);
@@ -1383,9 +1439,9 @@
                 }
             }
             
-            // Set harga otomatis dari harga_satuan
-            if (priceInput && found.harga_satuan) {
-                priceInput.value = found.harga_satuan;
+            // Set harga ke 0 (user akan input sendiri)
+            if (priceInput) {
+                priceInput.value = 0;
                 // Trigger kalkulasi subtotal
                 calculateIngredientCost(priceInput);
             }
@@ -1404,7 +1460,7 @@
                 `;
             }
             if (priceInput) {
-                priceInput.value = '';
+                priceInput.value = 0;
             }
         }
         // perbarui status disabled opsi bahan di semua select
@@ -1517,7 +1573,7 @@
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Harga/unit</label>
-                    <input type="number" step="0.01" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
+                    <input type="number" step="0.01" value="0" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
                 </div>
                 <div class="md:col-span-1">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Subtotal</label>
@@ -1611,13 +1667,18 @@
 
     // Perbarui statistik header berdasarkan array `recipes` saat ini
     function updateStats() {
-        const total = recipes.length;
-        const active = recipes.filter(r => (r.status || '').toLowerCase() === 'aktif').length;
-        const percent = total ? Math.round((active / total) * 100) : 0;
+        // Use total from pagination, not current page count
         const totalEl = document.getElementById('totalRecipesCount');
         const activeEl = document.getElementById('activeRecipesCount');
         const percentEl = document.getElementById('activeRecipesPercent');
+        
         if (totalEl) totalEl.textContent = total;
+        
+        // For active count, we need to use the value from server
+        // Since we only have current page data, keep existing display
+        const active = recipes.filter(r => (r.status || '').toLowerCase() === 'aktif').length;
+        const percent = total ? Math.round((active / total) * 100) : 0;
+        
         if (activeEl) activeEl.textContent = active;
         if (percentEl) percentEl.textContent = percent + '%';
     }
