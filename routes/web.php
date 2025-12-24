@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Kasir\CustommerController;
+use App\Http\Controllers\Kasir\CustomerController;
 use App\Http\Controllers\Kasir\DashboardController as KasirDashboardController;
 use App\Http\Controllers\Kasir\JurnalController as KasirJurnalController;
 use App\Http\Controllers\Kasir\LaporanController as KasirLaporanController;
@@ -38,7 +38,7 @@ Route::middleware([IsKasir::class])->group(function () {
             'transaksi' => TransaksiController::class,
             'laporan' => KasirLaporanController::class,
             'shift' => ShiftController::class,
-            'custommer' => CustommerController::class,
+            'customer' => CustomerController::class,
         ]);
 
         // API endpoint for real-time transaction updates

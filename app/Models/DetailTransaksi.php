@@ -28,6 +28,6 @@ class DetailTransaksi extends Model
 
     public function customer()
     {
-        return $this->belongsTo(Custommer::class, 'id_customer');
+        return $this->belongsTo(Customer::class, 'id_customer');
     }
 }

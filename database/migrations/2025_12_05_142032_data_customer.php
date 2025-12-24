@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('data_customer', function (Blueprint $table) {
             $table->id();
             $table->string('nama');
-            $table->integer('telepon');
+            $table->string('telepon')->nullable();
             $table->string('email')->default('no-reply@example.com');
             $table->timestamps();
         });
