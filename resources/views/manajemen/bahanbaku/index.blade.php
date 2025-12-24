@@ -178,6 +178,71 @@
           @endforeach
         </div>
 
+        <!-- Pagination -->
+        @if($bahan_baku->hasPages())
+        <div class="flex flex-col items-center justify-center space-y-4 mt-6">
+          <div class="text-sm text-gray-600">
+            Menampilkan <span class="font-medium">{{ $bahan_baku->firstItem() }}</span> 
+            sampai <span class="font-medium">{{ $bahan_baku->lastItem() }}</span> 
+            dari <span class="font-medium">{{ $bahan_baku->total() }}</span> bahan baku
+          </div>
+          
+          <nav class="flex items-center justify-center space-x-1">
+            <!-- Previous Page Link -->
+            @if($bahan_baku->onFirstPage())
+              <span class="px-3 py-1.5 text-gray-400 cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50">
+                <i class="fas fa-chevron-left text-xs"></i>
+              </span>
+            @else
+              <a href="{{ $bahan_baku->previousPageUrl() }}" class="px-3 py-1.5 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300 transition-colors">
+                <i class="fas fa-chevron-left text-xs"></i>
+              </a>
+            @endif
+
+            <!-- Page Numbers -->
+            @php
+              $currentPage = $bahan_baku->currentPage();
+              $lastPage = $bahan_baku->lastPage();
+              $start = max(1, $currentPage - 2);
+              $end = min($lastPage, $currentPage + 2);
+            @endphp
+
+            @if($start > 1)
+              <a href="{{ $bahan_baku->url(1) }}" class="px-3 py-1.5 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300 transition-colors">1</a>
+              @if($start > 2)
+                <span class="px-2 py-1.5 text-gray-400">...</span>
+              @endif
+            @endif
+
+            @for($page = $start; $page <= $end; $page++)
+              @if($page == $currentPage)
+                <span class="px-3 py-1.5 bg-green-500 text-white font-medium rounded-lg border border-green-500">{{ $page }}</span>
+              @else
+                <a href="{{ $bahan_baku->url($page) }}" class="px-3 py-1.5 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300 transition-colors">{{ $page }}</a>
+              @endif
+            @endfor
+
+            @if($end < $lastPage)
+              @if($end < $lastPage - 1)
+                <span class="px-2 py-1.5 text-gray-400">...</span>
+              @endif
+              <a href="{{ $bahan_baku->url($lastPage) }}" class="px-3 py-1.5 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300 transition-colors">{{ $lastPage }}</a>
+            @endif
+
+            <!-- Next Page Link -->
+            @if($bahan_baku->hasMorePages())
+              <a href="{{ $bahan_baku->nextPageUrl() }}" class="px-3 py-1.5 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300 transition-colors">
+                <i class="fas fa-chevron-right text-xs"></i>
+              </a>
+            @else
+              <span class="px-3 py-1.5 text-gray-400 cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50">
+                <i class="fas fa-chevron-right text-xs"></i>
+              </span>
+            @endif
+          </nav>
+        </div>
+        @endif
+
         <!-- No Data Message -->
         <div id="noDataMessage" class="hidden text-center py-8 sm:py-12">
           <div class="text-gray-400 text-5xl sm:text-6xl mb-3 sm:mb-4">
@@ -1165,8 +1230,6 @@
             if (e.target === tambahStokModal) closeTambahStokModal();
             if (e.target === detailModal) closeDetailModal();
         });
-        
-        // Handle window resize untuk responsif
     });
 </script>
 
@@ -1194,6 +1257,32 @@
     /* Better modal scrolling on mobile */
     .overflow-y-auto {
         -webkit-overflow-scrolling: touch;
+    }
+
+    /* Style untuk pagination */
+    .pagination-link {
+        min-width: 2.5rem;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .pagination-link:hover {
+        background-color: #f3f4f6;
+    }
+
+    .pagination-active {
+        background-color: #10B981;
+        color: white;
+    }
+
+    .pagination-disabled {
+        background-color: #f9fafb;
+        color: #9ca3af;
+        cursor: not-allowed;
     }
 </style>
 @endsection

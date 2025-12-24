@@ -22,25 +22,24 @@ class ProdukController extends Controller
             // Ambil semua produk dengan data terkait dan urutkan berdasarkan kadaluarsa terdekat (FEFO)
             $produk = Produk::with(['updateStokHistory' => function ($query) {
                 $query->orderBy('tanggal_update', 'desc');
-            }])->orderBy('kadaluarsa', 'asc')->get(); // Urutkan FEFO
+            }])->orderBy('kadaluarsa', 'asc')->paginate(10); // Ubah get() menjadi paginate(10)
 
             // Cek untuk notifikasi stok rendah/habis
-            $lowStockProducts = $produk->filter(function ($product) {
-                return $product->getStockStatus() === 'rendah';
-            });
+            $lowStockProducts = Produk::where('stok', '<', DB::raw('min_stok'))
+                ->where('stok', '>', 0)
+                ->get();
 
-            $outOfStockProducts = $produk->filter(function ($product) {
-                return $product->getStockStatus() === 'habis';
-            });
+            $outOfStockProducts = Produk::where('stok', '<=', 0)->get();
 
             // Cek untuk notifikasi kadaluarsa (kurang dari 3 hari)
-            $expiringSoonProducts = $produk->filter(function ($product) {
-                return $product->sisa_hari > 0 && $product->sisa_hari <= 3; // Kurang dari 3 hari
-            });
+            $today = Carbon::today();
+            $threeDaysLater = Carbon::today()->addDays(3);
 
-            $expiredProducts = $produk->filter(function ($product) {
-                return $product->getExpiryStatus() === 'expired';
-            });
+            $expiringSoonProducts = Produk::whereDate('kadaluarsa', '>=', $today)
+                ->whereDate('kadaluarsa', '<=', $threeDaysLater)
+                ->get();
+
+            $expiredProducts = Produk::whereDate('kadaluarsa', '<', $today)->get();
 
             // Simpan data notifikasi di session untuk ditampilkan sekali
             if ($request->session()->has('notifications_shown')) {
