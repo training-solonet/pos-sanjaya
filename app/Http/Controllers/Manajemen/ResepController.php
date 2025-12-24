@@ -14,7 +14,7 @@ class ResepController extends Controller
     public function index(Request $request)
     {
         // Load resep with rincian bahan to pass to the view
-        $resep = \App\Models\Resep::with('rincianResep.bahanBaku')->get();
+        $resep = \App\Models\Resep::with('rincianResep.bahanBaku')->paginate(10);
 
         $recipes = $resep->map(function ($r) {
             $ingredients = $r->rincianResep->map(function ($ir) {
