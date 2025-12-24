@@ -104,38 +104,63 @@
                     </div>
                 </div>
 
-                <!-- Charts Section -->
+                <!-- Top Products Section - Grid Layout -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Sales Chart -->
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Grafik Penjualan Harian</h3>
-                                <p class="text-sm text-gray-500" id="salesSubtitle">Penjualan 30 hari terakhir</p>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button onclick="changeSalesView('daily')"
-                                    class="sales-view-btn active px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded-lg">Harian</button>
-                                <button onclick="changeSalesView('weekly')"
-                                    class="sales-view-btn px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">Mingguan</button>
-                            </div>
+                    <!-- Top Products Table -->
+                    <div class="bg-white rounded-lg border border-gray-200">
+                        <div class="px-5 py-3 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900">Produk Terlaris</h3>
+                            <p class="text-sm text-gray-500 mt-0.5">Menampilkan produk dengan penjualan tertinggi</p>
                         </div>
-                        <div class="h-80 relative">
-                            <canvas id="salesChart"></canvas>
-                        </div>
-                        <div class="mt-4 grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-                            <div class="text-center">
-                                <p class="text-sm text-gray-500">Tertinggi</p>
-                                <p class="text-lg font-bold text-green-600" id="maxSales">Rp 2.950.000</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-sm text-gray-500">Terendah</p>
-                                <p class="text-lg font-bold text-red-600" id="minSales">Rp 1.450.000</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-sm text-gray-500">Rata-rata</p>
-                                <p class="text-lg font-bold text-blue-600" id="avgSales">Rp 2.185.000</p>
-                            </div>
+                        <div class="overflow-x-auto" style="max-height: 520px; overflow-y: auto;">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 sticky top-0 z-10 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Produk</th>
+                                        <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide">Qty</th>
+                                        <th class="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">Revenue</th>
+                                        <th class="px-3 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">Profit</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 bg-white">
+                                    @forelse($topProducts as $prod)
+                                        <tr class="hover:bg-blue-50 transition-colors">
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                        <i class="fas fa-cookie-bite text-blue-600 text-sm"></i>
+                                                    </div>
+                                                    <span class="font-medium text-gray-900 text-sm line-clamp-1">{{ $prod->nama }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-3 text-center">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-100 text-blue-700 font-semibold text-sm">
+                                                    {{ number_format($prod->total_qty,0,',','.') }}
+                                                </span>
+                                            </td>
+                                            <td class="px-3 py-3 text-right">
+                                                <span class="font-semibold text-gray-900 text-sm whitespace-nowrap">
+                                                    Rp {{ number_format($prod->revenue / 1000,0,',','.') }}K
+                                                </span>
+                                            </td>
+                                            <td class="px-3 py-3 text-right">
+                                                <span class="font-semibold text-green-600 text-sm whitespace-nowrap">
+                                                    Rp {{ number_format(($prod->revenue * 0.4) / 1000,0,',','.') }}K
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="px-4 py-8 text-center">
+                                                <div class="flex flex-col items-center justify-center">
+                                                    <i class="fas fa-box-open text-gray-300 text-3xl mb-2"></i>
+                                                    <p class="text-gray-500 text-sm">Tidak ada data produk</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -143,8 +168,8 @@
                     <div class="bg-white rounded-lg border border-gray-200 p-6">
                         <div class="flex items-center justify-between mb-4">
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Produk Terlaris</h3>
-                                <p class="text-sm text-gray-500">Top 6 produk bulan ini</p>
+                                <h3 class="text-lg font-semibold text-gray-900">Grafik Produk Terlaris</h3>
+                                <p class="text-sm text-gray-500">Periode: {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}</p>
                             </div>
                             <div class="flex space-x-2">
                                 <button onclick="changeProductView('quantity')"
@@ -179,51 +204,36 @@
                     </div>
                 </div>
 
-                <!-- Top Products Table -->
-                <div class="bg-white rounded-lg border border-gray-200">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">Produk Terlaris</h3>
-                        <p class="text-sm text-gray-500 mt-1">Menampilkan produk dengan penjualan tertinggi</p>
+                <!-- Sales Chart - Full Width -->
+                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Grafik Penjualan Harian</h3>
+                            <p class="text-sm text-gray-500" id="salesSubtitle">Penjualan 30 hari terakhir</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="changeSalesView('daily')"
+                                class="sales-view-btn active px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded-lg">Harian</button>
+                            <button onclick="changeSalesView('weekly')"
+                                class="sales-view-btn px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">Mingguan</button>
+                        </div>
                     </div>
-                    <div class="overflow-x-auto" style="max-height: 400px; overflow-y: auto;">
-                        <table class="w-full">
-                            <thead class="bg-gray-50 sticky top-0 z-10">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Terjual
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pendapatan
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profit</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 bg-white">
-                                @forelse($topProducts as $prod)
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center space-x-3">
-                                                <div class="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
-                                                    <i class="fas fa-box text-blue-600"></i>
-                                                </div>
-                                                <span class="font-medium text-gray-900">{{ $prod->nama }}</span>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ number_format($prod->total_qty,0,',','.') }} pcs</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900 font-semibold">Rp {{ number_format($prod->revenue,0,',','.') }}</td>
-                                        <td class="px-6 py-4 text-sm text-green-600 font-semibold">Rp {{ number_format(($prod->revenue * 0.5) ?? 0,0,',','.') }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="px-6 py-8 text-center">
-                                            <div class="flex flex-col items-center justify-center">
-                                                <i class="fas fa-box-open text-gray-300 text-4xl mb-2"></i>
-                                                <p class="text-gray-500">Tidak ada data produk terlaris</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    <div class="h-80 relative">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                    <div class="mt-4 grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500">Tertinggi</p>
+                            <p class="text-lg font-bold text-green-600" id="maxSales">Rp 2.950.000</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500">Terendah</p>
+                            <p class="text-lg font-bold text-red-600" id="minSales">Rp 1.450.000</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm text-gray-500">Rata-rata</p>
+                            <p class="text-lg font-bold text-blue-600" id="avgSales">Rp 2.185.000</p>
+                        </div>
                     </div>
                 </div>
 
@@ -233,10 +243,13 @@
                         <h3 class="text-lg font-semibold text-gray-900">Laporan <span id="reportPeriodTitle">Bulanan</span></h3>
                         <div class="flex gap-2">
                             <button onclick="changeReportView('monthly')" class="report-view-btn active bg-purple-100 text-purple-600 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:shadow-md">
-                                Bulanan
+                                <i class="fas fa-calendar-alt mr-1"></i>Bulanan
+                            </button>
+                            <button onclick="changeReportView('weekly')" class="report-view-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:shadow-md">
+                                <i class="fas fa-calendar-week mr-1"></i>Mingguan
                             </button>
                             <button onclick="changeReportView('daily')" class="report-view-btn bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:shadow-md">
-                                Harian
+                                <i class="fas fa-calendar-day mr-1"></i>Harian
                             </button>
                         </div>
                     </div>
@@ -300,6 +313,7 @@
     let serverProducts = @json($productsChart ?? null);
     let serverMonthly = @json($monthlyReport ?? null);
     let serverDaily = @json($dailyReport ?? null); // Data harian termasuk HPP dan profit margin
+    let serverWeekly = @json($weeklyReport ?? null); // Data mingguan termasuk growth dan profit margin
 
     // Get current month and year label in Indonesian
     function getMonthYearLabel() {
@@ -698,7 +712,7 @@
         // Update title
         const titleEl = document.getElementById('reportPeriodTitle');
         if (titleEl) {
-            titleEl.textContent = type === 'monthly' ? 'Bulanan' : 'Harian';
+            titleEl.textContent = type === 'monthly' ? 'Bulanan' : (type === 'weekly' ? 'Mingguan' : 'Harian');
         }
 
         if (type === 'monthly') {
@@ -736,6 +750,9 @@
                     profitMargin.textContent = (marginValue === null || marginValue === undefined) ? '-' : marginValue + '%';
                 }
             }
+        } else if (type === 'weekly') {
+            // Show weekly data from server
+            calculateWeeklyReport();
         } else {
             // Calculate and show daily data (today)
             calculateDailyReport();
@@ -758,6 +775,82 @@
     }
     // ========================================
 
+    // Calculate weekly report from server data
+    function calculateWeeklyReport() {
+        const periodLabel = document.getElementById('reportPeriodLabel');
+        const totalSales = document.getElementById('reportTotalSales');
+        const growthLabel = document.getElementById('reportGrowthLabel');
+        const growth = document.getElementById('reportGrowth');
+        const profitMargin = document.getElementById('reportProfitMargin');
+
+        if (growthLabel) growthLabel.textContent = 'Vs Minggu Lalu';
+
+        if (serverWeekly) {
+            // Update period label (tanggal range minggu ini)
+            if (periodLabel) periodLabel.textContent = serverWeekly.weekLabel || 'Minggu Ini';
+            
+            // Update total sales
+            if (totalSales) totalSales.textContent = formatCurrency(serverWeekly.total || 0);
+
+            // ========================================
+            // PERHITUNGAN GROWTH (PERTUMBUHAN) MINGGUAN
+            // ========================================
+            // Menghitung persentase pertumbuhan penjualan minggu ini vs minggu lalu
+            // RUMUS: ((Penjualan Minggu Ini - Penjualan Minggu Lalu) / Penjualan Minggu Lalu) × 100%
+            if (growth) {
+                const growthPercent = serverWeekly.growthPercent;
+                
+                if (growthPercent !== null && growthPercent !== undefined) {
+                    growth.textContent = (growthPercent > 0 ? '+' : '') + growthPercent + '%';
+                    
+                    // PEWARNAAN GROWTH MINGGUAN
+                    // Hijau > 0%, Merah < 0%, Kuning = 0%
+                    growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
+                    if (growthPercent > 0) {
+                        growth.classList.add('text-green-600'); // Pertumbuhan positif
+                    } else if (growthPercent < 0) {
+                        growth.classList.add('text-red-600'); // Penurunan
+                    } else {
+                        growth.classList.add('text-yellow-600'); // Stabil
+                    }
+                } else {
+                    growth.textContent = '-';
+                    growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
+                    growth.classList.add('text-gray-500');
+                }
+            }
+
+            // ========================================
+            // PERHITUNGAN PROFIT MARGIN (MARGIN KEUNTUNGAN) MINGGUAN
+            // ========================================
+            // Menggunakan data profit margin dari backend
+            if (profitMargin) {
+                const marginValue = serverWeekly.profitMargin;
+                console.log('=== WEEKLY PROFIT MARGIN DEBUG ===');
+                console.log('Weekly Total Sales:', serverWeekly.total);
+                console.log('Weekly Profit Margin:', marginValue);
+                console.log('Weekly Data:', serverWeekly);
+                
+                if (marginValue !== null && marginValue !== undefined) {
+                    profitMargin.textContent = marginValue + '%';
+                } else {
+                    profitMargin.textContent = '-';
+                }
+            }
+            // ========================================
+        } else {
+            // Fallback if no server data
+            if (periodLabel) periodLabel.textContent = 'Minggu Ini';
+            if (totalSales) totalSales.textContent = formatCurrency(0);
+            if (growth) {
+                growth.textContent = '-';
+                growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
+                growth.classList.add('text-gray-500');
+            }
+            if (profitMargin) profitMargin.textContent = '-';
+        }
+    }
+
     // Calculate daily report from sales data
     function calculateDailyReport() {
         const periodLabel = document.getElementById('reportPeriodLabel');
@@ -778,7 +871,38 @@
 
         // Get today's sales from server data (last element in array)
         if (serverSales && serverSales.data && serverSales.data.length > 0) {
-            const todaySales = serverSales.data[serverSales.data.length - 1];
+            // Cari data hari ini berdasarkan tanggal
+            const todayDay = today.getDate();
+            let todayIndex = -1;
+            let yesterdayIndex = -1;
+            
+            // Cari index hari ini dan kemarin dari labels
+            if (serverSales.labels && serverSales.labels.length > 0) {
+                // Loop dari belakang untuk mencari hari ini
+                for (let i = serverSales.labels.length - 1; i >= 0; i--) {
+                    const labelDay = parseInt(serverSales.labels[i]);
+                    if (labelDay === todayDay) {
+                        todayIndex = i;
+                        // Kemarin adalah index sebelumnya
+                        if (i > 0) {
+                            yesterdayIndex = i - 1;
+                        }
+                        break;
+                    }
+                }
+                
+                // Jika hari ini tidak ditemukan, gunakan data terakhir
+                if (todayIndex === -1) {
+                    todayIndex = serverSales.data.length - 1;
+                    yesterdayIndex = todayIndex > 0 ? todayIndex - 1 : -1;
+                }
+            } else {
+                // Fallback: gunakan elemen terakhir
+                todayIndex = serverSales.data.length - 1;
+                yesterdayIndex = todayIndex > 0 ? todayIndex - 1 : -1;
+            }
+            
+            const todaySales = serverSales.data[todayIndex] || 0;
             if (totalSales) totalSales.textContent = formatCurrency(todaySales);
 
             // ========================================
@@ -786,8 +910,9 @@
             // ========================================
             // Menghitung persentase pertumbuhan penjualan hari ini vs kemarin
             // RUMUS: ((Penjualan Hari Ini - Penjualan Kemarin) / Penjualan Kemarin) × 100%
-            if (serverSales.data.length > 1) {
-                const yesterdaySales = serverSales.data[serverSales.data.length - 2]; // Penjualan kemarin
+            if (yesterdayIndex >= 0) {
+                const yesterdaySales = serverSales.data[yesterdayIndex] || 0; // Penjualan kemarin
+                
                 if (yesterdaySales > 0) {
                     // Hitung persentase growth
                     const growthPercent = parseFloat(((todaySales - yesterdaySales) / yesterdaySales * 100).toFixed(1));
@@ -795,28 +920,37 @@
                         growth.textContent = (growthPercent > 0 ? '+' : '') + growthPercent + '%';
                         
                         // PEWARNAAN GROWTH HARIAN
-                        // Hijau >= 50%, Kuning 0-49%, Merah < 0%
+                        // Hijau > 0%, Merah < 0%, Kuning = 0%
                         growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
-                        if (growthPercent >= 50) {
-                            growth.classList.add('text-green-600'); // Pertumbuhan tinggi
-                        } else if (growthPercent >= 0) {
-                            growth.classList.add('text-yellow-600'); // Pertumbuhan normal
-                        } else {
+                        if (growthPercent > 0) {
+                            growth.classList.add('text-green-600'); // Pertumbuhan positif
+                        } else if (growthPercent < 0) {
                             growth.classList.add('text-red-600'); // Penurunan
+                        } else {
+                            growth.classList.add('text-yellow-600'); // Stabil
                         }
                     }
+                } else if (yesterdaySales === 0 && todaySales > 0) {
+                    // Kemarin tidak ada penjualan, hari ini ada = growth 100%
+                    if (growth) {
+                        growth.textContent = '+100%';
+                        growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
+                        growth.classList.add('text-green-600');
+                    }
                 } else {
+                    // Kemarin dan hari ini sama-sama 0 atau tidak ada data
                     if (growth) {
                         growth.textContent = '-';
                         growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
-                        growth.classList.add('text-success');
+                        growth.classList.add('text-gray-500');
                     }
                 }
             } else {
+                // Tidak ada data kemarin
                 if (growth) {
                     growth.textContent = '-';
                     growth.classList.remove('text-success', 'text-warning', 'text-danger', 'text-green-600', 'text-yellow-600', 'text-red-600');
-                    growth.classList.add('text-success');
+                    growth.classList.add('text-gray-500');
                 }
             }
 
@@ -827,18 +961,27 @@
             if (profitMargin) {
                 let marginValue = null;
                 
+                console.log('=== DAILY PROFIT MARGIN DEBUG ===');
+                console.log('Today Sales:', todaySales);
+                console.log('Server Daily Data:', serverDaily);
+                
                 // PRIORITAS 1: Gunakan data profit margin dari backend (paling akurat)
                 if (serverDaily && serverDaily.profitMargin !== null && serverDaily.profitMargin !== undefined) {
                     marginValue = serverDaily.profitMargin;
+                    console.log('Using server daily margin:', marginValue);
                 }
                 // PRIORITAS 2: Hitung dari data penjualan dan HPP jika tersedia
                 else if (serverDaily && serverDaily.totalSales && serverDaily.totalCost) {
                     marginValue = calculateProfitMargin(serverDaily.totalSales, serverDaily.totalCost);
+                    console.log('Calculated from sales/cost:', marginValue);
                 }
                 // PRIORITAS 3: Gunakan estimasi dari data bulanan
                 else if (serverMonthly?.profitMargin !== null && serverMonthly?.profitMargin !== undefined) {
                     marginValue = serverMonthly.profitMargin;
+                    console.log('Using monthly margin as fallback:', marginValue);
                 }
+                
+                console.log('Final margin value:', marginValue);
                 
                 // Tampilkan nilai profit margin
                 if (marginValue !== null && marginValue !== undefined) {

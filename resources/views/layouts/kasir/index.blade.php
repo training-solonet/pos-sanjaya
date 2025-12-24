@@ -234,18 +234,23 @@
         // Update current date and time
         function updateDateTime() {
             const now = new Date();
-            const options = {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            };
-            const dateStr = now.toLocaleDateString('id-ID', options);
-            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
             
-            const dateTimeElement = document.getElementById('currentDateTime');
-            if (dateTimeElement) {
-                dateTimeElement.textContent = `${dateStr} pukul ${timeStr}`;
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            
+            const dayName = days[now.getDay()];
+            const date = now.getDate();
+            const monthName = months[now.getMonth()];
+            const year = now.getFullYear();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const dateElement = document.getElementById('currentDate');
+            const timeElement = document.getElementById('currentTime');
+            
+            if (dateElement && timeElement) {
+                dateElement.textContent = `${dayName}, ${date} ${monthName} ${year}`;
+                timeElement.textContent = `${hours}:${minutes}`;
             }
         }
 
