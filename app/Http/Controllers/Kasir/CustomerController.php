@@ -15,6 +15,7 @@ class CustomerController extends Controller
     public function index()
     {
         $customers = Customer::orderBy('created_at', 'desc')->paginate(10);
+
         return view('kasir.custommer.index', compact('customers'));
     }
 
@@ -35,7 +36,7 @@ class CustomerController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => $validator->errors()->first()
+                'message' => $validator->errors()->first(),
             ], 422);
         }
 
@@ -49,12 +50,12 @@ class CustomerController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Customer berhasil ditambahkan',
-                'data' => $customer
+                'data' => $customer,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menambahkan customer: ' . $e->getMessage()
+                'message' => 'Gagal menambahkan customer: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -66,14 +67,15 @@ class CustomerController extends Controller
     {
         try {
             $customer = Customer::findOrFail($id);
+
             return response()->json([
                 'success' => true,
-                'data' => $customer
+                'data' => $customer,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Customer tidak ditemukan'
+                'message' => 'Customer tidak ditemukan',
             ], 404);
         }
     }
@@ -95,7 +97,7 @@ class CustomerController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => $validator->errors()->first()
+                'message' => $validator->errors()->first(),
             ], 422);
         }
 
@@ -110,12 +112,12 @@ class CustomerController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Customer berhasil diupdate',
-                'data' => $customer
+                'data' => $customer,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengupdate customer: ' . $e->getMessage()
+                'message' => 'Gagal mengupdate customer: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -131,12 +133,12 @@ class CustomerController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Customer berhasil dihapus'
+                'message' => 'Customer berhasil dihapus',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus customer: ' . $e->getMessage()
+                'message' => 'Gagal menghapus customer: '.$e->getMessage(),
             ], 500);
         }
     }
