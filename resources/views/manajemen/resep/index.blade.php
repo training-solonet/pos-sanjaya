@@ -680,19 +680,6 @@
                             <button onclick="viewRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Lihat Detail">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <div class="relative inline-block">
-                                <button onclick="toggleExportMenu(${recipe.id})" class="text-purple-600 hover:text-purple-700" title="Export">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <div id="exportMenu${recipe.id}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                                    <a href="/management/resep/${recipe.id}?export=excel" class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
-                                        <i class="fas fa-file-excel text-green-600 mr-1"></i>Excel
-                                    </a>
-                                    <a href="/management/resep/${recipe.id}?export=pdf" class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
-                                        <i class="fas fa-file-pdf text-red-600 mr-1"></i>PDF
-                                    </a>
-                                </div>
-                            </div>
                             <button onclick="editRecipe(${recipe.id})" class="text-green-600 hover:text-green-700" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </button>

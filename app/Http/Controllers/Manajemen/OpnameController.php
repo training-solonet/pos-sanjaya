@@ -16,6 +16,9 @@ class OpnameController extends Controller
         try {
             $today = Carbon::today()->toDateString();
 
+            // Cek apakah sudah ada opname hari ini
+            $has_opname_today = Opname::whereDate('tgl', $today)->exists();
+
             // Ambil semua bahan baku
             $bahan_baku = BahanBaku::with(['konversi'])->orderBy('nama')->get();
 
@@ -79,66 +82,97 @@ class OpnameController extends Controller
                 'progress' => $progress,
             ];
 
-            // Jika request AJAX, kembalikan JSON
-            if ($request->ajax() || $request->wantsJson()) {
+            // Jika request riwayat
+            if ($request->has('history')) {
+                $startDate = $request->get('start_date', Carbon::today()->subDays(7)->format('Y-m-d'));
+                $endDate = $request->get('end_date', Carbon::today()->format('Y-m-d'));
+
+                // Query untuk mengambil data riwayat dengan format yang benar
+                $histories = Opname::with(['bahanBaku.konversi'])
+                    ->whereDate('tgl', '>=', $startDate)
+                    ->whereDate('tgl', '<=', $endDate)
+                    ->orderBy('tgl', 'desc')
+                    ->orderBy('created_at', 'desc')
+                    ->get()
+                    ->map(function ($opname) {
+                        $bahan = $opname->bahanBaku;
+                        if (! $bahan) {
+                            return null;
+                        }
+
+                        $selisih = (float) $opname->stok - (float) $bahan->stok;
+                        $satuan = $bahan->konversi ? $bahan->konversi->satuan_kecil : 'unit';
+
+                        return [
+                            'id' => $opname->id,
+                            'id_bahan' => $opname->id_bahan,
+                            'nama_bahan' => $bahan->nama,
+                            'kode' => 'BB-'.str_pad($bahan->id, 3, '0', STR_PAD_LEFT),
+                            'kategori' => $bahan->kategori,
+                            'stok_sistem' => (float) $bahan->stok,
+                            'stok_fisik' => (float) $opname->stok,
+                            'selisih' => $selisih,
+                            'catatan' => $opname->catatan,
+                            'tgl' => Carbon::parse($opname->tgl)->format('Y-m-d'),
+                            'tgl_formatted' => Carbon::parse($opname->tgl)->translatedFormat('l, d F Y'),
+                            'waktu' => Carbon::parse($opname->created_at)->format('H:i'),
+                            'satuan' => $satuan,
+                        ];
+                    })
+                    ->filter() // Hapus null jika ada bahan yang tidak ditemukan
+                    ->values(); // Reset array keys
+
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'data' => $histories,
+                        'message' => 'Data riwayat berhasil diambil',
+                        'total_records' => $histories->count(),
+                    ]);
+                }
+            }
+
+            // Jika request AJAX untuk data opname
+            if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'data' => $opname_data,
                     'summary' => $summary,
                     'categories' => $categories,
+                    'has_opname_today' => $has_opname_today,
                 ]);
             }
 
-            // Jika request riwayat
-            if ($request->has('history') && $request->ajax()) {
-                $histories = Opname::with('bahanBaku.konversi')
-                    ->orderBy('tgl', 'desc')
-                    ->limit(50)
-                    ->get()
-                    ->map(function ($opname) {
-                        $selisih = (float) $opname->stok - (float) $opname->bahanBaku->stok;
-
-                        return [
-                            'id' => $opname->id,
-                            'nama_bahan' => $opname->bahanBaku->nama,
-                            'stok_sistem' => (float) $opname->bahanBaku->stok,
-                            'stok_fisik' => (float) $opname->stok,
-                            'selisih' => $selisih,
-                            'catatan' => $opname->catatan,
-                            'tgl' => $opname->tgl->format('d M Y H:i'),
-                            'satuan' => $opname->bahanBaku->konversi ?
-                                $opname->bahanBaku->konversi->satuan_kecil : 'unit',
-                        ];
-                    });
-
-                return response()->json([
-                    'success' => true,
-                    'data' => $histories,
-                ]);
-            }
-
-            return view('manajemen.bahanbaku.opname', compact('opname_data', 'summary', 'categories'));
+            return view('manajemen.bahanbaku.opname', compact(
+                'opname_data',
+                'summary',
+                'categories',
+                'has_opname_today'
+            ));
 
         } catch (\Exception $e) {
-            Log::error('Opname Index Error: '.$e->getMessage());
+            Log::error('Opname Index Error: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
 
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Terjadi kesalahan: '.$e->getMessage(),
+                    'error_details' => $e->getFile().':'.$e->getLine(),
                 ], 500);
             }
 
-            return back()->with('error', 'Gagal memuat data opname');
+            return back()->with('error', 'Gagal memuat data opname: '.$e->getMessage());
         }
     }
 
     public function store(Request $request)
     {
         try {
+            $today = Carbon::today()->toDateString();
+
             // Handle start new session
             if ($request->has('action') && $request->action === 'start_new_session') {
-                return $this->startNewSession();
+                return $this->startNewSession($today);
             }
 
             // Validate untuk save stok fisik
@@ -148,19 +182,35 @@ class OpnameController extends Controller
                 'catatan' => 'nullable|string|max:500',
             ]);
 
-            $today = Carbon::today()->toDateString();
+            // Cek apakah sudah ada opname hari ini untuk bahan ini
+            $existing_opname = Opname::where('id_bahan', $request->id_bahan)
+                ->whereDate('tgl', $today)
+                ->first();
 
-            // Create or update opname
-            $opname = Opname::updateOrCreate(
-                [
-                    'id_bahan' => $request->id_bahan,
-                    'tgl' => $today,
-                ],
-                [
+            if ($existing_opname) {
+                // Update existing
+                $existing_opname->update([
                     'stok' => $request->stok_fisik,
                     'catatan' => $request->catatan,
-                ]
-            );
+                    'updated_at' => Carbon::now(),
+                ]);
+                $opname = $existing_opname;
+            } else {
+                // Create new - INI YANG MENYIMPAN RIWAYAT
+                $opname = Opname::create([
+                    'id_bahan' => $request->id_bahan,
+                    'tgl' => $today,
+                    'stok' => $request->stok_fisik,
+                    'catatan' => $request->catatan,
+                ]);
+
+                Log::info('New opname record created:', [
+                    'id_bahan' => $request->id_bahan,
+                    'stok' => $request->stok_fisik,
+                    'catatan' => $request->catatan,
+                    'tgl' => $today,
+                ]);
+            }
 
             // Ambil data bahan baku untuk response
             $bahan_baku = BahanBaku::with('konversi')->find($request->id_bahan);
@@ -189,19 +239,27 @@ class OpnameController extends Controller
         }
     }
 
-    private function startNewSession()
+    private function startNewSession($today)
     {
         try {
-            $today = Carbon::today()->toDateString();
+            // Cek apakah sudah ada opname hari ini
+            $has_opname_today = Opname::whereDate('tgl', $today)->exists();
 
-            // Hapus semua opname hari ini
+            if ($has_opname_today) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Opname hari ini sudah dilakukan. Anda hanya dapat melakukan opname sekali per hari.',
+                ], 400);
+            }
+
+            // Hapus semua opname hari ini (seharusnya tidak ada karena baru dicek)
             $deleted = Opname::whereDate('tgl', $today)->delete();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Sesi opname baru telah dimulai',
                 'deleted_count' => $deleted,
-                'session_date' => Carbon::parse($today)->format('d M Y'),
+                'session_date' => Carbon::parse($today)->translatedFormat('d F Y'),
             ]);
 
         } catch (\Exception $e) {
@@ -214,7 +272,6 @@ class OpnameController extends Controller
         }
     }
 
-    // Method lainnya tetap ada untuk route resource
     public function show(Opname $opname)
     {
         return response()->json(['success' => false, 'message' => 'Method tidak tersedia']);

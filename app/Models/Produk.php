@@ -38,7 +38,7 @@ class Produk extends Model
     }
 
     // Method untuk update stok
-    public function updateStok($stok_baru, $kadaluarsa_baru = null, $keterangan = null)
+    public function updateStok($stok_baru, $kadaluarsa_baru = null, $keterangan = null, $sumber = null)
     {
         try {
             $stok_awal = $this->stok;
@@ -59,6 +59,7 @@ class Produk extends Model
                 'kadaluarsa' => $kadaluarsa_baru ?? $this->kadaluarsa,
                 'tanggal_update' => now(),
                 'keterangan' => $keterangan,
+                'sumber' => $sumber,
             ]);
 
             return true;
@@ -75,13 +76,30 @@ class Produk extends Model
         return $latestUpdate ? $latestUpdate->kadaluarsa : $this->kadaluarsa;
     }
 
-    // Hitung sisa hari kadaluarsa
+    // Hitung sisa hari kadaluarsa dengan benar
     public function getDaysUntilExpired()
     {
         $now = Carbon::now();
         $kadaluarsa = Carbon::parse($this->kadaluarsa);
 
-        return $now->diffInDays($kadaluarsa, false); // false untuk hasil negatif jika sudah expired
+        // Hitung selisih hari dengan presisi
+        $diff = $now->diffInDays($kadaluarsa, false);
+
+        return $diff; // Positif jika masih berlaku, negatif jika sudah expired
+    }
+
+    // Hitung sisa hari untuk tampilan (untuk menampilkan "3 hari lagi")
+    public function getRemainingDaysForDisplay()
+    {
+        $days = $this->getDaysUntilExpired();
+
+        if ($days > 0) {
+            return $days; // Masih berlaku, sisa X hari
+        } elseif ($days == 0) {
+            return 0; // Hari ini expired
+        } else {
+            return $days; // Sudah expired (negatif)
+        }
     }
 
     // Cek status stok
@@ -96,7 +114,7 @@ class Produk extends Model
         }
     }
 
-    // Cek status kadaluarsa
+    // Cek status kadaluarsa yang diperbaiki
     public function getExpiryStatus()
     {
         $days = $this->getDaysUntilExpired();
@@ -105,6 +123,8 @@ class Produk extends Model
             return 'expired';
         } elseif ($days == 0) {
             return 'hari_ini';
+        } elseif ($days < 3) { // Kurang dari 3 hari
+            return 'kritis';
         } elseif ($days <= 7) {
             return 'mendekati';
         } else {
@@ -128,11 +148,11 @@ class Produk extends Model
         );
     }
 
-    // Attribute accessor untuk sisa hari
+    // Attribute accessor untuk sisa hari (untuk tampilan)
     protected function sisaHari(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->getDaysUntilExpired(),
+            get: fn () => $this->getRemainingDaysForDisplay(),
         );
     }
 
@@ -140,5 +160,49 @@ class Produk extends Model
     public function getBahanBakuSafe()
     {
         return $this->bahanBaku ?: BahanBaku::first();
+    }
+
+    // Get expired status untuk warna
+    public function getExpiryColor()
+    {
+        $status = $this->getExpiryStatus();
+
+        switch ($status) {
+            case 'expired':
+                return [
+                    'text' => 'text-red-600',
+                    'bg' => 'bg-red-100',
+                    'icon' => 'fas fa-exclamation-triangle',
+                    'label' => 'Expired',
+                ];
+            case 'hari_ini':
+                return [
+                    'text' => 'text-red-600',
+                    'bg' => 'bg-red-100',
+                    'icon' => 'fas fa-exclamation-triangle',
+                    'label' => 'Hari Ini',
+                ];
+            case 'kritis': // Kurang dari 3 hari
+                return [
+                    'text' => 'text-red-600',
+                    'bg' => 'bg-red-100',
+                    'icon' => 'fas fa-exclamation-triangle',
+                    'label' => 'Kritis',
+                ];
+            case 'mendekati':
+                return [
+                    'text' => 'text-orange-600',
+                    'bg' => 'bg-orange-100',
+                    'icon' => 'fas fa-clock',
+                    'label' => 'Mendekati',
+                ];
+            default:
+                return [
+                    'text' => 'text-green-600',
+                    'bg' => 'bg-green-100',
+                    'icon' => 'fas fa-check-circle',
+                    'label' => 'Aman',
+                ];
+        }
     }
 }

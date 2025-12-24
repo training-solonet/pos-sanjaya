@@ -44,7 +44,7 @@
                 <a href="{{ route('management.konversi.index') }}"
                     class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
                     {{ request()->routeIs('management.konversi.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="1. Konversi Satuan - Atur satuan terlebih dahulu">
-                    <span class="sidebar-icon w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.konversi.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">1</span>
+                    <span class="sidebar-icon sidebar-number w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.konversi.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">1</span>
                     <i class="sidebar-icon fas fa-exchange-alt {{ request()->routeIs('management.konversi.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-2 transition-all duration-300"></i>
                     <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Konversi Satuan</span>
                 </a>
@@ -52,7 +52,7 @@
                 <a href="{{ route('management.bahanbaku.index') }}"
                     class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
                     {{ request()->routeIs('management.bahanbaku.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="2. Bahan Baku - Kelola bahan baku">
-                    <span class="sidebar-icon w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.bahanbaku.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">2</span>
+                    <span class="sidebar-icon sidebar-number w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.bahanbaku.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">2</span>
                     <i class="sidebar-icon fas fa-boxes {{ request()->routeIs('management.bahanbaku.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-2 transition-all duration-300"></i>
                     <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Bahan Baku</span>
                 </a>
@@ -60,7 +60,7 @@
                 <a href="{{ route('management.produk.index') }}"
                     class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
                     {{ request()->routeIs('management.produk.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="3. Produk - Kelola produk jadi">
-                    <span class="sidebar-icon w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.produk.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">3</span>
+                    <span class="sidebar-icon sidebar-number w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.produk.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">3</span>
                     <i class="sidebar-icon fas fa-cookie-bite {{ request()->routeIs('management.produk.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-2 transition-all duration-300"></i>
                     <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Produk</span>
                 </a>
@@ -68,7 +68,7 @@
                 <a href="{{ route('management.resep.index') }}"
                     class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
                     {{ request()->routeIs('management.resep.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="4. Resep - Buat resep produk">
-                    <span class="sidebar-icon w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.resep.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">4</span>
+                    <span class="sidebar-icon sidebar-number w-6 h-6 flex items-center justify-center {{ request()->routeIs('management.resep.*') ? 'bg-white text-green-600' : 'bg-red-100 text-red-600' }} rounded-full mr-3 text-xs font-bold flex-shrink-0">4</span>
                     <i class="sidebar-icon fas fa-utensils {{ request()->routeIs('management.resep.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-2 transition-all duration-300"></i>
                     <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Resep & Produksi</span>
                 </a>
