@@ -18,7 +18,7 @@ class BahanbakuController extends Controller
         // PERBAIKAN: Menambahkan paginate(10) untuk pagination
         $bahan_baku = BahanBaku::with('konversi')
             ->orderBy('tglupdate', 'desc') // Urutkan berdasarkan tglupdate terbaru
-            ->paginate(8); 
+            ->paginate(8);
         $konversi = Konversi::all();
 
         return view('manajemen.bahanbaku.index', compact('bahan_baku', 'konversi'));
