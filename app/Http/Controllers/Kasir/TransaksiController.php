@@ -97,16 +97,16 @@ class TransaksiController extends Controller
 
             // Catat ke jurnal secara otomatis
             $invoiceNumber = 'INV-'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT);
-            
+
             // Buat deskripsi produk yang dibeli
             $keterangan = 'Penjualan ';
             $itemDescriptions = [];
             foreach ($validated['items'] as $item) {
                 $produk = Produk::find($item['id']);
-                $itemDescriptions[] = $produk->nama . ' x' . $item['quantity'];
+                $itemDescriptions[] = $produk->nama.' x'.$item['quantity'];
             }
             $keterangan .= implode(', ', $itemDescriptions);
-            
+
             Jurnal::create([
                 'tgl' => now(),
                 'jenis' => 'pemasukan',

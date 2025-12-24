@@ -130,7 +130,8 @@
                             </p>
                         </div>
                         <div class="flex items-center space-x-3">
-                            <input type="text" id="searchTransaction" placeholder="Cari transaksi..." 
+                            <input type="text" id="searchTransaction" placeholder="Cari ID Transaksi..." 
+                                   onkeyup="handleSearch(this.value)"
                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent w-full lg:w-auto">
                         </div>
                     </div>
@@ -185,13 +186,32 @@
         const REFRESH_INTERVAL_MS = 5000; // 5 seconds
         let isInitialLoad = true; // Flag untuk initial load
 
+        // Fungsi handle search yang dipanggil langsung dari input
+        window.handleSearch = function(value) {
+            console.log('=== HANDLE SEARCH CALLED ===');
+            console.log('Search value:', value);
+            console.log('Before - currentFilters.search:', currentFilters.search);
+            
+            currentFilters.search = value;
+            
+            console.log('After - currentFilters.search:', currentFilters.search);
+            console.log('Total transactions:', salesData.transactions.length);
+            
+            // Debug: tampilkan sample data
+            if (salesData.transactions.length > 0) {
+                console.log('Sample transaction:', salesData.transactions[0]);
+            }
+            
+            renderTransactions();
+            console.log('=== RENDER COMPLETE ===');
+        };
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             displayCurrentDate();
             setTodayDate();
             currentFilters.date = document.getElementById('filterDate').value;
             renderTransactions();
-            setupSearch();
             setupFilterListeners();
             restoreFilters();
             updateLastUpdateTime();
@@ -463,16 +483,38 @@
 
         // Render transactions table
         function renderTransactions() {
-            console.log('Rendering transactions...', salesData.transactions.length);
+            console.log('=== RENDER TRANSACTIONS CALLED ===');
+            console.log('Total transactions in salesData:', salesData.transactions.length);
+            console.log('Current search filter:', currentFilters.search);
+            
             const tbody = document.getElementById('transactionTableBody');
-            let transactions = salesData.transactions;
+            
+            if (!tbody) {
+                console.error('Table body not found!');
+                return;
+            }
+            
+            let transactions = [...salesData.transactions]; // Copy array
+            console.log('Copied transactions:', transactions.length);
 
             // Apply search filter (client-side)
-            if (currentFilters.search) {
-                transactions = transactions.filter(t => 
-                    t.invoice.toLowerCase().includes(currentFilters.search.toLowerCase()) ||
-                    t.products.toLowerCase().includes(currentFilters.search.toLowerCase())
-                );
+            if (currentFilters.search && currentFilters.search.trim() !== '') {
+                const searchTerm = currentFilters.search.trim();
+                console.log('Applying search filter with term:', searchTerm);
+                
+                transactions = transactions.filter(t => {
+                    // Convert invoice to string untuk perbandingan
+                    const invoiceStr = String(t.invoice);
+                    const invoiceMatch = invoiceStr.includes(searchTerm);
+                    
+                    if (invoiceMatch) {
+                        console.log('Match found - Invoice:', t.invoice);
+                    }
+                    
+                    return invoiceMatch;
+                });
+                
+                console.log('After filter - transactions count:', transactions.length);
             }
 
             // Add fade-in animation for new rows (hanya jika bukan initial load)
@@ -487,7 +529,7 @@
                             <div class="flex flex-col items-center justify-center space-y-3">
                                 <i class="fas fa-inbox text-4xl text-gray-300"></i>
                                 <p class="text-sm text-gray-500">Tidak ada transaksi ditemukan</p>
-                                <p class="text-xs text-gray-400">Coba ubah filter atau pilih tanggal lain</p>
+                                <p class="text-xs text-gray-400">Coba ubah kata kunci pencarian</p>
                             </div>
                         </td>
                     </tr>
@@ -539,22 +581,6 @@
             if (isInitialLoad) {
                 isInitialLoad = false;
             }
-        }
-
-        // Setup search
-        function setupSearch() {
-            const searchInput = document.getElementById('searchTransaction');
-            let searchTimeout;
-            
-            searchInput.addEventListener('input', (e) => {
-                currentFilters.search = e.target.value;
-                
-                // Debounce search to avoid too many requests
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    renderTransactions();
-                }, 300);
-            });
         }
 
         // Setup filter listeners for real-time changes

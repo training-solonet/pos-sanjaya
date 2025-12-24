@@ -35,9 +35,10 @@
                                 </div>
                                 <input type="text" 
                                        id="searchInput"
-                                       placeholder="Cari produk..." 
+                                       placeholder="Ketik untuk mencari produk..." 
                                        class="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors bg-gray-50 focus:bg-white"
-                                       autocomplete="off">        
+                                       autocomplete="off"
+                                       oninput="searchProduct()">
                                 <button id="clearSearchBtn" class="absolute inset-y-0 right-0 pr-4 flex items-center hidden" onclick="clearSearch()" title="Hapus pencarian">
                                     <i class="fas fa-times-circle text-gray-400 hover:text-red-500 transition-colors"></i>
                                 </button>
@@ -452,9 +453,111 @@
         .product-card.hidden-card {
             display: none !important;
         }
+        
+        /* Search suggestions */
+        #searchSuggestions {
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        #searchSuggestions::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #searchSuggestions::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        #searchSuggestions::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        #searchSuggestions::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Highlight text in search results */
+        mark {
+            background-color: #fef08a;
+            color: inherit;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
     </style>
 
     <script>
+        // Simple toast notification function
+        function showToast(message, type = 'info') {
+            // Remove existing toast if any
+            const existingToast = document.querySelector('.custom-toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = 'custom-toast';
+            
+            const bgColor = type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500';
+            const icon = type === 'error' ? 'fa-times-circle' : type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+            
+            toast.innerHTML = `
+                <div class="${bgColor} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 max-w-md">
+                    <i class="fas ${icon} text-xl"></i>
+                    <span class="text-sm font-medium">${message}</span>
+                </div>
+            `;
+            
+            // Add styles
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 9999;
+                animation: slideDown 0.3s ease-out;
+            `;
+            
+            // Add keyframe animation if not exists
+            if (!document.querySelector('#toast-animation-style')) {
+                const style = document.createElement('style');
+                style.id = 'toast-animation-style';
+                style.textContent = `
+                    @keyframes slideDown {
+                        from {
+                            opacity: 0;
+                            transform: translateX(-50%) translateY(-20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateX(-50%) translateY(0);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(toast);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideDown 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
         let cart = [];
         let sidebarOpen = false;
         let currentCategory = 'semua';
@@ -671,7 +774,16 @@
             }
             
             productCards.forEach(card => {
+                // Skip the no results message div
+                if (card.id === 'noResultsMessage') {
+                    return;
+                }
+                
                 const productName = card.getAttribute('data-nama');
+                if (!productName) {
+                    return;
+                }
+                
                 const productCategory = getCategoryByName(productName);
                 
                 // Check if product matches search term
@@ -694,7 +806,7 @@
             
             // Show/hide no results message
             if (noResultsMessage) {
-                if (visibleCount === 0 && productCards.length > 0) {
+                if (visibleCount === 0 && productCards.length > 1) { // > 1 because noResultsMessage is also a card
                     noResultsMessage.classList.remove('hidden');
                 } else {
                     noResultsMessage.classList.add('hidden');
@@ -705,14 +817,105 @@
             updateProductCountDisplay(visibleCount);
         }
         
+        // Select suggestion from autocomplete
+        function selectSuggestion(name, id, originalName, price, stock) {
+            const searchInput = document.getElementById('searchInput');
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+            
+            // Set search input to selected product name
+            searchInput.value = originalName;
+            
+            // Hide suggestions
+            if (suggestionsDiv) {
+                suggestionsDiv.classList.add('hidden');
+            }
+            
+            // Trigger search to show only the selected product
+            searchProduct();
+            
+            // Optional: Auto-add to cart if product is in stock
+            if (stock > 0) {
+                // Show notification that user can click to add to cart
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-3';
+                notification.innerHTML = `
+                    <i class="fas fa-check-circle"></i>
+                    <span>Klik produk untuk menambahkan ke keranjang</span>
+                `;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        }
+        
+        // Handle keyboard navigation in search
+        function handleSearchKeydown(e) {
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+            
+            // Navigate suggestions with arrow keys
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                if (suggestionsDiv && !suggestionsDiv.classList.contains('hidden')) {
+                    e.preventDefault();
+                    
+                    const suggestionItems = suggestionsDiv.querySelectorAll('[onclick*="selectSuggestion"]');
+                    if (suggestionItems.length === 0) return;
+                    
+                    let currentIndex = -1;
+                    suggestionItems.forEach((item, index) => {
+                        if (item.classList.contains('bg-gray-100')) {
+                            currentIndex = index;
+                        }
+                    });
+                    
+                    if (e.key === 'ArrowDown') {
+                        currentIndex = (currentIndex + 1) % suggestionItems.length;
+                    } else if (e.key === 'ArrowUp') {
+                        currentIndex = currentIndex <= 0 ? suggestionItems.length - 1 : currentIndex - 1;
+                    }
+                    
+                    // Highlight current item
+                    suggestionItems.forEach((item, index) => {
+                        if (index === currentIndex) {
+                            item.classList.add('bg-gray-100');
+                        } else {
+                            item.classList.remove('bg-gray-100');
+                        }
+                    });
+                }
+                return;
+            }
+            
+            // Handle Enter key
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                
+                // Check if suggestion is highlighted
+                if (suggestionsDiv && !suggestionsDiv.classList.contains('hidden')) {
+                    const highlightedItem = suggestionsDiv.querySelector('[onclick*="selectSuggestion"].bg-gray-100');
+                    if (highlightedItem) {
+                        highlightedItem.click();
+                        return;
+                    }
+                }
+                
+                searchProduct();
+                return;
+            }
+        }
+        
         // Clear search input
         function clearSearch() {
             const searchInput = document.getElementById('searchInput');
+            
             if (searchInput) {
                 searchInput.value = '';
                 searchInput.focus();
-                searchProduct();
             }
+            
+            // Trigger search to show all products
+            searchProduct();
         }
 
         // Filter products by category
@@ -1521,12 +1724,13 @@
             // Connect to Bluetooth printer
             async function connectBluetoothPrinter() {
                 if (!isBluetoothSupported()) {
-                    alert('Browser Anda tidak mendukung Bluetooth API');
+                    showToast('Browser tidak mendukung Bluetooth', 'error');
                     return;
                 }
 
                 try {
                     // Show loading
+                    showToast('Mencari printer...', 'info');
                     updatePrinterStatus('Mencari printer...', 'connecting');
 
                     // Request Bluetooth device
@@ -1596,14 +1800,9 @@
                 } catch (error) {
                     console.error('Bluetooth connection error:', error);
                     updatePrinterStatus('Gagal terhubung', 'error');
-
-                    let errorMessage = 'Gagal menghubungkan printer';
-                    if (error.name === 'NotFoundError') {
-                        errorMessage = 'Printer tidak ditemukan. Pastikan printer dalam mode pairing.';
-                    } else if (error.name === 'SecurityError') {
-                        errorMessage = 'Akses Bluetooth ditolak. Periksa pengaturan browser.';
-                    }
-                    alert(errorMessage);
+                    
+                    // Show simple toast notification
+                    showToast('Gagal menghubungkan printer', 'error');
                 }
             }
 
@@ -1615,9 +1814,11 @@
                     const testData = new Uint8Array([0x1B, 0x40]); // ESC @ (Initialize printer)
                     await bluetoothCharacteristic.writeValue(testData);
                     updatePrinterStatus('Terhubung & Siap: ' + bluetoothDevice.name, 'ready');
+                    showToast('Printer berhasil terhubung', 'success');
                 } catch (error) {
                     console.error('Test print failed:', error);
                     updatePrinterStatus('Terhubung (Tidak responsif)', 'warning');
+                    showToast('Printer tidak responsif', 'error');
                 }
             }
 
@@ -2000,52 +2201,8 @@
                 toggleView(savedView);
             }
             
-            // Initialize search functionality
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                // Search on input (real-time)
-                searchInput.addEventListener('input', function() {
-                    searchProduct();
-                });
-                
-                // Also search on Enter key
-                searchInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        searchProduct();
-                    }
-                });
-                
-                // Support barcode scanner - typically sends Enter after barcode
-                let barcodeBuffer = '';
-                let barcodeTimeout;
-                
-                searchInput.addEventListener('keydown', function(e) {
-                    // Clear timeout if exists
-                    if (barcodeTimeout) {
-                        clearTimeout(barcodeTimeout);
-                    }
-                    
-                    // Add character to buffer
-                    if (e.key.length === 1) {
-                        barcodeBuffer += e.key;
-                    }
-                    
-                    // If Enter is pressed, process as barcode
-                    if (e.key === 'Enter' && barcodeBuffer.length > 3) {
-                        e.preventDefault();
-                        console.log('Barcode detected:', barcodeBuffer);
-                        // The search will automatically run from the input event
-                        barcodeBuffer = '';
-                        return;
-                    }
-                    
-                    // Reset buffer after 100ms (barcode scanners are fast)
-                    barcodeTimeout = setTimeout(() => {
-                        barcodeBuffer = '';
-                    }, 100);
-                });
-            }
+            // Search functionality is handled by inline oninput event
+            
             sidebarOpen = false;
             
             // Check if Bluetooth is supported
