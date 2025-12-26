@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\Jurnal;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class JurnalController extends Controller
@@ -36,6 +37,21 @@ class JurnalController extends Controller
         $jumlahPengeluaran = Jurnal::whereDate('tgl', $tanggal)
             ->where('jenis', 'pengeluaran')
             ->count();
+
+        // Jika request AJAX, return JSON
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'jurnals' => $jurnals,
+                    'totalPemasukan' => $totalPemasukan,
+                    'totalPengeluaran' => $totalPengeluaran,
+                    'jumlahPemasukan' => $jumlahPemasukan,
+                    'jumlahPengeluaran' => $jumlahPengeluaran,
+                    'saldoBersih' => $totalPemasukan - $totalPengeluaran,
+                ],
+            ]);
+        }
 
         return view('kasir.jurnal.index', compact(
             'jurnals',
@@ -81,9 +97,15 @@ class JurnalController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id, Request $request)
     {
-        //
+        // Jika ID adalah export, handle export
+        if ($id === 'export') {
+            return $this->export($request);
+        }
+
+        // Default behavior untuk show
+        return response()->json(['message' => 'Show not implemented']);
     }
 
     /**
@@ -133,11 +155,12 @@ class JurnalController extends Controller
     }
 
     /**
-     * Get jurnal data for real-time updates (API)
+     * Export jurnal to PDF or Excel
      */
-    public function getJurnalData(Request $request)
+    public function export(Request $request)
     {
         $tanggal = $request->get('tanggal', date('Y-m-d'));
+        $format = $request->get('format', 'pdf'); // pdf or excel
 
         // Get journals for specific date
         $jurnals = Jurnal::whereDate('tgl', $tanggal)
@@ -145,32 +168,41 @@ class JurnalController extends Controller
             ->get();
 
         // Calculate summary
-        $totalPemasukan = Jurnal::whereDate('tgl', $tanggal)
-            ->where('jenis', 'pemasukan')
-            ->sum('nominal');
+        $totalPemasukan = $jurnals->where('jenis', 'pemasukan')->sum('nominal');
+        $totalPengeluaran = $jurnals->where('jenis', 'pengeluaran')->sum('nominal');
+        $saldoBersih = $totalPemasukan - $totalPengeluaran;
 
-        $totalPengeluaran = Jurnal::whereDate('tgl', $tanggal)
-            ->where('jenis', 'pengeluaran')
-            ->sum('nominal');
+        $data = [
+            'jurnals' => $jurnals,
+            'tanggal' => $tanggal,
+            'totalPemasukan' => $totalPemasukan,
+            'totalPengeluaran' => $totalPengeluaran,
+            'saldoBersih' => $saldoBersih,
+        ];
 
-        $jumlahPemasukan = Jurnal::whereDate('tgl', $tanggal)
-            ->where('jenis', 'pemasukan')
-            ->count();
+        if ($format === 'excel') {
+            return $this->exportExcel($data);
+        }
 
-        $jumlahPengeluaran = Jurnal::whereDate('tgl', $tanggal)
-            ->where('jenis', 'pengeluaran')
-            ->count();
+        return $this->exportPdf($data);
+    }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'jurnals' => $jurnals,
-                'totalPemasukan' => $totalPemasukan,
-                'totalPengeluaran' => $totalPengeluaran,
-                'jumlahPemasukan' => $jumlahPemasukan,
-                'jumlahPengeluaran' => $jumlahPengeluaran,
-                'saldoBersih' => $totalPemasukan - $totalPengeluaran,
-            ],
+    private function exportPdf($data)
+    {
+        $pdf = Pdf::loadView('kasir.jurnal.export-pdf', $data);
+        $pdf->setPaper('a4', 'portrait');
+        return $pdf->download('jurnal-kasir-'.$data['tanggal'].'.pdf');
+    }
+
+    private function exportExcel($data)
+    {
+        $filename = 'jurnal-kasir-'.$data['tanggal'].'.xls';
+        $view = view('kasir.jurnal.export-excel', $data)->render();
+        
+        return response($view, 200, [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 }

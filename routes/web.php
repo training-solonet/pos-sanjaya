@@ -41,10 +41,7 @@ Route::middleware([IsKasir::class])->group(function () {
             'custommer' => CustommerController::class,
         ]);
 
-        // API endpoint for real-time transaction updates
-        Route::get('laporan/api/transactions', [KasirLaporanController::class, 'getTransactions'])->name('laporan.api.transactions');
-        Route::get('jurnal/api/data', [KasirJurnalController::class, 'getJurnalData'])->name('jurnal.api.data');
-        Route::get('transaksi/api/next-id', [TransaksiController::class, 'getNextId'])->name('transaksi.api.next-id');
+ 
     });
 });
 

@@ -103,6 +103,18 @@ class DashboardController extends Controller
             $labels7Hari[] = $dayNames[$date->dayOfWeek];
         }
 
+        // 7a. Data untuk grafik penjualan 30 hari terakhir
+        $penjualan30Hari = [];
+        $transaksi30Hari = [];
+        $labels30Hari = [];
+
+        for ($i = 29; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+            $penjualan30Hari[] = Transaksi::whereDate('tgl', $date)->sum('bayar');
+            $transaksi30Hari[] = Transaksi::whereDate('tgl', $date)->count();
+            $labels30Hari[] = $date->format('d M');
+        }
+
         // 8. Data penjualan per jam hari ini
         $penjualanPerJam = [];
         $labelJam = [];
@@ -131,6 +143,9 @@ class DashboardController extends Controller
             'penjualan7Hari',
             'transaksi7Hari',
             'labels7Hari',
+            'penjualan30Hari',
+            'transaksi30Hari',
+            'labels30Hari',
             'penjualanPerJam',
             'labelJam'
         ));

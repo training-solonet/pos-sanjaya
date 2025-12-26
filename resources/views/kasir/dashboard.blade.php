@@ -254,7 +254,7 @@
                             <h3 class="text-xl font-bold text-gray-900">
                                 <i class="fas fa-chart-area text-purple-600 mr-2"></i>Grafik Penjualan
                             </h3>
-                            <p class="text-sm text-gray-500 mt-1">Ringkasan penjualan 7 hari terakhir</p>
+                            <p class="text-sm text-gray-500 mt-1" id="chartDescription">Ringkasan penjualan 7 hari terakhir</p>
                         </div>
                         <div class="flex items-center space-x-2">
                             <button onclick="changeChartPeriod('7days')" class="chart-period-btn active px-4 py-2 text-sm font-semibold bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">7 Hari</button>
@@ -336,53 +336,65 @@
             '7days': {
                 labels: @json($labels7Hari),
                 sales: @json($penjualan7Hari),
-                transactions: @json($transaksi7Hari),
-                colors: {
-                    primary: 'rgba(34, 197, 94, 0.8)',
-                    secondary: 'rgba(59, 130, 246, 0.6)'
-                }
+                transactions: @json($transaksi7Hari)
             },
             '30days': {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                sales: [15200000, 18500000, 17800000, 19200000],
-                transactions: [385, 461, 433, 478],
-                colors: {
-                    primary: 'rgba(34, 197, 94, 0.8)',
-                    secondary: 'rgba(59, 130, 246, 0.6)'
-                }
+                labels: @json($labels30Hari),
+                sales: @json($penjualan30Hari),
+                transactions: @json($transaksi30Hari)
             }
         };
+
+        console.log('Initial Sales Data:', salesData);
 
         let currentChart = null;
         let currentPeriod = '7days';
 
         // Create Sales Chart
         function createSalesChart(period = '7days') {
-            const ctx = document.getElementById('salesChart').getContext('2d');
+            const canvas = document.getElementById('salesChart');
+            if (!canvas) {
+                console.error('Canvas salesChart not found!');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
             const data = salesData[period];
+            
+            console.log('Creating chart with period:', period);
+            console.log('Chart data:', data);
             
             // Destroy existing chart if it exists
             if (currentChart) {
                 currentChart.destroy();
             }
 
+            // Create gradient for area fill - matching the green from image
+            const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+            gradient.addColorStop(0, 'rgba(52, 211, 153, 0.5)');    // Emerald-400
+            gradient.addColorStop(0.5, 'rgba(52, 211, 153, 0.25)');
+            gradient.addColorStop(1, 'rgba(52, 211, 153, 0.05)');   // Almost transparent
+
             currentChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: data.labels,
                     datasets: [{
-                        label: 'Penjualan (Rp)',
+                        label: 'Total Penjualan',
                         data: data.sales,
-                        borderColor: 'rgb(34, 197, 94)',
-                        backgroundColor: data.colors.primary,
-                        borderWidth: 3,
+                        borderColor: 'rgb(52, 211, 153)',
+                        backgroundColor: gradient,
+                        borderWidth: 2.5,
                         fill: true,
                         tension: 0.4,
-                        pointBackgroundColor: 'rgb(34, 197, 94)',
+                        pointBackgroundColor: 'rgb(52, 211, 153)',
                         pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
+                        pointBorderWidth: 2.5,
+                        pointRadius: 5.5,
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: 'rgb(52, 211, 153)',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 3
                     }]
                 },
                 options: {
@@ -393,13 +405,22 @@
                             display: false
                         },
                         tooltip: {
+                            enabled: true,
                             backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: 'rgb(34, 197, 94)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            titleFont: {
+                                size: 13,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 12
+                            },
+                            borderColor: 'rgb(52, 211, 153)',
                             borderWidth: 1,
-                            cornerRadius: 8,
+                            cornerRadius: 6,
                             displayColors: false,
+                            padding: 12,
                             callbacks: {
                                 label: function(context) {
                                     return 'Penjualan: Rp ' + context.parsed.y.toLocaleString('id-ID');
@@ -411,21 +432,40 @@
                         y: {
                             beginAtZero: true,
                             grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
+                                color: 'rgba(0, 0, 0, 0.06)',
+                                drawBorder: false,
+                                lineWidth: 1
+                            },
+                            border: {
+                                display: false,
+                                dash: [5, 5]
                             },
                             ticks: {
                                 callback: function(value) {
+                                    if (value === 0) return 'Rp 0.0M';
                                     return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
                                 },
-                                color: 'rgb(107, 114, 128)'
+                                color: 'rgb(107, 114, 128)',
+                                font: {
+                                    size: 11
+                                },
+                                padding: 8
                             }
                         },
                         x: {
                             grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            border: {
                                 display: false
                             },
                             ticks: {
-                                color: 'rgb(107, 114, 128)'
+                                color: 'rgb(107, 114, 128)',
+                                font: {
+                                    size: 11
+                                },
+                                padding: 8
                             }
                         }
                     },
@@ -435,6 +475,8 @@
                     }
                 }
             });
+            
+            console.log('Chart created successfully');
         }
 
         // Change Chart Period
@@ -443,12 +485,16 @@
             
             // Update button states
             document.querySelectorAll('.chart-period-btn').forEach(btn => {
-                btn.classList.remove('active', 'bg-green-100', 'text-green-600');
+                btn.classList.remove('active', 'bg-green-100', 'text-green-700');
                 btn.classList.add('bg-gray-100', 'text-gray-600');
             });
             
             event.target.classList.remove('bg-gray-100', 'text-gray-600');
-            event.target.classList.add('active', 'bg-green-100', 'text-green-600');
+            event.target.classList.add('active', 'bg-green-100', 'text-green-700');
+            
+            // Update description
+            const description = period === '7days' ? 'Ringkasan penjualan 7 hari terakhir' : 'Ringkasan penjualan 30 hari terakhir';
+            document.getElementById('chartDescription').textContent = description;
             
             // Update chart
             createSalesChart(period);
@@ -470,8 +516,8 @@
                 return sum + numValue;
             }, 0);
             
-            // Calculate average
-            const daysCount = period === '7days' ? 7 : 30;
+            // Calculate average - based on actual number of days
+            const daysCount = data.labels.length;
             const avgDaily = totalSales / daysCount;
             
             // Format with proper Indonesian number format
@@ -497,23 +543,25 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            updateDateTime();
-            setInterval(updateDateTime, 60000);
+            console.log('Dashboard loaded');
+            console.log('Sales Data:', salesData);
             
             // Initialize mobile state
             if (window.innerWidth < 1024) {
                 const sidebar = document.getElementById('sidebar');
                 const overlay = document.getElementById('mobileOverlay');
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
+                if (sidebar) sidebar.classList.add('-translate-x-full');
+                if (overlay) overlay.classList.add('hidden');
             }
             
-            // Initialize charts
+            // Initialize charts with delay to ensure canvas is ready
             setTimeout(() => {
+                console.log('Initializing charts...');
                 createSalesChart('7days');
                 updateSalesStats('7days');
                 createProductsChart();
                 createHourlyChart();
+                console.log('Charts initialized');
             }, 100);
         });
 

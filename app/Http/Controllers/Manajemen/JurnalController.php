@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Manajemen;
 use App\Http\Controllers\Controller;
 use App\Models\Jurnal;
 use App\Models\Transaksi;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -81,8 +82,13 @@ class JurnalController extends Controller
         }
     }
 
-    public function show($id)
+    public function show($id, Request $request)
     {
+        // Jika ID adalah export, handle export
+        if ($id === 'export') {
+            return $this->export($request);
+        }
+
         try {
             // Cek apakah ID adalah transaksi (format: transaksi_{id})
             if (str_starts_with($id, 'transaksi_')) {
@@ -400,4 +406,112 @@ class JurnalController extends Controller
     public function create() {}
 
     public function edit($id) {}
+
+    /**
+     * Export jurnal to PDF or Excel
+     */
+    public function export(Request $request)
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $period = $request->get('period', 'daily');
+        $format = $request->get('format', 'pdf'); // pdf or excel
+
+        // Query untuk jurnal manual dan transaksi
+        $manualQuery = Jurnal::where('role', 'manajemen');
+        $transaksiQuery = Transaksi::query();
+
+        // Filter berdasarkan periode
+        switch ($period) {
+            case 'daily':
+                $manualQuery->whereDate('tgl', $date);
+                $transaksiQuery->whereDate('tgl', $date);
+                $periodLabel = \Carbon\Carbon::parse($date)->format('d F Y');
+                break;
+
+            case 'weekly':
+                $startOfWeek = date('Y-m-d', strtotime('monday this week', strtotime($date)));
+                $endOfWeek = date('Y-m-d', strtotime('sunday this week', strtotime($date)));
+                $manualQuery->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
+                $transaksiQuery->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
+                $periodLabel = \Carbon\Carbon::parse($startOfWeek)->format('d M') . ' - ' . \Carbon\Carbon::parse($endOfWeek)->format('d M Y');
+                break;
+
+            case 'monthly':
+                $startOfMonth = date('Y-m-01', strtotime($date));
+                $endOfMonth = date('Y-m-t', strtotime($date));
+                $manualQuery->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
+                $transaksiQuery->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
+                $periodLabel = \Carbon\Carbon::parse($date)->format('F Y');
+                break;
+
+            default:
+                $manualQuery->whereDate('tgl', $date);
+                $transaksiQuery->whereDate('tgl', $date);
+                $periodLabel = \Carbon\Carbon::parse($date)->format('d F Y');
+        }
+
+        $jurnalsManual = $manualQuery->orderBy('tgl', 'desc')->get();
+        $transaksis = $transaksiQuery->orderBy('tgl', 'desc')->get();
+
+        // Konversi transaksi ke format jurnal
+        $jurnalsTransaksi = $this->convertTransactionsToJurnals($transaksis);
+
+        // Gabungkan dan urutkan
+        $allJurnals = $jurnalsManual->concat($jurnalsTransaksi)
+            ->sortByDesc('tgl')
+            ->values();
+
+        // Hitung summary
+        $totalPemasukan = 0;
+        $totalPengeluaran = 0;
+        foreach ($allJurnals as $jurnal) {
+            if (is_array($jurnal)) {
+                if ($jurnal['jenis'] == 'pemasukan') {
+                    $totalPemasukan += $jurnal['nominal'];
+                } else {
+                    $totalPengeluaran += $jurnal['nominal'];
+                }
+            } else {
+                if ($jurnal->jenis == 'pemasukan') {
+                    $totalPemasukan += $jurnal->nominal;
+                } else {
+                    $totalPengeluaran += $jurnal->nominal;
+                }
+            }
+        }
+
+        $data = [
+            'jurnals' => $allJurnals,
+            'period' => $period,
+            'periodLabel' => $periodLabel,
+            'totalPemasukan' => $totalPemasukan,
+            'totalPengeluaran' => $totalPengeluaran,
+            'saldoBersih' => $totalPemasukan - $totalPengeluaran,
+        ];
+
+        if ($format === 'excel') {
+            return $this->exportExcel($data);
+        }
+
+        return $this->exportPdf($data);
+    }
+
+    private function exportPdf($data)
+    {
+        $pdf = Pdf::loadView('manajemen.jurnal.export-pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
+        return $pdf->download('jurnal-manajemen-'.str_replace(' ', '-', $data['periodLabel']).'.pdf');
+    }
+
+    private function exportExcel($data)
+    {
+        $filename = 'jurnal-manajemen-'.str_replace(' ', '-', $data['periodLabel']).'.xls';
+        $view = view('manajemen.jurnal.export-excel', $data)->render();
+        
+        return response($view, 200, [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
 }

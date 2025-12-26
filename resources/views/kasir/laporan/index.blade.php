@@ -318,10 +318,15 @@
                 if (currentFilters.search) params.append('search', currentFilters.search);
                 
                 console.log('Fetching from API with filters:', currentFilters);
-                const url = `{{ route('kasir.laporan.api.transactions') }}?${params.toString()}`;
+                const url = `{{ route('kasir.laporan.index') }}?${params.toString()}`;
                 console.log('API URL:', url);
                 
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
                 const data = await response.json();
                 console.log('API Response:', data);
                 

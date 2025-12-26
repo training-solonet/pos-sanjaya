@@ -4,14 +4,12 @@ namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetailTransaksi;
+use App\Models\Jurnal;
 use App\Models\Produk;
 use App\Models\Transaksi;
-// PASTIKAN INI ADA
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-
-// PASTIKAN INI ADA
 
 class TransaksiController extends Controller
 {
@@ -24,6 +22,21 @@ class TransaksiController extends Controller
         $totalProduk = $produks->count();
 
         return view('kasir.transaksi.index', compact('produks', 'totalProduk'));
+    }
+
+    /**
+     * Show the form for creating a new resource (or return next ID for AJAX).
+     */
+    public function create()
+    {
+        // Get the last transaction ID and increment by 1
+        $lastTransaction = Transaksi::latest('id')->first();
+        $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
+
+        return response()->json([
+            'success' => true,
+            'next_id' => $nextId,
+        ]);
     }
 
     /**
@@ -182,20 +195,5 @@ class TransaksiController extends Controller
     public function destroy(string $id)
     {
         //
-    }
-
-    /**
-     * Get next transaction ID
-     */
-    public function getNextId()
-    {
-        // Get the last transaction ID and increment by 1
-        $lastTransaction = Transaksi::latest('id')->first();
-        $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
-
-        return response()->json([
-            'success' => true,
-            'next_id' => $nextId,
-        ]);
     }
 }
