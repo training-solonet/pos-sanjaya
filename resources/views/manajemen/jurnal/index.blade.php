@@ -30,10 +30,22 @@
                         value="{{ date('Y-m-d') }}">
                     
                     <!-- Tombol Export -->
-                    <button onclick="exportData()"
-                        class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
-                        <i class="fas fa-download mr-2"></i>Export
-                    </button>
+                    <div class="relative inline-block text-left" x-data="{ open: false }">
+                        <button @click="open = !open" type="button" class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 inline-flex items-center">
+                            <i class="fas fa-download mr-2"></i>Export
+                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                        </button>
+                        <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                            <div class="py-1" role="menu">
+                                <a href="#" @click.prevent="exportData('pdf')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-file-pdf mr-2 text-red-500"></i>Export PDF
+                                </a>
+                                <a href="#" @click.prevent="exportData('excel')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-file-excel mr-2 text-green-500"></i>Export Excel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -898,12 +910,12 @@
     });
 
     // Export function
-    function exportData() {
+    function exportData(format) {
       const filterPeriod = document.getElementById('filterPeriod').value;
       const filterDate = document.getElementById('filterDate').value;
       
-      // Buat URL export dengan parameter periode
-      const exportUrl = `/management/jurnal/export?period=${filterPeriod}&date=${filterDate}`;
+      // Buat URL export dengan parameter periode dan format
+      const exportUrl = `{{ route('management.jurnal.show', ':id') }}`.replace(':id', 'export') + `?period=${filterPeriod}&date=${filterDate}&format=${format}`;
       
       // Redirect ke URL export (akan dihandle oleh controller)
       window.open(exportUrl, '_blank');

@@ -4,13 +4,12 @@ namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetailTransaksi;
+use App\Models\Jurnal;
 use App\Models\Produk;
 use App\Models\Transaksi;
-use App\Models\UpdateStokProduk; // PASTIKAN INI ADA
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log; // PASTIKAN INI ADA
 
 class TransaksiController extends Controller
 {
@@ -23,6 +22,21 @@ class TransaksiController extends Controller
         $totalProduk = $produks->count();
 
         return view('kasir.transaksi.index', compact('produks', 'totalProduk'));
+    }
+
+    /**
+     * Show the form for creating a new resource (or return next ID for AJAX).
+     */
+    public function create()
+    {
+        // Get the last transaction ID and increment by 1
+        $lastTransaction = Transaksi::latest('id')->first();
+        $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
+
+        return response()->json([
+            'success' => true,
+            'next_id' => $nextId,
+        ]);
     }
 
     /**
@@ -97,27 +111,28 @@ class TransaksiController extends Controller
 
                 // Kurangi stok produk
                 $produk->decrement('stok', $item['quantity']);
-
-                // Simpan stok akhir setelah dikurangi
-                $stokAkhir = $produk->stok;
-
-                // ============ PERBAIKAN UTAMA ============
-                // BUAT LOG PENGURANGAN STOK UNTUK DETAIL PRODUK
-                // Pastikan log benar-benar dibuat
-                UpdateStokProduk::create([
-                    'id_produk' => $item['id'],
-                    'stok_awal' => $stokAwal,
-                    'stok_baru' => -$item['quantity'], // Negatif karena pengurangan
-                    'total_stok' => $stokAkhir,
-                    'kadaluarsa' => $produk->kadaluarsa,
-                    'tanggal_update' => now(),
-                    'keterangan' => 'Pengurangan stok dari transaksi #'.$transaksi->id,
-                ]);
-                // =========================================
-
-                // Log untuk debugging
-                Log::info("Log stok TRANSAKSI dibuat: Produk ID {$item['id']}, Stok Awal: {$stokAwal}, Pengurangan: {$item['quantity']}, Stok Akhir: {$stokAkhir}");
             }
+
+            // Catat ke jurnal secara otomatis
+            $invoiceNumber = 'INV-'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT);
+
+            // Buat deskripsi produk yang dibeli
+            $keterangan = 'Penjualan ';
+            $itemDescriptions = [];
+            foreach ($validated['items'] as $item) {
+                $produk = Produk::find($item['id']);
+                $itemDescriptions[] = $produk->nama.' x'.$item['quantity'];
+            }
+            $keterangan .= implode(', ', $itemDescriptions);
+
+            Jurnal::create([
+                'tgl' => now(),
+                'jenis' => 'pemasukan',
+                'kategori' => 'Penjualan',
+                'keterangan' => $keterangan,
+                'nominal' => $total,
+                'role' => 'kasir',
+            ]);
 
             DB::commit();
 
