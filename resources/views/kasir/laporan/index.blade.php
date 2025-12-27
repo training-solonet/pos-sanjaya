@@ -486,7 +486,7 @@
             }
         }
 
-        // Render transactions table
+        // Menampilkan tabel transaksi
         function renderTransactions() {
             console.log('=== RENDER TRANSACTIONS CALLED ===');
             console.log('Total transactions in salesData:', salesData.transactions.length);
