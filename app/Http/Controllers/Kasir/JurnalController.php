@@ -191,6 +191,7 @@ class JurnalController extends Controller
     {
         $pdf = Pdf::loadView('kasir.jurnal.export-pdf', $data);
         $pdf->setPaper('a4', 'portrait');
+
         return $pdf->download('jurnal-kasir-'.$data['tanggal'].'.pdf');
     }
 
@@ -198,7 +199,7 @@ class JurnalController extends Controller
     {
         $filename = 'jurnal-kasir-'.$data['tanggal'].'.xls';
         $view = view('kasir.jurnal.export-excel', $data)->render();
-        
+
         return response($view, 200, [
             'Content-Type' => 'application/vnd.ms-excel',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',

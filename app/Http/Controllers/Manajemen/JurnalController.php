@@ -433,7 +433,7 @@ class JurnalController extends Controller
                 $endOfWeek = date('Y-m-d', strtotime('sunday this week', strtotime($date)));
                 $manualQuery->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
                 $transaksiQuery->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
-                $periodLabel = \Carbon\Carbon::parse($startOfWeek)->format('d M') . ' - ' . \Carbon\Carbon::parse($endOfWeek)->format('d M Y');
+                $periodLabel = \Carbon\Carbon::parse($startOfWeek)->format('d M').' - '.\Carbon\Carbon::parse($endOfWeek)->format('d M Y');
                 break;
 
             case 'monthly':
@@ -500,6 +500,7 @@ class JurnalController extends Controller
     {
         $pdf = Pdf::loadView('manajemen.jurnal.export-pdf', $data);
         $pdf->setPaper('a4', 'landscape');
+
         return $pdf->download('jurnal-manajemen-'.str_replace(' ', '-', $data['periodLabel']).'.pdf');
     }
 
@@ -507,7 +508,7 @@ class JurnalController extends Controller
     {
         $filename = 'jurnal-manajemen-'.str_replace(' ', '-', $data['periodLabel']).'.xls';
         $view = view('manajemen.jurnal.export-excel', $data)->render();
-        
+
         return response($view, 200, [
             'Content-Type' => 'application/vnd.ms-excel',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',

@@ -41,7 +41,6 @@ Route::middleware([IsKasir::class])->group(function () {
             'custommer' => CustommerController::class,
         ]);
 
- 
     });
 });
 
