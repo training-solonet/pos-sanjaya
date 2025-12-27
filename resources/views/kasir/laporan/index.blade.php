@@ -522,11 +522,6 @@
                 console.log('After filter - transactions count:', transactions.length);
             }
 
-            // Add fade-in animation for new rows (hanya jika bukan initial load)
-            const currentCount = tbody.querySelectorAll('tr').length;
-            const newCount = transactions.length;
-            const hasNewData = !isInitialLoad && newCount > currentCount;
-
             if (transactions.length === 0) {
                 tbody.innerHTML = `
                     <tr>
@@ -541,7 +536,7 @@
                 `;
             } else {
                 tbody.innerHTML = transactions.map((t, index) => `
-                    <tr class="hover:bg-gray-50 transition-all ${hasNewData && index === 0 ? 'animate-fade-in bg-green-50' : ''}">
+                    <tr class="hover:bg-gray-50 transition-all">
                         <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
                             <span class="text-sm font-medium text-gray-900">${t.invoice}</span>
                         </td>
@@ -571,16 +566,6 @@
 
             document.getElementById('showingCount').textContent = transactions.length;
             document.getElementById('totalCount').textContent = salesData.transactions.length;
-
-            // Remove highlight after animation
-            if (hasNewData) {
-                setTimeout(() => {
-                    const firstRow = tbody.querySelector('tr:first-child');
-                    if (firstRow) {
-                        firstRow.classList.remove('bg-green-50');
-                    }
-                }, 2000);
-            }
 
             // Set initial load flag to false after first render
             if (isInitialLoad) {
