@@ -4,7 +4,7 @@
 @section('page-description', 'Sistem kasir dan penjualan')
 
 @section('content')
-    <!-- Transaksi Page Content -->
+    <!-- Halaman transaksi -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 h-full">
                 <!-- Card Katalog Produk -->
                 <div class="xl:col-span-2">
