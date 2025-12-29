@@ -98,28 +98,6 @@ class TransaksiController extends Controller
                 // Kurangi stok produk
                 $produk->decrement('stok', $item['quantity']);
 
-<<<<<<< HEAD
-            // Catat ke jurnal secara otomatis
-            $invoiceNumber = 'INV-'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT);
-            
-            // Buat deskripsi produk yang dibeli
-            $keterangan = 'Penjualan ';
-            $itemDescriptions = [];
-            foreach ($validated['items'] as $item) {
-                $produk = Produk::find($item['id']);
-                $itemDescriptions[] = $produk->nama . ' x' . $item['quantity'];
-            }
-            $keterangan .= implode(', ', $itemDescriptions);
-            
-            Jurnal::create([
-                'tgl' => now(),
-                'jenis' => 'pemasukan',
-                'kategori' => 'Penjualan',
-                'keterangan' => $keterangan,
-                'nominal' => $total,
-                'role' => 'kasir',
-            ]);
-=======
                 // Simpan stok akhir setelah dikurangi
                 $stokAkhir = $produk->stok;
 
@@ -140,7 +118,6 @@ class TransaksiController extends Controller
                 // Log untuk debugging
                 Log::info("Log stok TRANSAKSI dibuat: Produk ID {$item['id']}, Stok Awal: {$stokAwal}, Pengurangan: {$item['quantity']}, Stok Akhir: {$stokAkhir}");
             }
->>>>>>> a86d36d046187506b52ba8698b4ffc4d2072d77f
 
             DB::commit();
 
