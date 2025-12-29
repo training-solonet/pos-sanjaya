@@ -14,7 +14,7 @@
                 <div class="flex gap-2">
                     <a href="{{ route('management.updateproduk.index') }}"
                         class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center">
-                        <i class="fas fa-clipboard-check mr-2"></i>Stok Produk
+                        <i class="fas fa-clipboard-check mr-2"></i>Daily Stok
                     </a>
                     <button onclick="openAddProductModal()"
                         class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 transition-all flex items-center">
@@ -262,7 +262,6 @@
                 </div>
             </div>
 
-            <!-- PERBAIKAN: Tambahkan ini untuk debugging pagination -->
             @if($produk->count() > 0)
                 <!-- Pagination -->
                 <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">

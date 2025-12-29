@@ -125,93 +125,207 @@
                 </div>
             </div>
 
-            <!-- History List -->
+            <!-- History Grid -->
             <div id="historyContainer" class="space-y-4">
                 @if($history->count() > 0)
-                    @foreach($history as $index => $entry)
-                        @php
-                            // Format tanggal dengan Carbon untuk bahasa Indonesia
-                            $date = \Carbon\Carbon::parse($entry->tanggal_update);
-                            // Format: Hari, Tanggal Bulan Tahun Jam:Menit
-                            $dateStr = $date->translatedFormat('l, d F Y H:i');
-                            $kadaluarsaDate = \Carbon\Carbon::parse($entry->kadaluarsa);
-                            $kadaluarsaStr = $kadaluarsaDate->translatedFormat('d F Y');
+                    <!-- Pagination Info -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                        <div class="flex flex-col sm:flex-row justify-between items-center">
+                            <p class="text-sm text-gray-600 mb-2 sm:mb-0">
+                                Menampilkan <span class="font-semibold">{{ $history->firstItem() }}</span> - 
+                                <span class="font-semibold">{{ $history->lastItem() }}</span> dari 
+                                <span class="font-semibold">{{ $history->total() }}</span> entri
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Grid 4 kolom per baris -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        @foreach($history as $entry)
+                            @php
+                                // Format tanggal dengan Carbon untuk bahasa Indonesia
+                                $date = \Carbon\Carbon::parse($entry->tanggal_update);
+                                $dateStr = $date->translatedFormat('l, d F Y H:i');
+                                $kadaluarsaDate = \Carbon\Carbon::parse($entry->kadaluarsa);
+                                $kadaluarsaStr = $kadaluarsaDate->translatedFormat('d F Y');
+                                
+                                // Hitung selisih hari untuk kadaluarsa (bulatkan ke bawah)
+                                $now = \Carbon\Carbon::now();
+                                $diffDays = $now->diffInDays($kadaluarsaDate, false);
+                                $diffDaysRounded = floor($diffDays); // Bulatkan ke bawah
+                                
+                                // Hitung nomor urut berdasarkan pagination
+                                $entryNumber = ($history->currentPage() - 1) * $history->perPage() + $loop->iteration;
+                                
+                                // Tentukan warna berdasarkan status kadaluarsa
+                                $expiredColor = 'text-green-600';
+                                $expiredText = '';
+                                
+                                if ($diffDaysRounded < 0) {
+                                    $expiredColor = 'text-red-600';
+                                    $expiredText = 'Expired';
+                                } elseif ($diffDaysRounded <= 7) {
+                                    $expiredColor = 'text-orange-600';
+                                    $expiredText = $diffDaysRounded . ' hari';
+                                } else {
+                                    $expiredText = $diffDaysRounded . ' hari';
+                                }
+                            @endphp
                             
-                            // Hitung selisih hari untuk kadaluarsa
-                            $now = \Carbon\Carbon::now();
-                            $diffDays = $now->diffInDays($kadaluarsaDate, false);
-                        @endphp
-                        
-                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow" 
-                             data-entry-id="{{ $entry->id }}"
-                             data-tanggal="{{ $date->format('Y-m-d') }}"
-                             data-bulan="{{ $date->format('Y-m') }}">
-                            <div class="p-6">
-                                <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-3 mb-3">
-                                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-clipboard-list text-green-600 text-xl"></i>
+                            <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-1"
+                                 data-entry-id="{{ $entry->id }}"
+                                 data-tanggal="{{ $date->format('Y-m-d') }}"
+                                 data-bulan="{{ $date->format('Y-m') }}">
+                                <div class="p-4">
+                                    <!-- Header dengan nomor dan tanggal -->
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-boxes text-green-600 text-sm"></i>
                                             </div>
-                                            <div>
-                                                <h4 class="text-lg font-semibold text-gray-900">Penambahan Stok #{{ $history->count() - $index }}</h4>
-                                                <p class="text-sm text-gray-500">
-                                                    <i class="fas fa-calendar mr-1"></i>{{ $dateStr }}
-                                                </p>
-                                            </div>
+                                            <span class="text-sm font-semibold text-gray-900">#{{ $entryNumber }}</span>
                                         </div>
-                                        
-                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-                                            <div>
-                                                <p class="text-xs text-gray-500">Produk</p>
-                                                <p class="text-lg font-bold text-gray-900 nama-produk" data-id="{{ $entry->id_produk }}">{{ $entry->produk->nama }}</p>
+                                        <span class="text-xs text-gray-500">{{ $date->translatedFormat('d/m H:i') }}</span>
+                                    </div>
+                                    
+                                    <!-- Produk -->
+                                    <div class="mb-3">
+                                        <p class="text-xs text-gray-500 mb-1">Produk</p>
+                                        <p class="text-sm font-semibold text-gray-900 truncate" title="{{ $entry->produk->nama }}">
+                                            {{ $entry->produk->nama }}
+                                        </p>
+                                    </div>
+                                    
+                                    <!-- Stok Information -->
+                                    <div class="space-y-2 mb-4">
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <div class="text-center">
+                                                <p class="text-xs text-gray-500">Awal</p>
+                                                <p class="text-sm font-bold text-gray-900">{{ $entry->stok_awal }}</p>
                                             </div>
-                                            <div>
-                                                <p class="text-xs text-gray-500">Stok Awal</p>
-                                                <p class="text-lg font-bold text-gray-900 stok-awal" data-value="{{ $entry->stok_awal }}">{{ $entry->stok_awal }} pcs</p>
+                                            <div class="text-center">
+                                                <p class="text-xs text-gray-500">Tambah</p>
+                                                <p class="text-sm font-bold text-green-600">+{{ $entry->stok_baru }}</p>
                                             </div>
-                                            <div>
-                                                <p class="text-xs text-gray-500">Stok Tambahan</p>
-                                                <p class="text-lg font-bold text-green-600 stok-tambahan" data-value="{{ $entry->stok_baru }}">+{{ $entry->stok_baru }} pcs</p>
+                                            <div class="text-center">
+                                                <p class="text-xs text-gray-500">Total</p>
+                                                <p class="text-sm font-bold text-blue-600">{{ $entry->total_stok }}</p>
                                             </div>
-                                            <div>
-                                                <p class="text-xs text-gray-500">Total Stok</p>
-                                                <p class="text-lg font-bold text-blue-600 total-stok" data-value="{{ $entry->total_stok }}">{{ $entry->total_stok }} pcs</p>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="mt-3">
-                                            <p class="text-xs text-gray-500">Keterangan</p>
-                                            <p class="text-sm text-gray-700 keterangan-text">{{ $entry->keterangan ?: '-' }}</p>
-                                        </div>
-                                        
-                                        <div class="mt-3">
-                                            <p class="text-xs text-gray-500">Kadaluarsa</p>
-                                            <p class="text-sm font-medium {{ $diffDays < 0 ? 'text-red-600' : ($diffDays <= 7 ? 'text-orange-600' : 'text-gray-700') }} kadaluarsa-text" data-value="{{ $entry->kadaluarsa }}">
-                                                {{ $kadaluarsaStr }}
-                                                @if($diffDays < 0)
-                                                    <span class="ml-2 text-xs text-red-500">(Sudah Kadaluarsa)</span>
-                                                @elseif($diffDays <= 7)
-                                                    <span class="ml-2 text-xs text-orange-500">({{ $diffDays }} hari lagi)</span>
-                                                @endif
-                                            </p>
                                         </div>
                                     </div>
                                     
-                                    <div class="flex flex-col gap-2">
+                                    <!-- Kadaluarsa -->
+                                    <div class="mb-4">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs text-gray-500">Kadaluarsa</span>
+                                            <span class="text-xs font-medium {{ $expiredColor }}">
+                                                {{ $expiredText }}
+                                            </span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                            @if($diffDaysRounded >= 0)
+                                                @php
+                                                    $progressWidth = min(100, max(0, ($diffDaysRounded / 30) * 100));
+                                                    $progressColor = $diffDaysRounded <= 7 ? 'bg-orange-500' : 'bg-green-500';
+                                                @endphp
+                                                <div class="h-1.5 rounded-full {{ $progressColor }}" style="width: {{ $progressWidth }}%"></div>
+                                            @else
+                                                <div class="h-1.5 rounded-full bg-red-500" style="width: 100%"></div>
+                                            @endif
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">{{ $kadaluarsaStr }}</p>
+                                    </div>
+                                    
+                                    <!-- Keterangan -->
+                                    <div class="mb-4">
+                                        <p class="text-xs text-gray-500 mb-1">Keterangan</p>
+                                        <p class="text-xs text-gray-700 truncate" title="{{ $entry->keterangan ?: '-' }}">
+                                            {{ $entry->keterangan ?: '-' }}
+                                        </p>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="flex gap-2 pt-3 border-t border-gray-100">
                                         <button onclick="openEditModal({{ $entry->id }})" 
-                                                class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm flex items-center">
-                                            <i class="fas fa-edit mr-2"></i>Edit
+                                                class="flex-1 px-3 py-1.5 bg-gradient-to-r from-green-300 to-green-500 text-white rounded hover:from-green-500 hover:to-green-700 transition-colors text-xs flex items-center justify-center gap-1">
+                                            <i class="fas fa-edit text-xs"></i>
+                                            <span>Edit</span>
                                         </button>
                                         <button onclick="deleteEntry({{ $entry->id }})" 
-                                                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm flex items-center">
-                                            <i class="fas fa-trash mr-2"></i>Hapus
+                                                class="flex-1 px-3 py-1.5 bg-gradient-to-r from-red-300 to-red-500 text-white rounded hover:from-red-500 hover:to-red-700 transition-colors text-xs flex items-center justify-center gap-1">
+                                            <i class="fas fa-trash text-xs"></i>
+                                            <span>Hapus</span>
                                         </button>
                                     </div>
                                 </div>
                             </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-4">
+                        <div class="flex flex-col sm:flex-row items-center justify-between">
+                            <div class="mb-3 sm:mb-0">
+                                <p class="text-sm text-gray-700">
+                                    Halaman <span class="font-semibold">{{ $history->currentPage() }}</span> dari 
+                                    <span class="font-semibold">{{ $history->lastPage() }}</span>
+                                </p>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                {{-- Previous Button --}}
+                                @if ($history->onFirstPage())
+                                    <button class="px-3 py-1.5 border border-gray-300 rounded bg-gray-100 text-gray-400 cursor-not-allowed text-sm">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                @else
+                                    <a href="{{ $history->previousPageUrl() }}" class="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 text-sm">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                @endif
+
+                                {{-- Page Numbers --}}
+                                @php
+                                    $current = $history->currentPage();
+                                    $last = $history->lastPage();
+                                    $start = max(1, $current - 2);
+                                    $end = min($last, $current + 2);
+                                @endphp
+
+                                @if($start > 1)
+                                    <a href="{{ $history->url(1) }}" class="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 text-sm">1</a>
+                                    @if($start > 2)
+                                        <span class="px-3 py-1.5 text-gray-500">...</span>
+                                    @endif
+                                @endif
+
+                                @for ($page = $start; $page <= $end; $page++)
+                                    @if ($page == $current)
+                                        <span class="px-3 py-1.5 border border-green-500 rounded bg-green-50 text-green-600 font-semibold text-sm">{{ $page }}</span>
+                                    @else
+                                        <a href="{{ $history->url($page) }}" class="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 text-sm">{{ $page }}</a>
+                                    @endif
+                                @endfor
+
+                                @if($end < $last)
+                                    @if($end < $last - 1)
+                                        <span class="px-3 py-1.5 text-gray-500">...</span>
+                                    @endif
+                                    <a href="{{ $history->url($last) }}" class="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 text-sm">{{ $last }}</a>
+                                @endif
+
+                                {{-- Next Button --}}
+                                @if ($history->hasMorePages())
+                                    <a href="{{ $history->nextPageUrl() }}" class="px-3 py-1.5 border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 text-sm">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                @else
+                                    <button class="px-3 py-1.5 border border-gray-300 rounded bg-gray-100 text-gray-400 cursor-not-allowed text-sm">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                @endif
+                            </div>
                         </div>
-                    @endforeach
+                    </div>
                 @else
                     <div id="emptyState" class="bg-white rounded-lg border border-gray-200 p-12 text-center">
                         <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -264,11 +378,13 @@
                         <input type="number" name="stok_baru" required min="1"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                                oninput="calculateTotalStock()">
+                        <p class="text-xs text-gray-500 mt-1">Jumlah stok yang ditambahkan ke produk</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Total Stok</label>
                         <input type="number" id="total_stok" readonly
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                        <p class="text-xs text-gray-500 mt-1">Stok awal + stok tambahan</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Kadaluarsa Baru</label>
@@ -326,11 +442,13 @@
                         <input type="number" name="stok_baru" id="edit_stok_baru" required min="1"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                                oninput="calculateEditTotalStock()">
+                        <p class="text-xs text-gray-500 mt-1">Jumlah stok yang ditambahkan ke produk</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Total Stok</label>
                         <input type="number" id="edit_total_stok" readonly
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                        <p class="text-xs text-gray-500 mt-1">Stok awal + stok tambahan</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Kadaluarsa</label>
@@ -425,25 +543,50 @@
 
     // Open Edit Modal
     function openEditModal(id) {
-        const entryElement = document.querySelector(`[data-entry-id="${id}"]`);
-        if (entryElement) {
-            const namaProduk = entryElement.querySelector('.nama-produk').textContent;
-            const stokAwal = entryElement.querySelector('.stok-awal').getAttribute('data-value');
-            const stokTambahan = entryElement.querySelector('.stok-tambahan').getAttribute('data-value');
-            const totalStok = entryElement.querySelector('.total-stok').getAttribute('data-value');
-            const kadaluarsa = entryElement.querySelector('.kadaluarsa-text').getAttribute('data-value');
-            const keterangan = entryElement.querySelector('.keterangan-text').textContent;
-            
-            document.getElementById('edit_id').value = id;
-            document.getElementById('edit_nama_produk').value = namaProduk;
-            document.getElementById('edit_stok_awal').value = stokAwal;
-            document.getElementById('edit_stok_baru').value = stokTambahan;
-            document.getElementById('edit_total_stok').value = totalStok;
-            document.getElementById('edit_kadaluarsa').value = kadaluarsa;
-            document.getElementById('edit_keterangan').value = keterangan !== '-' ? keterangan : '';
-            
-            document.getElementById('editModal').classList.remove('hidden');
-        }
+        // Show loading
+        Swal.fire({
+            title: 'Memuat...',
+            text: 'Sedang mengambil data...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch(`{{ route("management.updateproduk.index") }}/${id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            Swal.close();
+            if (data.success) {
+                document.getElementById('edit_id').value = data.data.id;
+                document.getElementById('edit_nama_produk').value = data.data.nama_produk;
+                document.getElementById('edit_stok_awal').value = data.data.stok_awal;
+                document.getElementById('edit_stok_baru').value = data.data.stok_baru;
+                document.getElementById('edit_total_stok').value = data.data.total_stok;
+                
+                // Format date untuk input
+                const kadaluarsaDate = new Date(data.data.kadaluarsa);
+                document.getElementById('edit_kadaluarsa').value = kadaluarsaDate.toISOString().split('T')[0];
+                
+                document.getElementById('edit_keterangan').value = data.data.keterangan;
+                
+                document.getElementById('editModal').classList.remove('hidden');
+            } else {
+                Swal.fire('Error', data.message || 'Gagal mengambil data', 'error');
+            }
+        })
+        .catch(error => {
+            Swal.close();
+            console.error('Error:', error);
+            Swal.fire('Error', 'Terjadi kesalahan saat mengambil data', 'error');
+        });
     }
 
     // Calculate Total Stock for Edit Modal
@@ -839,26 +982,19 @@
             return;
         }
         
-        let csvContent = "Tanggal,Waktu,Nama Produk,Stok Awal,Stok Tambahan,Total Stok,Kadaluarsa,Sisa Hari,Keterangan\n";
+        let csvContent = "Tanggal,Nama Produk,Stok Awal,Stok Tambahan,Total Stok,Kadaluarsa,Sisa Hari,Keterangan\n";
         
         entries.forEach(entry => {
             if (entry.style.display !== 'none') {
-                const dateTime = entry.querySelector('.text-sm.text-gray-500').textContent.split(', ');
-                const date = dateTime[1] ? dateTime[1] : '';
-                const namaProduk = entry.querySelector('.nama-produk').textContent || '';
-                const stokAwal = entry.querySelector('.stok-awal').textContent.replace(' pcs', '') || '0';
-                const stokTambahan = entry.querySelector('.stok-tambahan').textContent.replace('+', '').replace(' pcs', '') || '0';
-                const totalStok = entry.querySelector('.total-stok').textContent.replace(' pcs', '') || '0';
-                const kadaluarsa = entry.querySelector('.kadaluarsa-text').textContent.split('(')[0].trim() || '';
+                const dateTime = entry.querySelector('.text-xs.text-gray-500').textContent.trim();
+                const namaProduk = entry.querySelector('.text-sm.font-semibold').textContent.trim();
+                const stokAwal = entry.querySelectorAll('.text-sm.font-bold')[0].textContent.trim();
+                const stokTambahan = entry.querySelectorAll('.text-sm.font-bold')[1].textContent.replace('+', '').trim();
+                const totalStok = entry.querySelectorAll('.text-sm.font-bold')[2].textContent.trim();
+                const kadaluarsa = entry.querySelector('.text-xs.font-medium').textContent.trim();
+                const keterangan = entry.querySelectorAll('.text-xs.text-gray-700')[0].textContent.trim();
                 
-                // Get remaining days info
-                const remainingDaysSpan = entry.querySelector('.kadaluarsa-text span');
-                const remainingDays = remainingDaysSpan ? remainingDaysSpan.textContent.replace(/[()]/g, '').trim() : '';
-                
-                const keterangan = entry.querySelector('.keterangan-text').textContent !== '-' ? 
-                    entry.querySelector('.keterangan-text').textContent : '';
-                
-                csvContent += `"${date}","${namaProduk}","${stokAwal}","${stokTambahan}","${totalStok}","${kadaluarsa}","${remainingDays}","${keterangan}"\n`;
+                csvContent += `"${dateTime}","${namaProduk}","${stokAwal}","${stokTambahan}","${totalStok}","${kadaluarsa}","${keterangan}"\n`;
             }
         });
         
@@ -899,22 +1035,15 @@
         
         entries.forEach(entry => {
             if (entry.style.display !== 'none') {
-                const dateTime = entry.querySelector('.text-sm.text-gray-500').textContent.split(', ');
-                const date = dateTime[1] ? dateTime[1] : '';
-                const namaProduk = entry.querySelector('.nama-produk').textContent || '';
-                const stokAwal = entry.querySelector('.stok-awal').textContent.replace(' pcs', '') || '0';
-                const stokTambahan = entry.querySelector('.stok-tambahan').textContent.replace('+', '').replace(' pcs', '') || '0';
-                const totalStok = entry.querySelector('.total-stok').textContent.replace(' pcs', '') || '0';
-                const kadaluarsa = entry.querySelector('.kadaluarsa-text').textContent.split('(')[0].trim() || '';
+                const dateTime = entry.querySelector('.text-xs.text-gray-500').textContent.trim();
+                const namaProduk = entry.querySelector('.text-sm.font-semibold').textContent.trim();
+                const stokAwal = entry.querySelectorAll('.text-sm.font-bold')[0].textContent.trim();
+                const stokTambahan = entry.querySelectorAll('.text-sm.font-bold')[1].textContent.replace('+', '').trim();
+                const totalStok = entry.querySelectorAll('.text-sm.font-bold')[2].textContent.trim();
+                const kadaluarsa = entry.querySelector('.text-xs.font-medium').textContent.trim();
+                const keterangan = entry.querySelectorAll('.text-xs.text-gray-700')[0].textContent.trim();
                 
-                // Get remaining days info
-                const remainingDaysSpan = entry.querySelector('.kadaluarsa-text span');
-                const remainingDays = remainingDaysSpan ? remainingDaysSpan.textContent.replace(/[()]/g, '').trim() : '';
-                
-                const keterangan = entry.querySelector('.keterangan-text').textContent !== '-' ? 
-                    entry.querySelector('.keterangan-text').textContent : '';
-                
-                data.push([date, namaProduk, stokAwal, stokTambahan, totalStok, kadaluarsa, remainingDays, keterangan]);
+                data.push([dateTime, namaProduk, stokAwal, stokTambahan, totalStok, kadaluarsa, keterangan]);
             }
         });
         
@@ -985,12 +1114,12 @@
             
             entries.forEach(entry => {
                 if (entry.style.display !== 'none') {
-                    const dateTime = entry.querySelector('.text-sm.text-gray-500').textContent;
-                    const namaProduk = entry.querySelector('.nama-produk').textContent || '';
-                    const stokAwal = entry.querySelector('.stok-awal').textContent || '0';
-                    const stokTambahan = entry.querySelector('.stok-tambahan').textContent || '0';
-                    const totalStok = entry.querySelector('.total-stok').textContent || '0';
-                    const kadaluarsa = entry.querySelector('.kadaluarsa-text').textContent.split('(')[0].trim() || '';
+                    const dateTime = entry.querySelector('.text-xs.text-gray-500').textContent.trim();
+                    const namaProduk = entry.querySelector('.text-sm.font-semibold').textContent.trim();
+                    const stokAwal = entry.querySelectorAll('.text-sm.font-bold')[0].textContent.trim();
+                    const stokTambahan = entry.querySelectorAll('.text-sm.font-bold')[1].textContent.replace('+', '').trim();
+                    const totalStok = entry.querySelectorAll('.text-sm.font-bold')[2].textContent.trim();
+                    const kadaluarsa = entry.querySelector('.text-xs.font-medium').textContent.trim();
                     
                     tableData.push([
                         dateTime,
