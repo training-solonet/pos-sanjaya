@@ -35,7 +35,7 @@
         /* Sidebar base styles */
         .sidebar {
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 18rem !important; /* 288px - Diperbesar agar nama toko tidak terpotong */
+            width: 22rem !important; /* 352px - Diperlebar untuk tampilan yang lebih rapi */
         }
         
         /* Sidebar collapsed state */
@@ -49,6 +49,10 @@
         }
         
         .sidebar.collapsed .sidebar-title {
+            display: none;
+        }
+        
+        .sidebar.collapsed .sidebar-number {
             display: none;
         }
         
@@ -92,7 +96,7 @@
             }
             
             .content {
-                margin-left: 18rem;
+                margin-left: 22rem;
             }
             
             .content.sidebar-collapsed {
@@ -104,7 +108,7 @@
         @media (max-width: 1023px) {
             .sidebar {
                 transform: translateX(-100%);
-                width: 18rem !important;
+                width: 22rem !important;
             }
             
             .sidebar.-translate-x-full {
@@ -116,7 +120,7 @@
             }
             
             .sidebar.collapsed {
-                width: 18rem !important;
+                width: 22rem !important;
             }
             
             .content {
@@ -234,11 +238,15 @@
             const year = now.getFullYear();
             const hours = now.getHours().toString().padStart(2, '0');
             const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
             
-            const dateTimeElement = document.getElementById('currentDateTime');
-            if (dateTimeElement) {
-                dateTimeElement.textContent = `${dayName}, ${date} ${monthName} ${year} ${hours}:${minutes}`;
+            const dateElement = document.getElementById('currentDate');
+            const timeElement = document.getElementById('currentTime');
+            
+            if (dateElement) {
+                dateElement.textContent = `${dayName}, ${date} ${monthName} ${year}`;
+            }
+            if (timeElement) {
+                timeElement.textContent = `${hours}:${minutes}`;
             }
         }
         

@@ -12,8 +12,8 @@
             <div class="space-y-6">
                 <!-- Header Actions -->
                 @php
-                    $totalResep = isset($resep) ? $resep->count() : 0;
-                    $activeResep = isset($resep) ? $resep->where('status','Aktif')->count() : 0;
+                    $totalResep = isset($resep) ? $resep->total() : 0;
+                    $activeResep = \App\Models\Resep::where('status','Aktif')->count();
                     $activePercent = $totalResep ? round($activeResep / $totalResep * 100) : 0;
                 @endphp
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
@@ -147,32 +147,32 @@
                     <!-- Table View -->
                     <div id="tableView" class="overflow-x-auto">
                         <table class="w-full">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                                 <tr>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Resep</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Kategori</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Porsi</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Food Cost</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Harga Jual</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Margin</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status</th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Resep
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Kategori
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Porsi
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Food Cost
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Harga Jual
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Margin
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Status
+                                    </th>
+                                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                                        Aksi
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="recipeTableBody" class="bg-white divide-y divide-gray-200">
@@ -187,13 +187,37 @@
                             <!-- Grid cards will be populated by JavaScript -->
                         </div>
                     </div>
+                    
+                    <!-- Pagination -->
+                    <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                Menampilkan <span id="paginationInfo">1-10 dari {{ $resep->total() }}</span> resep
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="changePage('prev')" id="prevPageBtn" 
+                                    class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    {{ $resep->onFirstPage() ? 'disabled' : '' }}>
+                                    <i class="fas fa-chevron-left"></i> Sebelumnya
+                                </button>
+                                <div id="pageNumbers" class="flex items-center space-x-1">
+                                    <!-- Page numbers will be populated by JavaScript -->
+                                </div>
+                                <button onclick="changePage('next')" id="nextPageBtn" 
+                                    class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    {{ !$resep->hasMorePages() ? 'disabled' : '' }}>
+                                    Selanjutnya <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
     {{-- </div> --}}
 @endsection
 <!-- Add Recipe Modal -->
-<div id="addRecipeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+<div id="addRecipeModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-40 hidden">
     <div class="w-full max-w-5xl bg-white rounded-2xl shadow-lg max-h-[90vh] overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">Buat Resep Baru</h3>
@@ -204,24 +228,27 @@
 
         <form id="recipeForm" class="px-6 py-6 overflow-auto" style="max-height:calc(90vh - 120px);">
             <!-- Informasi Dasar -->
-            <div class="bg-white rounded-lg p-4 mb-4 border border-gray-100">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-lg font-semibold text-gray-800">Informasi Dasar</h4>
+            <div class="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 mb-6 border border-blue-100 shadow-sm">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-info-circle text-white"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-gray-800">Informasi Dasar</h4>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Resep</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Resep</label>
                         <div class="flex gap-2">
-                            <select id="productSelect" onchange="onProductSelected(this)" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                            <select id="productSelect" onchange="onProductSelected(this)" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
                                 <option value="">Pilih Produk </option>
                             </select>
                             <input type="hidden" id="recipeNameHidden">
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">Pilih produk untuk mengisi nama & harga.</p>
+                        <p class="text-xs text-gray-500 mt-1.5">Pilih produk untuk mengisi nama & harga.</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
-                        <select id="recipeCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Kategori</label>
+                        <select id="recipeCategory" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
                             <option value="">Pilih Kategori</option>
                             <option value="Roti dan Pastry">Roti dan Pastry</option>
                             <option value="Kue dan Dessert">Kue dan Dessert</option>
@@ -232,12 +259,12 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Porsi/Yield</label>
-                        <input id="recipeYield" type="number" min="1" value="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" oninput="calculateTotalCost()">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Porsi/Yield</label>
+                        <input id="recipeYield" type="number" min="1" value="1" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" oninput="calculateTotalCost()">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Waktu Pembuatan</label>
-                        <input id="recipeDuration" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="90 menit">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Waktu Pembuatan</label>
+                        <input id="recipeDuration" type="text" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="90 menit">
                     </div>
                 </div>
             </div>
@@ -264,56 +291,101 @@
                     @media (min-width: 1400px) {
                         #addRecipeModal > div { max-width: 80rem; }
                     }
+                    
+                    /* Limit dropdown height to show 5 items with scroll */
+                    #productSelect, .ingredient-name {
+                        max-height: 200px;
+                        overflow-y: auto;
+                    }
+                    
+                    /* Style scrollbar for dropdown */
+                    #productSelect::-webkit-scrollbar, .ingredient-name::-webkit-scrollbar {
+                        width: 8px;
+                    }
+                    
+                    #productSelect::-webkit-scrollbar-track, .ingredient-name::-webkit-scrollbar-track {
+                        background: #f1f1f1;
+                        border-radius: 4px;
+                    }
+                    
+                    #productSelect::-webkit-scrollbar-thumb, .ingredient-name::-webkit-scrollbar-thumb {
+                        background: #888;
+                        border-radius: 4px;
+                    }
+                    
+                    #productSelect::-webkit-scrollbar-thumb:hover, .ingredient-name::-webkit-scrollbar-thumb:hover {
+                        background: #555;
+                    }
+                    
+                    /* For Firefox */
+                    #productSelect, .ingredient-name {
+                        scrollbar-width: thin;
+                        scrollbar-color: #888 #f1f1f1;
+                    }
                 </style>
 
             <!-- Bahan & Kalkulasi Biaya -->
-            <div class="bg-blue-50 rounded-lg p-4 mb-4 border border-blue-100">
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="text-lg font-semibold text-gray-800">Bahan & Kalkulasi Biaya</h4>
-                    <button type="button" onclick="addIngredient()" class="px-3 py-1 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">+ Tambah Bahan</button>
+            <div class="bg-gradient-to-br from-green-50 to-white rounded-xl p-6 mb-6 border border-green-100 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-shopping-basket text-white"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-800">Bahan & Kalkulasi Biaya</h4>
+                    </div>
+                    <button type="button" onclick="addIngredient()" class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm hover:shadow">
+                        <i class="fas fa-plus mr-1"></i> Tambah Bahan
+                    </button>
                 </div>
-                <div id="ingredientsList" class="bg-white rounded-lg p-3 border border-gray-100">
+                <div id="ingredientsList" class="bg-white rounded-lg p-4 border border-gray-200 mb-4">
                     <!-- Ingredient rows inserted here -->
                 </div>
 
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-green-50 rounded-lg p-6">
-                        <div class="text-xs text-green-700">Total Food Cost</div>
-                        <div id="totalFoodCost" class="font-bold text-green-900">Rp 0</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-lg p-5 border-2 border-green-200 shadow-sm">
+                        <div class="text-xs font-semibold text-green-700 mb-1">Total Food Cost</div>
+                        <div id="totalFoodCost" class="text-2xl font-bold text-green-900">Rp 0</div>
                     </div>
-                    <div class="bg-green-50 rounded-lg p-6">
-                        <div class="text-xs text-green-700">Cost per Porsi</div>
-                        <div id="costPerPortion" class="font-bold text-green-900">Rp 0</div>
+                    <div class="bg-white rounded-lg p-5 border-2 border-green-200 shadow-sm">
+                        <div class="text-xs font-semibold text-green-700 mb-1">Cost per Porsi</div>
+                        <div id="costPerPortion" class="text-2xl font-bold text-green-900">Rp 0</div>
                     </div>
-                        <div class="bg-green-50 rounded-lg p-6 flex items-center justify-between">
-                        <div>
-                            <div class="text-xs text-green-700">Harga Jual Target</div>
-                            <input id="targetPrice" type="number" min="0" class="mt-1 w-28 px-2 py-1 border border-gray-300 rounded-lg bg-white" value="35000" oninput="calculateMargin()">
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs text-green-700">Margin Profit</div>
-                            <div id="profitMargin" class="font-bold text-green-900">0%</div>
+                    <div class="bg-white rounded-lg p-5 border-2 border-green-200 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="text-xs font-semibold text-green-700 mb-2">Harga Jual Target</div>
+                                <input id="targetPrice" type="number" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all" placeholder="0" oninput="calculateMargin()">
+                            </div>
+                            <div class="ml-4 text-center">
+                                <div class="text-xs font-semibold text-green-700 mb-1">Margin</div>
+                                <div id="profitMargin" class="text-2xl font-bold text-green-900">0%</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Instruksi & Catatan -->
-            <div class="bg-yellow-50 rounded-lg p-4 mb-4 border border-yellow-100">
-                <h4 class="text-lg font-semibold text-gray-800 mb-3">Instruksi & Catatan</h4>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Langkah Pembuatan</label>
-                    <textarea id="recipeInstructions" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+            <div class="bg-gradient-to-br from-yellow-50 to-white rounded-xl p-6 mb-6 border border-yellow-100 shadow-sm">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 bg-yellow-600 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-clipboard-list text-white"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-gray-800">Instruksi & Catatan</h4>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Langkah Pembuatan</label>
+                    <textarea id="recipeInstructions" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all" placeholder="Tulis langkah-langkah pembuatan resep..."></textarea>
                 </div>
 
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Chef</label>
-                        <textarea id="recipeNotes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Tips & trik khusus..."></textarea>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Catatan Chef</label>
+                        <textarea id="recipeNotes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all" placeholder="Tips & trik khusus..."></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select id="recipeStatusDuplicate" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                        <select id="recipeStatusDuplicate" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all">
                             <option value="Aktif">Aktif</option>
                             <option value="Draft">Draft (Belum Final)</option>
                             <option value="Nonaktif">Nonaktif</option>
@@ -322,16 +394,21 @@
                 </div>
             </div>
 
-            <div class="mt-6 flex items-center space-x-3 justify-end border-t pt-4 sticky bottom-0 bg-white z-10">
-                <button type="button" onclick="closeAddRecipeModal()" class="px-4 py-2 bg-gray-200 rounded-lg">Batal</button>
-                <button type="button" onclick="saveRecipe()" class="px-4 py-2 bg-green-600 text-white rounded-lg">Simpan Resep</button>
+            <!-- Footer Buttons -->
+            <div class="flex items-center space-x-3 justify-end border-t border-gray-200 pt-5 mt-8 sticky bottom-0 bg-white z-10 pb-4">
+                <button type="button" onclick="closeAddRecipeModal()" class="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium">
+                    Batal
+                </button>
+                <button type="button" onclick="saveRecipe()" class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm hover:shadow">
+                    <i class="fas fa-save mr-1"></i> Simpan Resep
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Confirmation Modal for Delete -->
-<div id="confirmDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+<div id="confirmDeleteModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-40 hidden">
     <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 transform transition-all">
         <div class="p-6">
             <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
@@ -431,7 +508,7 @@
             const sel = document.getElementById('productSelect');
             if (!sel) return;
             // clear existing but keep first empty option; show only product name in list
-            sel.innerHTML = '<option value="">Pilih Produk (opsional)</option>' + (produkList || []).map(p => `<option value="${p.id}" data-harga="${p.harga}">${p.nama}</option>`).join('');
+            sel.innerHTML = '<option value="">Pilih Produk</option>' + (produkList || []).map(p => `<option value="${p.id}" data-harga="${p.harga}">${p.nama}</option>`).join('');
         } catch (e) {
             console.error('populateProductSelect error', e);
         }
@@ -463,9 +540,16 @@
     // --- Data yang di-inject dari server ---
     // `recipes`: array objek resep yang disiapkan controller
     // `bahans`: daftar bahan baku (id, nama, stok) untuk dipakai di select bahan
-    let recipes = @json($recipes ?? []);
+    let recipes = @json($recipesArray ?? []);
     // Bahan baku list (id, nama, stok)
     let bahanList = @json($bahans ?? []);
+    
+    // Pagination data
+    let currentPage = {{ $resep->currentPage() }};
+    let lastPage = {{ $resep->lastPage() }};
+    let perPage = {{ $resep->perPage() }};
+    let total = {{ $resep->total() }};
+    let allRecipes = [...recipes]; // Store all recipes for filtering
 
     // Render sebuah `<datalist>` tersembunyi berisi semua nama bahan
     // - Berguna sebagai fallback untuk input yang perlu lookup nama bahan
@@ -538,6 +622,20 @@
         }
     }
 
+    // Toggle individual export menu for each recipe
+    function toggleExportMenu(recipeId) {
+        const menu = document.getElementById('exportMenu' + recipeId);
+        if (menu) {
+            // Close all other export menus first
+            document.querySelectorAll('[id^="exportMenu"]').forEach(m => {
+                if (m.id !== 'exportMenu' + recipeId) {
+                    m.classList.add('hidden');
+                }
+            });
+            menu.classList.toggle('hidden');
+        }
+    }
+
     // Close dropdown when clicking outside
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('exportDropdown');
@@ -545,6 +643,16 @@
         
         if (dropdown && button && !button.contains(event.target) && !dropdown.contains(event.target)) {
             dropdown.classList.add('hidden');
+        }
+
+        // Close export menus when clicking outside
+        const isExportButton = event.target.closest('[onclick*="toggleExportMenu"]');
+        const isExportMenu = event.target.closest('[id^="exportMenu"]');
+        
+        if (!isExportButton && !isExportMenu) {
+            document.querySelectorAll('[id^="exportMenu"]').forEach(menu => {
+                menu.classList.add('hidden');
+            });
         }
     });
 
@@ -566,12 +674,17 @@
 
     // Inisialisasi ketika halaman selesai dimuat
     window.addEventListener('DOMContentLoaded', function() {
+        // Debug: log loaded recipes
+        console.log('Loaded recipes:', recipes.length, 'Total in DB:', total);
+        console.log('Current page:', currentPage, 'Last page:', lastPage);
+        
         // populate product select if produk provided
         populateProductSelect();
         updateDateTime();
         setInterval(updateDateTime, 60000); // Perbarui setiap menit
         renderTableView(); 
         updateStats();
+        updatePaginationUI(); // Initialize pagination UI
         
         // Check if there's an 'edit' parameter in URL to auto-open edit modal
         const urlParams = new URLSearchParams(window.location.search);
@@ -627,36 +740,54 @@
         }
 
         tbody.innerHTML = recipesToRender.map(recipe => `
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-blue-50 transition-colors duration-150">
                     <td class="px-6 py-4">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 bg-gradient-to-r ${getCategoryGradient(recipe.category)} rounded-lg flex items-center justify-center mr-3">
-                                <i class="fas ${getCategoryIcon(recipe.category)} text-white text-sm"></i>
+                            <div class="w-12 h-12 bg-gradient-to-r ${getCategoryGradient(recipe.category)} rounded-lg flex items-center justify-center mr-3 shadow-sm">
+                                <i class="fas ${getCategoryIcon(recipe.category)} text-white"></i>
                             </div>
                             <div>
-                                <div class="text-sm font-medium text-gray-900 cursor-pointer text-blue-600" onclick="viewRecipe(${recipe.id})">${recipe.name}</div>
-                                <div class="text-xs text-gray-500">${recipe.yield} porsi • ${formatDuration(recipe.duration)}</div>
+                                <div class="text-sm font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors" onclick="viewRecipe(${recipe.id})">${recipe.name}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">
+                                    <i class="fas fa-utensils mr-1"></i>${recipe.yield} porsi • 
+                                    <i class="fas fa-clock mr-1 ml-1"></i>${formatDuration(recipe.duration)}
+                                </div>
                             </div>
                         </div>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">${recipe.category}</span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-900">${recipe.yield}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">Rp ${((Number(recipe.foodCost) || 0)).toLocaleString('id-ID')}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">Rp ${((Number(recipe.sellingPrice) || 0)).toLocaleString('id-ID')}</td>
-                    <td class="px-6 py-4">
-                        <span class="inline-block px-2 py-1 text-xs font-medium ${getMarginColor(recipe.margin)} rounded-full">${recipe.margin}%</span>
+                        <span class="inline-flex items-center px-3 py-1.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full shadow-sm">
+                            <i class="fas fa-tag mr-1.5"></i>${recipe.category}
+                        </span>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="inline-block px-2 py-1 text-xs font-medium ${getStatusColor(recipe.status)} rounded-full">${recipe.status}</span>
+                        <span class="text-sm font-semibold text-gray-900">${recipe.yield}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="flex items-center space-x-2">
-                            <button onclick="editRecipe(${recipe.id})" class="text-green-600 hover:text-green-700" title="Edit">
+                        <span class="text-sm font-bold text-green-700">Rp ${((Number(recipe.foodCost) || 0)).toLocaleString('id-ID')}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-sm font-bold text-blue-700">Rp ${((Number(recipe.sellingPrice) || 0)).toLocaleString('id-ID')}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-3 py-1.5 text-xs font-bold ${getMarginColor(recipe.margin)} rounded-full shadow-sm">
+                            <i class="fas fa-percentage mr-1"></i>${recipe.margin}%
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-3 py-1.5 text-xs font-bold ${getStatusColor(recipe.status)} rounded-full shadow-sm">
+                            ${recipe.status === 'Aktif' ? '<i class="fas fa-check-circle mr-1"></i>' : recipe.status === 'Draft' ? '<i class="fas fa-edit mr-1"></i>' : '<i class="fas fa-times-circle mr-1"></i>'}${recipe.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="viewRecipe(${recipe.id})" class="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all" title="Lihat Detail">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editRecipe(${recipe.id})" class="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button onclick="deleteRecipe(${recipe.id})" class="text-red-600 hover:text-red-700" title="Hapus">
+                            <button onclick="deleteRecipe(${recipe.id})" class="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all" title="Hapus">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -717,7 +848,19 @@
                                 <button onclick="event.stopPropagation(); editRecipe(${recipe.id})" class="text-blue-600 hover:text-blue-700" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <!-- duplicate removed -->
+                                <div class="relative inline-block">
+                                    <button onclick="event.stopPropagation(); toggleExportMenu(${recipe.id})" class="text-purple-600 hover:text-purple-700" title="Export">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <div id="exportMenu${recipe.id}" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                        <a href="/management/resep/${recipe.id}?export=excel" class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-file-excel text-green-600 mr-1"></i>Excel
+                                        </a>
+                                        <a href="/management/resep/${recipe.id}?export=pdf" class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-file-pdf text-red-600 mr-1"></i>PDF
+                                        </a>
+                                    </div>
+                                </div>
                                 <button onclick="event.stopPropagation(); deleteRecipe(${recipe.id})" class="text-red-600 hover:text-red-700" title="Hapus">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -815,6 +958,91 @@
             renderGridView(filtered);
         }
     }
+    
+    // Pagination functions
+    function updatePaginationUI() {
+        const prevBtn = document.getElementById('prevPageBtn');
+        const nextBtn = document.getElementById('nextPageBtn');
+        const pageNumbers = document.getElementById('pageNumbers');
+        const paginationInfo = document.getElementById('paginationInfo');
+        
+        // Update buttons state
+        if (prevBtn) prevBtn.disabled = currentPage === 1;
+        if (nextBtn) nextBtn.disabled = currentPage === lastPage;
+        
+        // Update info text
+        const start = (currentPage - 1) * perPage + 1;
+        const end = Math.min(currentPage * perPage, total);
+        if (paginationInfo) {
+            paginationInfo.textContent = `${start}-${end} dari ${total}`;
+        }
+        
+        // Generate page numbers
+        if (pageNumbers) {
+            let html = '';
+            const range = 2; // Show 2 pages before and after current
+            
+            for (let i = 1; i <= lastPage; i++) {
+                if (i === 1 || i === lastPage || (i >= currentPage - range && i <= currentPage + range)) {
+                    const active = i === currentPage ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100';
+                    html += `<button onclick="goToPage(${i})" class="px-3 py-1 text-sm border border-gray-300 rounded-lg ${active}">${i}</button>`;
+                } else if (i === currentPage - range - 1 || i === currentPage + range + 1) {
+                    html += `<span class="px-2">...</span>`;
+                }
+            }
+            pageNumbers.innerHTML = html;
+        }
+    }
+    
+    function changePage(direction) {
+        if (direction === 'next' && currentPage < lastPage) {
+            goToPage(currentPage + 1);
+        } else if (direction === 'prev' && currentPage > 1) {
+            goToPage(currentPage - 1);
+        }
+    }
+    
+    function goToPage(page) {
+        if (page < 1 || page > lastPage || page === currentPage) return;
+        
+        currentPage = page;
+        
+        // Fetch data from server with page parameter
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', page);
+        
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.recipes) {
+                recipes = data.recipes;
+                allRecipes = [...recipes];
+                
+                // Re-render current view
+                if (currentView === 'table') {
+                    renderTableView();
+                } else {
+                    renderGridView();
+                }
+                
+                updatePaginationUI();
+                updateStats();
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching page:', error);
+            showToast('Gagal memuat data halaman', 'error');
+        });
+    }
+
 
     // Buka modal 'Buat / Edit Resep'
     // - Mereset form, membersihkan state sementara, lalu menampilkan modal
@@ -885,7 +1113,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Harga/unit</label>
-                        <input type="number" step="0.01" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
+                        <input type="number" step="0.01" value="0" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
                     </div>
                     <div class="md:col-span-1">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Subtotal</label>
@@ -949,18 +1177,55 @@
                     </button>
                 </div>
             `;
-            // set bahan selection and apply auto-fill satuan & harga (match by name -> id)
+            // set bahan selection and apply auto-fill satuan (tapi jangan override harga)
             const nameSelect = newIngredient.querySelector('.ingredient-name');
+            const priceInput = newIngredient.querySelector('.ingredient-price');
+            const unitSelect = newIngredient.querySelector('.ingredient-unit');
+            
             if (nameSelect) {
                 const found = (bahanList || []).find(b => b.nama === (ing.name || ''));
                 if (found) {
                     nameSelect.value = found.id;
-                    onBahanSelected(nameSelect); // ini akan auto-set satuan & harga
+                    
+                    // Simpan harga yang sudah ada sebelum memanggil onBahanSelected
+                    const savedPrice = ing.price;
+                    
+                    // Set satuan berdasarkan data bahan (tanpa memanggil onBahanSelected yang akan override harga)
+                    if (unitSelect && found.satuan_kecil) {
+                        const satuan = String(found.satuan_kecil).toLowerCase().trim();
+                        
+                        if (satuan === 'kg') {
+                            unitSelect.innerHTML = `
+                                <option value="kg">kg</option>
+                                <option value="gram">gram</option>
+                            `;
+                        } else if (satuan === 'gram' || satuan === 'g') {
+                            unitSelect.innerHTML = `<option value="gram">gram</option>`;
+                        } else if (satuan === 'liter' || satuan === 'l') {
+                            unitSelect.innerHTML = `
+                                <option value="liter">liter</option>
+                                <option value="ml">ml</option>
+                            `;
+                        } else if (satuan === 'ml') {
+                            unitSelect.innerHTML = `<option value="ml">ml</option>`;
+                        } else if (satuan === 'pcs') {
+                            unitSelect.innerHTML = `<option value="pcs">pcs</option>`;
+                        } else if (satuan === 'slice') {
+                            unitSelect.innerHTML = `<option value="slice">slice</option>`;
+                        } else {
+                            unitSelect.innerHTML = `<option value="${satuan}">${satuan}</option>`;
+                        }
+                    }
+                    
+                    // Set satuan yang tersimpan di resep
+                    if (unitSelect) unitSelect.value = ing.unit || 'gram';
+                    
+                    // Kembalikan harga yang sudah ada (dari resep, bukan dari database bahan)
+                    if (priceInput) priceInput.value = savedPrice;
                 } else {
                     nameSelect.value = '';
                     // jika bahan tidak ditemukan, set manual dari data resep
-                    const sel = newIngredient.querySelector('.ingredient-unit');
-                    if (sel) sel.value = ing.unit || 'gram';
+                    if (unitSelect) unitSelect.value = ing.unit || 'gram';
                 }
             }
             list.appendChild(newIngredient);
@@ -1174,9 +1439,9 @@
                 }
             }
             
-            // Set harga otomatis dari harga_satuan
-            if (priceInput && found.harga_satuan) {
-                priceInput.value = found.harga_satuan;
+            // Set harga ke 0 (user akan input sendiri)
+            if (priceInput) {
+                priceInput.value = 0;
                 // Trigger kalkulasi subtotal
                 calculateIngredientCost(priceInput);
             }
@@ -1195,7 +1460,7 @@
                 `;
             }
             if (priceInput) {
-                priceInput.value = '';
+                priceInput.value = 0;
             }
         }
         // perbarui status disabled opsi bahan di semua select
@@ -1308,7 +1573,7 @@
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Harga/unit</label>
-                    <input type="number" step="0.01" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
+                    <input type="number" step="0.01" value="0" placeholder="0" class="ingredient-price w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" oninput="calculateIngredientCost(this)" required>
                 </div>
                 <div class="md:col-span-1">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Subtotal</label>
@@ -1402,13 +1667,18 @@
 
     // Perbarui statistik header berdasarkan array `recipes` saat ini
     function updateStats() {
-        const total = recipes.length;
-        const active = recipes.filter(r => (r.status || '').toLowerCase() === 'aktif').length;
-        const percent = total ? Math.round((active / total) * 100) : 0;
+        // Use total from pagination, not current page count
         const totalEl = document.getElementById('totalRecipesCount');
         const activeEl = document.getElementById('activeRecipesCount');
         const percentEl = document.getElementById('activeRecipesPercent');
+        
         if (totalEl) totalEl.textContent = total;
+        
+        // For active count, we need to use the value from server
+        // Since we only have current page data, keep existing display
+        const active = recipes.filter(r => (r.status || '').toLowerCase() === 'aktif').length;
+        const percent = total ? Math.round((active / total) * 100) : 0;
+        
         if (activeEl) activeEl.textContent = active;
         if (percentEl) percentEl.textContent = percent + '%';
     }

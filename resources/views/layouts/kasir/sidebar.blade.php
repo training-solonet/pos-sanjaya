@@ -49,6 +49,18 @@
             <i class="sidebar-icon fas fa-book {{ request()->routeIs('kasir.jurnal*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 text-lg transition-all duration-300"></i>
             <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Jurnal Harian</span>
         </a>
+
+        <a href="{{ route('kasir.custommer.index') }}"
+            class="nav-item group flex items-center px-4 py-3.5 text-sm font-medium {{ request()->routeIs('kasir.custommer*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Jurnal Harian">
+            <i class="fas fa-users mr-3 text-lg {{ request()->routeIs('kasir.custommer*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 text-lg transition-all duration-300"></i>
+            <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Data Custommer</span>
+        </a>
+
+        <a href="{{ route('kasir.shift.index') }}"
+            class="nav-item group flex items-center px-4 py-3.5 text-sm font-medium {{ request()->routeIs('kasir.shift*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Jurnal Harian">
+            <i class="fas fa-clock mr-3 text-lg {{ request()->routeIs('kasir.shift*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 text-lg transition-all duration-300"></i>
+            <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Shift Kasir</span>
+        </a>
     </nav>
 
     <!-- USER PROFILE -->

@@ -10,8 +10,28 @@
                         <p class="text-gray-600">Menampilkan detail lengkap resep</p>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <a href="{{ route('management.resep.index') }}" class="px-4 py-2 bg-gray-200 rounded-lg">Kembali</a>
-                        <a href="{{ route('management.resep.index', ['edit' => $recipe['id']]) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg">Edit</a>
+                        <!-- Export Dropdown -->
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+                                <i class="fas fa-download"></i>
+                                <span>Export</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                            <div x-show="open" @click.away="open = false" 
+                                 class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10"
+                                 style="display: none;">
+                                <a href="{{ route('management.resep.show', ['resep' => $recipe['id'], 'export' => 'excel']) }}" 
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-file-excel text-green-600 mr-2"></i>Export Excel
+                                </a>
+                                <a href="{{ route('management.resep.show', ['resep' => $recipe['id'], 'export' => 'pdf']) }}" 
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-file-pdf text-red-600 mr-2"></i>Export PDF
+                                </a>
+                            </div>
+                        </div>
+                        <a href="{{ route('management.resep.index') }}" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Kembali</a>
+                        <a href="{{ route('management.resep.index', ['edit' => $recipe['id']]) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Edit</a>
                     </div>
                 </div>
 

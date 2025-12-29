@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetailTransaksi;
-use App\Models\Jurnal;
 use App\Models\Produk;
 use App\Models\Transaksi;
+use App\Models\UpdateStokProduk; // PASTIKAN INI ADA
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log; // PASTIKAN INI ADA
 
 class TransaksiController extends Controller
 {
@@ -91,10 +92,13 @@ class TransaksiController extends Controller
                     'harga' => $item['price'],
                 ]);
 
+                // Simpan stok awal sebelum dikurangi
+                $stokAwal = $produk->stok;
+
                 // Kurangi stok produk
                 $produk->decrement('stok', $item['quantity']);
-            }
 
+<<<<<<< HEAD
             // Catat ke jurnal secara otomatis
             $invoiceNumber = 'INV-'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT);
             
@@ -115,6 +119,28 @@ class TransaksiController extends Controller
                 'nominal' => $total,
                 'role' => 'kasir',
             ]);
+=======
+                // Simpan stok akhir setelah dikurangi
+                $stokAkhir = $produk->stok;
+
+                // ============ PERBAIKAN UTAMA ============
+                // BUAT LOG PENGURANGAN STOK UNTUK DETAIL PRODUK
+                // Pastikan log benar-benar dibuat
+                UpdateStokProduk::create([
+                    'id_produk' => $item['id'],
+                    'stok_awal' => $stokAwal,
+                    'stok_baru' => -$item['quantity'], // Negatif karena pengurangan
+                    'total_stok' => $stokAkhir,
+                    'kadaluarsa' => $produk->kadaluarsa,
+                    'tanggal_update' => now(),
+                    'keterangan' => 'Pengurangan stok dari transaksi #'.$transaksi->id,
+                ]);
+                // =========================================
+
+                // Log untuk debugging
+                Log::info("Log stok TRANSAKSI dibuat: Produk ID {$item['id']}, Stok Awal: {$stokAwal}, Pengurangan: {$item['quantity']}, Stok Akhir: {$stokAkhir}");
+            }
+>>>>>>> a86d36d046187506b52ba8698b4ffc4d2072d77f
 
             DB::commit();
 

@@ -19,28 +19,27 @@ class ProdukController extends Controller
     public function index(Request $request)
     {
         try {
-            // Ambil semua produk dengan data terkait
+            // Ambil semua produk dengan data terkait dan urutkan berdasarkan kadaluarsa terdekat (FEFO)
             $produk = Produk::with(['updateStokHistory' => function ($query) {
                 $query->orderBy('tanggal_update', 'desc');
-            }])->get();
+            }])->orderBy('kadaluarsa', 'asc')->paginate(10); // Ubah get() menjadi paginate(10)
 
             // Cek untuk notifikasi stok rendah/habis
-            $lowStockProducts = $produk->filter(function ($product) {
-                return $product->getStockStatus() === 'rendah';
-            });
+            $lowStockProducts = Produk::where('stok', '<', DB::raw('min_stok'))
+                ->where('stok', '>', 0)
+                ->get();
 
-            $outOfStockProducts = $produk->filter(function ($product) {
-                return $product->getStockStatus() === 'habis';
-            });
+            $outOfStockProducts = Produk::where('stok', '<=', 0)->get();
 
-            // Cek untuk notifikasi kadaluarsa
-            $expiringProducts = $produk->filter(function ($product) {
-                return $product->getExpiryStatus() === 'mendekati';
-            });
+            // Cek untuk notifikasi kadaluarsa (kurang dari 3 hari)
+            $today = Carbon::today();
+            $threeDaysLater = Carbon::today()->addDays(3);
 
-            $expiredProducts = $produk->filter(function ($product) {
-                return $product->getExpiryStatus() === 'expired';
-            });
+            $expiringSoonProducts = Produk::whereDate('kadaluarsa', '>=', $today)
+                ->whereDate('kadaluarsa', '<=', $threeDaysLater)
+                ->get();
+
+            $expiredProducts = Produk::whereDate('kadaluarsa', '<', $today)->get();
 
             // Simpan data notifikasi di session untuk ditampilkan sekali
             if ($request->session()->has('notifications_shown')) {
@@ -75,12 +74,12 @@ class ProdukController extends Controller
                     ];
                 }
 
-                if ($expiringProducts->count() > 0) {
+                if ($expiringSoonProducts->count() > 0) {
                     $notifications[] = [
                         'type' => 'warning',
                         'title' => 'Kadaluarsa Mendekati',
-                        'message' => 'Ada '.$expiringProducts->count().' produk yang akan kadaluarsa dalam 7 hari ke depan.',
-                        'products' => $expiringProducts->pluck('nama')->toArray(),
+                        'message' => 'Ada '.$expiringSoonProducts->count().' produk yang akan kadaluarsa dalam 3 hari ke depan.',
+                        'products' => $expiringSoonProducts->pluck('nama')->toArray(),
                     ];
                 }
 
@@ -108,7 +107,6 @@ class ProdukController extends Controller
 
         $request->validate([
             'nama' => 'required|string|max:255|unique:produk,nama',
-            'nama' => 'required|string|max:255|unique:produk,nama',
             'stok' => 'required|integer|min:0',
             'min_stok' => 'required|integer|min:0',
             'harga' => 'required|integer|min:0',
@@ -134,26 +132,8 @@ class ProdukController extends Controller
                 }
 
                 // Create product dengan bahan baku yang valid
-                // Cari bahan baku pertama yang tersedia
-                $bahanBaku = BahanBaku::first();
-
-                if (! $bahanBaku) {
-                    // Buat bahan baku default jika tidak ada
-                    $bahanBaku = BahanBaku::create([
-                        'nama' => 'Bahan Baku Umum',
-                        'stok' => 0,
-                        'min_stok' => 0,
-                        'kategori' => 'Bahan Utama',
-                        'harga_satuan' => 0,
-                        'id_konversi' => 1, // Pastikan ada konversi dengan id=1
-                        'tglupdate' => now(),
-                    ]);
-                }
-
-                // Create product dengan bahan baku yang valid
                 $produk = Produk::create([
                     'nama' => $request->nama,
-                    'id_bahan_baku' => $bahanBaku->id,
                     'id_bahan_baku' => $bahanBaku->id,
                     'stok' => $request->stok,
                     'min_stok' => $request->min_stok,
@@ -199,6 +179,16 @@ class ProdukController extends Controller
                 $query->orderBy('tanggal_update', 'desc');
             }])->findOrFail($id);
 
+            // Hitung sisa hari dengan benar
+            $kadaluarsa = Carbon::parse($produk->kadaluarsa);
+            $today = Carbon::today();
+            $sisa_hari = $today->diffInDays($kadaluarsa, false);
+
+            // Hitung total penambahan dan pengurangan
+            $totalIncrease = $produk->updateStokHistory->where('stok_baru', '>', 0)->sum('stok_baru');
+            $totalDecrease = abs($produk->updateStokHistory->where('stok_baru', '<', 0)->sum('stok_baru'));
+            $netChange = $totalIncrease - $totalDecrease;
+
             return response()->json([
                 'id' => $produk->id,
                 'nama' => $produk->nama,
@@ -207,16 +197,44 @@ class ProdukController extends Controller
                 'harga' => $produk->harga,
                 'kadaluarsa' => $produk->kadaluarsa->format('Y-m-d'),
                 'status_stok' => $produk->status_stok,
-                'sisa_hari' => $produk->sisa_hari,
+                'sisa_hari' => $sisa_hari,
+                'created_at' => $produk->created_at->format('Y-m-d H:i:s'),
+                'updated_at' => $produk->updated_at->format('Y-m-d H:i:s'),
+                'total_increase' => $totalIncrease,
+                'total_decrease' => $totalDecrease,
+                'net_change' => $netChange,
                 'update_stok_history' => $produk->updateStokHistory->map(function ($history) {
+                    // ============ PERBAIKAN LOGIKA SUMBER ============
+                    $keterangan = $history->keterangan ?? '';
+                    $sumber = 'Halaman Daily Update'; // Default
+
+                    // Periksa dengan lebih teliti
+                    if (strpos(strtolower($keterangan), 'stok awal') !== false ||
+                        strpos(strtolower($keterangan), 'produk baru') !== false) {
+                        $sumber = 'Penambahan dari halaman stok produk';
+                    } elseif (strpos(strtolower($keterangan), 'edit produk') !== false ||
+                             strpos(strtolower($keterangan), 'update stok') !== false) {
+                        $sumber = 'Update dari halaman produk';
+                    } elseif (strpos(strtolower($keterangan), 'tambah stok') !== false ||
+                             strpos(strtolower($keterangan), 'penambahan stok') !== false ||
+                             strpos(strtolower($keterangan), 'penambahan stok manual') !== false) {
+                        $sumber = 'Update dari halaman update stok produk';
+                    } elseif (strpos(strtolower($keterangan), 'transaksi') !== false) {
+                        $sumber = 'Pengurangan dari transaksi';
+                    } elseif (strpos(strtolower($keterangan), 'daily update') !== false) {
+                        $sumber = 'Penambahan dari daily update';
+                    }
+                    // =================================================
+
                     return [
                         'id' => $history->id,
                         'stok_awal' => $history->stok_awal,
                         'stok_baru' => $history->stok_baru,
                         'total_stok' => $history->total_stok,
-                        'kadaluarsa' => Carbon::parse($history->kadaluarsa)->format('d F Y'),
-                        'tanggal_update' => Carbon::parse($history->tanggal_update)->format('d F Y H:i'),
+                        'kadaluarsa' => $history->kadaluarsa ? Carbon::parse($history->kadaluarsa)->format('Y-m-d') : null,
+                        'tanggal_update' => Carbon::parse($history->tanggal_update)->format('Y-m-d H:i:s'),
                         'keterangan' => $history->keterangan,
+                        'sumber' => $sumber,
                     ];
                 }),
             ]);
@@ -237,7 +255,6 @@ class ProdukController extends Controller
         Log::info('Update Product Request:', ['id' => $id, 'data' => $request->all()]);
 
         $request->validate([
-            'nama' => 'required|string|max:255|unique:produk,nama,'.$id,
             'nama' => 'required|string|max:255|unique:produk,nama,'.$id,
             'stok' => 'required|integer|min:0',
             'min_stok' => 'required|integer|min:0',
@@ -268,7 +285,7 @@ class ProdukController extends Controller
                         'keterangan' => 'Update stok melalui edit produk',
                     ]);
 
-                    // KURANGI STOK BAHAN BAKU jika stok BERTAMBAH (selisih positif) (Tambahan Code)
+                    // KURANGI STOK BAHAN BAKU jika stok BERTAMBAH (selisih positif)
                     if ($selisihStok > 0) {
                         Log::info("=== UPDATE PRODUK: Stok '{$produk->nama}' bertambah +{$selisihStok} ===");
                         try {
@@ -282,7 +299,7 @@ class ProdukController extends Controller
                     }
                 }
 
-                // Update product - TIDAK mengupdate id_bahan_baku
+                // Update product
                 $produk->update([
                     'nama' => $request->nama,
                     'stok' => $request->stok,
@@ -370,7 +387,7 @@ class ProdukController extends Controller
                 'keterangan' => $request->keterangan ?? 'Penambahan stok manual',
             ]);
 
-            // KURANGI STOK BAHAN BAKU BERDASARKAN RESEP (Tambahan Code)
+            // KURANGI STOK BAHAN BAKU BERDASARKAN RESEP
             Log::info("=== TAMBAH STOK PRODUK '{$produk->nama}' +{$stokBaru} ===");
             try {
                 $this->reduceBahanBakuFromResep($produk, $stokBaru);
@@ -449,7 +466,7 @@ class ProdukController extends Controller
                     continue;
                 }
 
-                // GUNAKAN satuan_kecil dari database langsung (TIDAK dikonversi lagi!)
+                // GUNAKAN satuan_kecil dari database langsung
                 $satuanStok = strtolower($bahan->satuan_kecil ?? 'gram');
 
                 $convertedQty = $this->convertUnit($totalQty, $unit, $satuanStok);
@@ -481,13 +498,6 @@ class ProdukController extends Controller
             Log::error('ERROR reduceBahanBaku: '.$e->getMessage());
             throw $e;
         }
-    }
-
-    private function mapToSmallestUnit($satuan)
-    {
-        $map = ['kg' => 'gram', 'l' => 'ml', 'liter' => 'ml'];
-
-        return $map[$satuan] ?? $satuan;
     }
 
     private function convertUnit($quantity, $fromUnit, $toUnit)
