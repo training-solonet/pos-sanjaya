@@ -113,14 +113,13 @@
                                 <option value="Draft">Draft</option>
                                 <option value="Nonaktif">Nonaktif</option>
                             </select>
-                            <select id="costFilter"
+                            <select id="priceFilter"
                                 class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 onchange="filterRecipes()">
-                                <option value="">Filter Biaya</option>
-                                <option value="low">
-                                    < Rp 10.000</option>
-                                <option value="medium">Rp 10.000 - 25.000</option>
-                                <option value="high">> Rp 25.000</option>
+                                <option value="">Filter Harga Jual</option>
+                                <option value="low">&lt; Rp 10.000</option>
+                                <option value="medium">Rp 10.000 - Rp 25.000</option>
+                                <option value="high">&gt; Rp 25.000</option>
                             </select>
                         </div>
                     </div>
@@ -992,7 +991,7 @@
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const categoryFilter = document.getElementById('categoryFilter').value;
         const statusFilter = document.getElementById('statusFilter').value;
-        const costFilter = document.getElementById('costFilter').value;
+        const priceFilter = document.getElementById('priceFilter').value;
 
         const filtered = recipes.filter(recipe => {
             const matchesSearch = recipe.name.toLowerCase().includes(searchTerm) ||
@@ -1000,22 +999,22 @@
             const matchesCategory = !categoryFilter || recipe.category === categoryFilter;
             const matchesStatus = !statusFilter || recipe.status === statusFilter;
 
-            let matchesCost = true;
-            if (costFilter) {
-                switch (costFilter) {
+            let matchesPrice = true;
+            if (priceFilter) {
+                switch (priceFilter) {
                     case 'low':
-                        matchesCost = recipe.foodCost < 10000;
+                        matchesPrice = recipe.sellingPrice < 10000;
                         break;
                     case 'medium':
-                        matchesCost = recipe.foodCost >= 10000 && recipe.foodCost <= 25000;
+                        matchesPrice = recipe.sellingPrice >= 10000 && recipe.sellingPrice <= 25000;
                         break;
                     case 'high':
-                        matchesCost = recipe.foodCost > 25000;
+                        matchesPrice = recipe.sellingPrice > 25000;
                         break;
                 }
             }
 
-            return matchesSearch && matchesCategory && matchesStatus && matchesCost;
+            return matchesSearch && matchesCategory && matchesStatus && matchesPrice;
         });
 
         if (currentView === 'table') {
