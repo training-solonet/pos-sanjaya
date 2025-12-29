@@ -975,11 +975,7 @@
                     marginValue = calculateProfitMargin(serverDaily.totalSales, serverDaily.totalCost);
                     console.log('Calculated from sales/cost:', marginValue);
                 }
-                // PRIORITAS 3: Gunakan estimasi dari data bulanan
-                else if (serverMonthly?.profitMargin !== null && serverMonthly?.profitMargin !== undefined) {
-                    marginValue = serverMonthly.profitMargin;
-                    console.log('Using monthly margin as fallback:', marginValue);
-                }
+                // Jika tidak ada data harian, tampilkan "-" (jangan gunakan data bulanan)
                 
                 console.log('Final margin value:', marginValue);
                 

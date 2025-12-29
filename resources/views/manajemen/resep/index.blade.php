@@ -189,28 +189,94 @@
                     </div>
                     
                     <!-- Pagination -->
-                    <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                        <div class="flex items-center justify-between">
-                            <div class="text-sm text-gray-600">
-                                Menampilkan <span id="paginationInfo">1-10 dari {{ $resep->total() }}</span> resep
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <button onclick="changePage('prev')" id="prevPageBtn" 
-                                    class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    {{ $resep->onFirstPage() ? 'disabled' : '' }}>
-                                    <i class="fas fa-chevron-left"></i> Sebelumnya
-                                </button>
-                                <div id="pageNumbers" class="flex items-center space-x-1">
-                                    <!-- Page numbers will be populated by JavaScript -->
+                    @if($resep->count() > 0)
+                        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+                            <div class="flex flex-col sm:flex-row items-center justify-between">
+                                <div class="mb-2 sm:mb-0">
+                                    <p class="text-sm text-gray-700">
+                                        Menampilkan
+                                        <span class="font-medium">{{ $resep->firstItem() }}</span>
+                                        -
+                                        <span class="font-medium">{{ $resep->lastItem() }}</span>
+                                        dari
+                                        <span class="font-medium">{{ $resep->total() }}</span>
+                                        resep
+                                    </p>
                                 </div>
-                                <button onclick="changePage('next')" id="nextPageBtn" 
-                                    class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    {{ !$resep->hasMorePages() ? 'disabled' : '' }}>
-                                    Selanjutnya <i class="fas fa-chevron-right"></i>
-                                </button>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        {{-- Tombol Previous --}}
+                                        @if ($resep->onFirstPage())
+                                            <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                                <span class="sr-only">Sebelumnya</span>
+                                                <i class="fas fa-chevron-left"></i>
+                                            </span>
+                                        @else
+                                            <a href="{{ $resep->previousPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                <span class="sr-only">Sebelumnya</span>
+                                                <i class="fas fa-chevron-left"></i>
+                                            </a>
+                                        @endif
+
+                                        {{-- Tombol Halaman --}}
+                                        @php
+                                            $current = $resep->currentPage();
+                                            $last = $resep->lastPage();
+                                            $start = max(1, $current - 2);
+                                            $end = min($last, $current + 2);
+                                        @endphp
+
+                                        @if($start > 1)
+                                            <a href="{{ $resep->url(1) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                1
+                                            </a>
+                                            @if($start > 2)
+                                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                                                    ...
+                                                </span>
+                                            @endif
+                                        @endif
+
+                                        @for ($page = $start; $page <= $end; $page++)
+                                            @if ($page == $current)
+                                                <span class="relative inline-flex items-center px-4 py-2 border border-green-500 bg-green-50 text-sm font-medium text-green-600">
+                                                    {{ $page }}
+                                                </span>
+                                            @else
+                                                <a href="{{ $resep->url($page) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                    {{ $page }}
+                                                </a>
+                                            @endif
+                                        @endfor
+
+                                        @if($end < $last)
+                                            @if($end < $last - 1)
+                                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                                                    ...
+                                                </span>
+                                            @endif
+                                            <a href="{{ $resep->url($last) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                {{ $last }}
+                                            </a>
+                                        @endif
+
+                                        {{-- Tombol Next --}}
+                                        @if ($resep->hasMorePages())
+                                            <a href="{{ $resep->nextPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                <span class="sr-only">Berikutnya</span>
+                                                <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        @else
+                                            <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                                <span class="sr-only">Berikutnya</span>
+                                                <i class="fas fa-chevron-right"></i>
+                                            </span>
+                                        @endif
+                                    </nav>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    @endif
                 </div>
             </div>
         </main>

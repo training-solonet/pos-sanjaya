@@ -143,7 +143,8 @@ class LaporanController extends Controller
             ->value('total_cost') ?? 0;
 
         // PERHITUNGAN MARGIN: (Penjualan - FoodCost) / Penjualan × 100%
-        $profitMargin = $totalRevenue > 0 && $totalCost > 0 ? round((($totalRevenue - $totalCost) / $totalRevenue) * 100, 1) : null;
+        // Hanya hitung profit margin jika ada penjualan yang sebenarnya
+        $profitMargin = $totalRevenue > 0 && $totalCost >= 0 ? round((($totalRevenue - $totalCost) / $totalRevenue) * 100, 1) : null;
 
         $monthlyReport = [
             'monthLabel' => Carbon::now()->format('F Y'),
@@ -182,11 +183,11 @@ class LaporanController extends Controller
             ->value('total_cost') ?? 0;
 
         // RUMUS PROFIT MARGIN HARIAN: ((Penjualan Hari Ini - FoodCost Hari Ini) / Penjualan Hari Ini) × 100%
-        // Jika ada penjualan tapi foodcost = 0, berarti margin 100% (tidak ada biaya produksi atau resep belum diinput)
-        if ($todayTotal > 0) {
+        // Hanya hitung profit margin jika ada penjualan yang sebenarnya
+        if ($todayTotal > 0 && $todayCost >= 0) {
             $todayProfitMargin = round((($todayTotal - $todayCost) / $todayTotal) * 100, 1);
         } else {
-            $todayProfitMargin = null; // Tidak ada penjualan
+            $todayProfitMargin = null; // Tidak ada penjualan atau data tidak valid
         }
 
         $dailyReport = [
@@ -239,11 +240,11 @@ class LaporanController extends Controller
             ->value('total_cost') ?? 0;
 
         // RUMUS PROFIT MARGIN MINGGUAN: ((Penjualan Minggu Ini - FoodCost Minggu Ini) / Penjualan Minggu Ini) × 100%
-        // Jika ada penjualan tapi foodcost = 0, berarti margin 100% (tidak ada biaya produksi atau resep belum diinput)
-        if ($thisWeekTotal > 0) {
+        // Hanya hitung profit margin jika ada penjualan yang sebenarnya
+        if ($thisWeekTotal > 0 && $thisWeekCost >= 0) {
             $weeklyProfitMargin = round((($thisWeekTotal - $thisWeekCost) / $thisWeekTotal) * 100, 1);
         } else {
-            $weeklyProfitMargin = null; // Tidak ada penjualan
+            $weeklyProfitMargin = null; // Tidak ada penjualan atau data tidak valid
         }
 
         $weeklyReport = [
