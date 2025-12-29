@@ -274,6 +274,96 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Pagination -->
+            @if($bahan_baku->count() > 0)
+                <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+                    <div class="flex flex-col sm:flex-row items-center justify-between">
+                        <div class="mb-2 sm:mb-0">
+                            <p class="text-sm text-gray-700">
+                                Menampilkan
+                                <span class="font-medium">{{ $bahan_baku->firstItem() }}</span>
+                                -
+                                <span class="font-medium">{{ $bahan_baku->lastItem() }}</span>
+                                dari
+                                <span class="font-medium">{{ $bahan_baku->total() }}</span>
+                                bahan baku
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                {{-- Tombol Previous --}}
+                                @if ($bahan_baku->onFirstPage())
+                                    <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                        <span class="sr-only">Sebelumnya</span>
+                                        <i class="fas fa-chevron-left"></i>
+                                    </span>
+                                @else
+                                    <a href="{{ $bahan_baku->previousPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Sebelumnya</span>
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                @endif
+
+                                {{-- Tombol Halaman --}}
+                                @php
+                                    $current = $bahan_baku->currentPage();
+                                    $last = $bahan_baku->lastPage();
+                                    $start = max(1, $current - 2);
+                                    $end = min($last, $current + 2);
+                                @endphp
+
+                                @if($start > 1)
+                                    <a href="{{ $bahan_baku->url(1) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        1
+                                    </a>
+                                    @if($start > 2)
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                                            ...
+                                        </span>
+                                    @endif
+                                @endif
+
+                                @for ($page = $start; $page <= $end; $page++)
+                                    @if ($page == $current)
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-green-500 bg-green-50 text-sm font-medium text-green-600">
+                                            {{ $page }}
+                                        </span>
+                                    @else
+                                        <a href="{{ $bahan_baku->url($page) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            {{ $page }}
+                                        </a>
+                                    @endif
+                                @endfor
+
+                                @if($end < $last)
+                                    @if($end < $last - 1)
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                                            ...
+                                        </span>
+                                    @endif
+                                    <a href="{{ $bahan_baku->url($last) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        {{ $last }}
+                                    </a>
+                                @endif
+
+                                {{-- Tombol Next --}}
+                                @if ($bahan_baku->hasMorePages())
+                                    <a href="{{ $bahan_baku->nextPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Berikutnya</span>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                @else
+                                    <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                        <span class="sr-only">Berikutnya</span>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                @endif
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </main>
@@ -422,6 +512,8 @@
     let hasOpnameToday = {{ $has_opname_today ? 'true' : 'false' }};
     let currentView = 'grid';
     let allHistories = null;
+    let currentPage = {{ $bahan_baku->currentPage() }};
+    let lastPage = {{ $bahan_baku->lastPage() }};
 
     // CSRF Token
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -458,10 +550,10 @@
         }
     }
 
-    // Load data opname
-    async function loadOpnameData() {
+    // Load data opname dengan pagination
+    async function loadOpnameData(page = currentPage) {
         try {
-            const response = await fetch('{{ route("management.opname.index") }}?ajax=1', {
+            const response = await fetch('{{ route("management.opname.index") }}?ajax=1&page=' + page, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
@@ -477,6 +569,7 @@
             if (result.success) {
                 updateStatistics(result.summary);
                 updateProductItems(result.data);
+                updatePagination(result.pagination);
                 
                 // Update status opname hari ini
                 hasOpnameToday = result.has_opname_today;
@@ -486,6 +579,14 @@
             }
         } catch (error) {
             console.error('Error loading opname data:', error);
+        }
+    }
+
+    // Update pagination info
+    function updatePagination(pagination) {
+        if (pagination) {
+            currentPage = pagination.current_page;
+            lastPage = pagination.last_page;
         }
     }
 
@@ -503,74 +604,112 @@
     // Update product items
     function updateProductItems(products) {
         // Update grid view
-        const productItems = document.querySelectorAll('.product-item');
-        products.forEach(product => {
-            const item = Array.from(productItems).find(el => el.getAttribute('data-id') == product.id);
-            if (item) {
-                const status = product.status;
-                const statusConfig = getStatusConfig(status);
+        const gridView = document.getElementById('gridView');
+        const listView = document.getElementById('listViewContent');
+        
+        if (currentView === 'grid') {
+            let gridHtml = '';
+            products.forEach(product => {
+                const statusConfig = getStatusConfig(product.status);
                 const selisih = product.selisih !== null ? parseFloat(product.selisih) : null;
                 
-                // Update status badge
-                const badge = item.querySelector('.status-badge');
-                if (badge) {
-                    badge.className = `status-badge ${statusConfig.badgeClass} px-2 py-1 rounded-full text-xs font-medium`;
-                    badge.innerHTML = `<i class="${statusConfig.icon} mr-1"></i>${statusConfig.text}`;
-                }
+                gridHtml += `
+                    <div class="product-item border border-gray-200 rounded-xl p-4 hover:border-green-400 transition-all cursor-pointer"
+                         data-status="${product.status}" 
+                         data-kategori="${product.kategori ? product.kategori.toLowerCase().replace(/ /g, '-') : ''}"
+                         data-id="${product.id}"
+                         data-nama="${product.nama.toLowerCase()}"
+                         data-kode="${product.kode.toLowerCase()}">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900">${product.nama}</h4>
+                                <p class="text-sm text-gray-500">Kode: ${product.kode}</p>
+                                <p class="text-sm text-gray-600 mt-1">Kategori: ${product.kategori}</p>
+                            </div>
+                            <span class="status-badge ${statusConfig.badgeClass} px-2 py-1 rounded-full text-xs font-medium">
+                                <i class="${statusConfig.icon} mr-1"></i>${statusConfig.text}
+                            </span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Stok Sistem:</span>
+                                <span class="font-medium">${parseFloat(product.stok_sistem).toFixed(2)} ${product.satuan}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Stok Fisik:</span>
+                                <span class="font-medium ${statusConfig.stockClass}">
+                                    ${product.stok_fisik !== null ? parseFloat(product.stok_fisik).toFixed(2) + ' ' + product.satuan : 'Belum dihitung'}
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Selisih:</span>
+                                <span class="font-medium ${selisih > 0 ? 'text-blue-600' : selisih < 0 ? 'text-red-600' : selisih === 0 ? 'text-green-600' : 'text-gray-400'}">
+                                    ${product.stok_fisik !== null ? 
+                                        (selisih > 0 ? '+' : '') + parseFloat(selisih).toFixed(2) + ' ' + product.satuan : 
+                                        '-'}
+                                </span>
+                            </div>
+                            ${product.tgl_opname_terakhir ? `
+                            <div class="flex justify-between items-center text-xs text-gray-500">
+                                <span>Terakhir dihitung:</span>
+                                <span>${new Date(product.tgl_opname_terakhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="mt-4">
+                            <button onclick="openCountModal(${product.id}, '${product.nama.replace(/'/g, "\\'")}', ${product.stok_sistem}, ${product.stok_fisik || 'null'}, '${product.satuan}', '${(product.catatan || '').replace(/'/g, "\\'")}')"
+                                    class="w-full py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium">
+                                <i class="fas fa-calculator mr-2"></i>Hitung Stok
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            gridView.innerHTML = gridHtml;
+        } else {
+            let listHtml = '';
+            products.forEach(product => {
+                const statusConfig = getStatusConfig(product.status);
+                const selisih = product.selisih !== null ? parseFloat(product.selisih) : null;
                 
-                if (currentView === 'grid') {
-                    // Update grid view
-                    const stockPhysical = item.querySelectorAll('.flex.justify-between.items-center')[1];
-                    if (stockPhysical) {
-                        const span = stockPhysical.querySelector('span.font-medium');
-                        if (span) {
-                            span.className = `font-medium ${product.stok_fisik !== null ? statusConfig.stockClass : 'text-gray-400'}`;
-                            span.textContent = product.stok_fisik !== null ? 
-                                `${parseFloat(product.stok_fisik).toFixed(2)} ${product.satuan}` : 'Belum dihitung';
-                        }
-                    }
-                    
-                    // Update selisih
-                    const selisihElement = item.querySelectorAll('.flex.justify-between.items-center')[2];
-                    if (selisihElement) {
-                        const span = selisihElement.querySelector('span.font-medium');
-                        if (span) {
-                            const selisihClass = selisih > 0 ? 'text-blue-600' : 
-                                               selisih < 0 ? 'text-red-600' : 
-                                               selisih === 0 ? 'text-green-600' : 'text-gray-400';
-                            span.className = `font-medium ${product.stok_fisik !== null ? selisihClass : 'text-gray-400'}`;
-                            span.textContent = product.stok_fisik !== null ? 
-                                `${selisih > 0 ? '+' : ''}${selisih !== null ? selisih.toFixed(2) : 0} ${product.satuan}` : '-';
-                        }
-                    }
-                } else {
-                    // Update list view
-                    const row = item;
-                    const tds = row.querySelectorAll('td');
-                    if (tds.length >= 7) {
-                        // Update stok fisik column (index 4)
-                        tds[4].className = `px-6 py-4 text-sm ${statusConfig.stockClass}`;
-                        tds[4].textContent = product.stok_fisik !== null ? 
-                            `${parseFloat(product.stok_fisik).toFixed(2)} ${product.satuan}` : 'Belum dihitung';
-                        
-                        // Update selisih column (index 5)
-                        const selisihClass = selisih > 0 ? 'text-blue-600' : 
-                                           selisih < 0 ? 'text-red-600' : 
-                                           selisih === 0 ? 'text-green-600' : 'text-gray-400';
-                        tds[5].className = `px-6 py-4 text-sm ${selisihClass}`;
-                        tds[5].textContent = product.stok_fisik !== null ? 
-                            `${selisih > 0 ? '+' : ''}${selisih !== null ? selisih.toFixed(2) : 0} ${product.satuan}` : '-';
-                        
-                        // Update status column (index 6)
-                        const statusBadge = tds[6].querySelector('.status-badge');
-                        if (statusBadge) {
-                            statusBadge.className = `status-badge ${statusConfig.badgeClass} px-2 py-1 rounded-full text-xs font-medium`;
-                            statusBadge.innerHTML = `<i class="${statusConfig.icon} mr-1"></i>${statusConfig.text}`;
-                        }
-                    }
-                }
-            }
-        });
+                listHtml += `
+                    <tr class="hover:bg-gray-50 product-item"
+                        data-status="${product.status}" 
+                        data-kategori="${product.kategori ? product.kategori.toLowerCase().replace(/ /g, '-') : ''}"
+                        data-id="${product.id}"
+                        data-nama="${product.nama.toLowerCase()}"
+                        data-kode="${product.kode.toLowerCase()}">
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">${product.nama}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${product.kode}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${product.kategori}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${parseFloat(product.stok_sistem).toFixed(2)} ${product.satuan}</td>
+                        <td class="px-6 py-4 text-sm ${statusConfig.stockClass}">
+                            ${product.stok_fisik !== null ? parseFloat(product.stok_fisik).toFixed(2) + ' ' + product.satuan : 'Belum dihitung'}
+                        </td>
+                        <td class="px-6 py-4 text-sm ${selisih > 0 ? 'text-blue-600' : selisih < 0 ? 'text-red-600' : selisih === 0 ? 'text-green-600' : 'text-gray-400'}">
+                            ${product.stok_fisik !== null ? 
+                                (selisih > 0 ? '+' : '') + parseFloat(selisih).toFixed(2) + ' ' + product.satuan : 
+                                '-'}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="status-badge ${statusConfig.badgeClass} px-2 py-1 rounded-full text-xs font-medium">
+                                <i class="${statusConfig.icon} mr-1"></i>${statusConfig.text}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <button onclick="openCountModal(${product.id}, '${product.nama.replace(/'/g, "\\'")}', ${product.stok_sistem}, ${product.stok_fisik || 'null'}, '${product.satuan}', '${(product.catatan || '').replace(/'/g, "\\'")}')"
+                                    class="px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm">
+                                <i class="fas fa-calculator mr-1"></i>Hitung
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            listViewContent.innerHTML = listHtml;
+        }
+        
+        // Setup search and filters untuk data baru
+        setupSearchAndFilters();
     }
 
     // Open count modal
@@ -710,7 +849,7 @@
                 
                 // Refresh data setelah 1 detik
                 setTimeout(() => {
-                    loadOpnameData();
+                    loadOpnameData(currentPage);
                 }, 1000);
             } else {
                 showError(result.message || 'Gagal menyimpan data');
@@ -835,7 +974,7 @@
                         
                         // Refresh data
                         setTimeout(() => {
-                            loadOpnameData();
+                            loadOpnameData(currentPage);
                         }, 1000);
                     } else {
                         showError(result.message || 'Gagal memulai sesi opname');
