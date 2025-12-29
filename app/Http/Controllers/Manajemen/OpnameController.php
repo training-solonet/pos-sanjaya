@@ -19,8 +19,8 @@ class OpnameController extends Controller
             // Cek apakah sudah ada opname hari ini
             $has_opname_today = Opname::whereDate('tgl', $today)->exists();
 
-            // Ambil semua bahan baku
-            $bahan_baku = BahanBaku::with(['konversi'])->orderBy('nama')->get();
+            // Ambil semua bahan baku dengan pagination
+            $bahan_baku = BahanBaku::with(['konversi'])->orderBy('nama')->paginate(12);
 
             $opname_data = [];
             $categories = [];
@@ -69,16 +69,20 @@ class OpnameController extends Controller
                 ];
             }
 
-            // Hitung statistik
-            $total_bahan = count($opname_data);
-            $dihitung = collect($opname_data)->whereIn('status', ['counted', 'discrepancy'])->count();
-            $selisih_count = collect($opname_data)->where('status', 'discrepancy')->count();
-            $progress = $total_bahan > 0 ? round(($dihitung / $total_bahan) * 100) : 0;
+            // Hitung statistik dari semua data, bukan hanya yang dipaginate
+            $total_bahan_all = BahanBaku::count();
+            $dihitung_all = Opname::whereDate('tgl', $today)->count();
+            $selisih_count_all = Opname::whereDate('tgl', $today)
+                ->join('bahan_baku', 'opname.id_bahan', '=', 'bahan_baku.id')
+                ->whereRaw('ABS(opname.stok - bahan_baku.stok) > 0.01')
+                ->count();
+
+            $progress = $total_bahan_all > 0 ? round(($dihitung_all / $total_bahan_all) * 100) : 0;
 
             $summary = [
-                'total_bahan' => $total_bahan,
-                'dihitung' => $dihitung,
-                'selisih' => $selisih_count,
+                'total_bahan' => $total_bahan_all,
+                'dihitung' => $dihitung_all,
+                'selisih' => $selisih_count_all,
                 'progress' => $progress,
             ];
 
@@ -119,8 +123,8 @@ class OpnameController extends Controller
                             'satuan' => $satuan,
                         ];
                     })
-                    ->filter() // Hapus null jika ada bahan yang tidak ditemukan
-                    ->values(); // Reset array keys
+                    ->filter()
+                    ->values();
 
                 if ($request->ajax()) {
                     return response()->json([
@@ -140,6 +144,12 @@ class OpnameController extends Controller
                     'summary' => $summary,
                     'categories' => $categories,
                     'has_opname_today' => $has_opname_today,
+                    'pagination' => [
+                        'current_page' => $bahan_baku->currentPage(),
+                        'last_page' => $bahan_baku->lastPage(),
+                        'per_page' => $bahan_baku->perPage(),
+                        'total' => $bahan_baku->total(),
+                    ],
                 ]);
             }
 
@@ -147,7 +157,8 @@ class OpnameController extends Controller
                 'opname_data',
                 'summary',
                 'categories',
-                'has_opname_today'
+                'has_opname_today',
+                'bahan_baku'
             ));
 
         } catch (\Exception $e) {

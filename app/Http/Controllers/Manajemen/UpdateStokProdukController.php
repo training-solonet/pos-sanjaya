@@ -25,29 +25,27 @@ class UpdateStokProdukController extends Controller
             // Ambil semua produk untuk dropdown
             $produk = Produk::orderBy('nama')->get();
 
-            // Ambil history update stok dengan relasi produk
+            // Ambil history update stok dengan relasi produk dan pagination 12 data per halaman
             $history = UpdateStokProduk::with('produk')
                 ->orderBy('tanggal_update', 'desc')
-                ->get();
+                ->paginate(12);
 
             // Hitung summary dengan timezone Jakarta
             $now = Carbon::now('Asia/Jakarta');
-            $totalEntries = $history->count();
+            $totalEntries = UpdateStokProduk::count();
 
             // Count today entries
-            $todayEntries = $history->filter(function ($item) use ($now) {
-                return Carbon::parse($item->tanggal_update)->isSameDay($now);
-            })->count();
+            $todayEntries = UpdateStokProduk::whereDate('tanggal_update', $now->toDateString())->count();
 
             // Count week entries
-            $weekEntries = $history->filter(function ($item) use ($now) {
-                return Carbon::parse($item->tanggal_update) >= $now->copy()->startOfWeek();
-            })->count();
+            $weekEntries = UpdateStokProduk::whereBetween('tanggal_update',
+                [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]
+            )->count();
 
             // Count month entries
-            $monthEntries = $history->filter(function ($item) use ($now) {
-                return Carbon::parse($item->tanggal_update) >= $now->copy()->startOfMonth();
-            })->count();
+            $monthEntries = UpdateStokProduk::whereBetween('tanggal_update',
+                [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()]
+            )->count();
 
             return view('manajemen.produk.UpdateStokProduk', compact(
                 'produk',
