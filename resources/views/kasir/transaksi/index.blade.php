@@ -1363,8 +1363,6 @@
                     const result = await response.json();
 
                     if (result.success) {
-                        // Confirm order number (save increment to localStorage)
-                        confirmOrderNumber();
                         
                         // Show success notification
                         showSuccessNotification('Pembayaran berhasil');
