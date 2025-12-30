@@ -181,4 +181,19 @@ class TransaksiController extends Controller
     {
         //
     }
+
+    /**
+     * Get next transaction ID
+     */
+    public function getNextId()
+    {
+        // Get the last transaction ID and increment by 1
+        $lastTransaction = Transaksi::latest('id')->first();
+        $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
+
+        return response()->json([
+            'success' => true,
+            'next_id' => $nextId,
+        ]);
+    }
 }

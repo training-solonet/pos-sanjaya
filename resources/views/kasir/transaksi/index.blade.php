@@ -35,14 +35,11 @@
                                 </div>
                                 <input type="text" 
                                        id="searchInput"
-                                       placeholder="Cari produk atau scan barcode..." 
-                                       class="w-full pl-12 pr-20 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors bg-gray-50 focus:bg-white"
-                                       autocomplete="off">
-                                <button id="clearSearchBtn" class="absolute inset-y-0 right-12 pr-2 flex items-center hidden" onclick="clearSearch()" title="Hapus pencarian">
+                                       placeholder="Cari produk..." 
+                                       class="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors bg-gray-50 focus:bg-white"
+                                       autocomplete="off">        
+                                <button id="clearSearchBtn" class="absolute inset-y-0 right-0 pr-4 flex items-center hidden" onclick="clearSearch()" title="Hapus pencarian">
                                     <i class="fas fa-times-circle text-gray-400 hover:text-red-500 transition-colors"></i>
-                                </button>
-                                <button class="absolute inset-y-0 right-0 pr-4 flex items-center" onclick="document.getElementById('searchInput').focus()" title="Scan Barcode">
-                                    <i class="fas fa-qrcode text-gray-400 hover:text-green-600 transition-colors"></i>
                                 </button>
                             </div>
 
@@ -148,7 +145,7 @@
                                     </div>
                                     <div>
                                         <h2 class="text-xl font-bold text-gray-900">Keranjang</h2>
-                                        <p class="text-sm text-gray-500">Order #001 - Hari ini</p>
+                                        <p class="text-sm text-gray-500" id="orderInfo">Belum ada order</p>
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-3">
@@ -176,8 +173,7 @@
                                     <p class="text-xs text-gray-500 mb-3">Belum ada produk yang dipilih</p>
                                     <div class="bg-gray-50 rounded-lg p-3">
                                         <p class="text-xs text-gray-400 mb-1">💡 Tips:</p>
-                                        <p class="text-xs text-gray-500">Klik produk di katalog untuk menambahkan ke
-                                            keranjang</p>
+                                        <p class="text-xs text-gray-500">Klik produk di katalog untuk menambahkan ke keranjang</p>
                                     </div>
                                 </div>
                             </div>
@@ -350,19 +346,15 @@
                                         <span>Bayar Sekarang</span>
                                     </div>
                                 </button>
-                                <div class="grid grid-cols-3 gap-2">
+                                <div class="grid grid-cols-2 gap-2">
                                     <button
                                         class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-3 rounded-lg transition-colors text-sm">
                                         <i class="fas fa-save text-xs mr-1"></i>Hold
                                     </button>
-                                    <button
-                                        class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-3 rounded-lg transition-colors text-sm">
-                                        <i class="fas fa-print text-xs mr-1"></i>Print
-                                    </button>
-                                    <button
-                                        class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-3 rounded-lg transition-colors text-sm">
+                                    <a href="{{ route('kasir.laporan.index') }}"
+                                        class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-3 rounded-lg transition-colors text-sm inline-block">
                                         <i class="fas fa-history text-xs mr-1"></i>Riwayat
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -467,6 +459,39 @@
         let sidebarOpen = false;
         let currentCategory = 'semua';
         let currentView = 'grid'; // Default view
+        let currentOrderNumber = null;
+
+        // Generate order number from database
+        async function generateOrderNumber() {
+            try {
+                const response = await fetch('{{ route('kasir.transaksi.api.next-id') }}');
+                const result = await response.json();
+                if (result.success) {
+                    return result.next_id;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error fetching next ID:', error);
+                return null;
+            }
+        }
+
+        // Confirm order number (no longer needed with database IDs)
+        function confirmOrderNumber() {
+            // No action needed - ID is managed by database
+        }
+
+        // Update order info display
+        function updateOrderInfo() {
+            const orderInfo = document.getElementById('orderInfo');
+            if (orderInfo) {
+                if (currentOrderNumber) {
+                    orderInfo.textContent = `ID ${currentOrderNumber}`;
+                } else {
+                    orderInfo.textContent = 'Belum ada order';
+                }
+            }
+        }
 
         // Toggle between grid and list view
         function toggleView(viewType) {
@@ -794,10 +819,8 @@
 
             // Header action functions
             function showTransactionHistory() {
-                // Close sidebar first
-                // closeSidebar();
-                // Implement transaction history modal/page
-                alert('Fitur riwayat transaksi akan segera hadir');
+                // Redirect to laporan page
+                window.location.href = "{{ route('kasir.laporan.index') }}";
             }
 
             function showSettings() {
@@ -862,9 +885,18 @@
                     stock: stock,
                     quantity: 1
                 });
+                
+                // Generate order number untuk transaksi baru
+                if (cart.length === 1) {
+                    generateOrderNumber().then(nextId => {
+                        currentOrderNumber = nextId;
+                        updateOrderInfo();
+                    });
+                }
             }
             
             updateCartDisplay();
+            updateOrderInfo();
             
             // Visual feedback
             const productCards = document.querySelectorAll('.product-card');
@@ -1291,11 +1323,6 @@
                     kembalian = bayar - finalTotal;
                 }
 
-                // Show confirmation
-                if (!confirm(`Konfirmasi pembayaran sebesar Rp ${finalTotal.toLocaleString('id-ID')}?`)) {
-                    return;
-                }
-
                 // Prepare data
                 const transactionData = {
                     metode: paymentMethod,
@@ -1336,13 +1363,15 @@
                     const result = await response.json();
 
                     if (result.success) {
-                        // Success
-                        alert(
-                            `Pembayaran berhasil!\n\nInvoice: ${result.data.invoice}\nTotal: Rp ${result.data.total.toLocaleString('id-ID')}\nKembalian: Rp ${result.data.kembalian.toLocaleString('id-ID')}\n\nTerima kasih!`);
+                        
+                        // Show success notification
+                        showSuccessNotification('Pembayaran berhasil');
 
-                        // Clear cart
+                        // Clear cart and reset order number
                         cart = [];
+                        currentOrderNumber = null;
                         updateCartDisplay();
+                        updateOrderInfo();
 
                         // Reset cash input
                         document.getElementById('cashAmount').value = '';
@@ -1360,7 +1389,7 @@
 
                     } else {
                         // Error
-                        alert('Gagal memproses transaksi: ' + result.message);
+                        showErrorNotification('Gagal memproses transaksi: ' + result.message);
                     }
 
                     // Reset button
@@ -1369,7 +1398,7 @@
 
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Terjadi kesalahan saat memproses pembayaran: ' + error.message);
+                    showErrorNotification('Terjadi kesalahan saat memproses pembayaran');
 
                     // Reset button
                     const payButton = document.getElementById('checkoutBtn');
@@ -1390,10 +1419,68 @@
             function clearCart() {
                 if (cart.length === 0) return;
 
-                if (confirm('Hapus semua item dari keranjang?')) {
-                    cart = [];
-                    updateCartDisplay();
-                }
+                // Langsung hapus tanpa konfirmasi
+                currentOrderNumber = null;
+                cart = [];
+                updateCartDisplay();
+                updateOrderInfo();
+
+                // Tampilkan notifikasi sukses
+                showSuccessNotification('Berhasil hapus item');
+            }
+
+            // Show success notification
+            function showSuccessNotification(message) {
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3 animate-slide-in';
+                toast.innerHTML = `
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                document.body.appendChild(toast);
+                
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(100%)';
+                    toast.style.transition = 'all 0.3s ease';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            // Show error notification
+            function showErrorNotification(message) {
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3 animate-slide-in';
+                toast.innerHTML = `
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                document.body.appendChild(toast);
+                
+                // Auto remove after 4 seconds
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(100%)';
+                    toast.style.transition = 'all 0.3s ease';
+                    setTimeout(() => toast.remove(), 300);
+                }, 4000);
             }
 
             // Initialize
@@ -1709,12 +1796,8 @@
                     // Try to reconnect to saved printer
                     const reconnected = await reconnectSavedPrinter();
                     if (!reconnected) {
-                        if (confirm('Printer tidak terhubung. Hubungkan sekarang?')) {
-                            await connectBluetoothPrinter();
-                            if (!printerConnected) return false;
-                        } else {
-                            return false;
-                        }
+                        // Printer tidak terhubung, skip printing dan lanjutkan pembayaran
+                        return false;
                     }
                 }
 
@@ -1735,7 +1818,7 @@
                     return true;
                 } catch (error) {
                     console.error('Print error:', error);
-                    alert('Gagal mencetak struk: ' + error.message);
+                    // Tidak perlu alert, hanya log error - pembayaran tetap berhasil
                     return false;
                 }
             }
@@ -1769,11 +1852,6 @@
 
                     bayar = parseInt(cashValue);
                     kembalian = bayar - finalTotal;
-                }
-
-                // Show confirmation
-                if (!confirm(`Konfirmasi pembayaran sebesar Rp ${finalTotal.toLocaleString('id-ID')}?`)) {
-                    return;
                 }
 
                 // Prepare data
@@ -1829,13 +1907,7 @@
                         }
 
                         // Success message
-                        if (printSuccess) {
-                            alert(
-                                `Pembayaran berhasil! Struk telah dicetak.\n\nInvoice: ${result.data.invoice}\nTotal: Rp ${result.data.total.toLocaleString('id-ID')}\nKembalian: Rp ${result.data.kembalian.toLocaleString('id-ID')}\n\nTerima kasih!`);
-                        } else {
-                            alert(
-                                `Pembayaran berhasil! (Struk gagal dicetak)\n\nInvoice: ${result.data.invoice}\nTotal: Rp ${result.data.total.toLocaleString('id-ID')}\nKembalian: Rp ${result.data.kembalian.toLocaleString('id-ID')}\n\nTerima kasih!`);
-                        }
+                        showSuccessNotification('Pembayaran berhasil');
 
                         // Clear cart
                         cart = [];
@@ -1857,7 +1929,7 @@
 
                     } else {
                         // Error
-                        alert('Gagal memproses transaksi: ' + result.message);
+                        showErrorNotification('Gagal memproses transaksi: ' + result.message);
                     }
 
                     // Reset button
@@ -1866,7 +1938,7 @@
 
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Terjadi kesalahan saat memproses pembayaran: ' + error.message);
+                    showErrorNotification('Terjadi kesalahan saat memproses pembayaran');
 
                     // Reset button
                     const payButton = document.getElementById('checkoutBtn');
@@ -1908,6 +1980,7 @@
             updateDateTime();
             setInterval(updateDateTime, 60000);
             updateCartDisplay();
+            updateOrderInfo();
             
             // Initialize payment input formatting
             formatCashInput();

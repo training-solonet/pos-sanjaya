@@ -15,7 +15,7 @@ class JurnalController extends Controller
     {
         $tanggal = $request->get('tanggal', date('Y-m-d'));
 
-        // Get journals for specific date
+        // Get journals for specific date (sudah include transaksi penjualan yang otomatis tercatat)
         $jurnals = Jurnal::whereDate('tgl', $tanggal)
             ->orderBy('tgl', 'desc')
             ->get();
@@ -129,6 +129,48 @@ class JurnalController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Transaksi berhasil dihapus',
+        ]);
+    }
+
+    /**
+     * Get jurnal data for real-time updates (API)
+     */
+    public function getJurnalData(Request $request)
+    {
+        $tanggal = $request->get('tanggal', date('Y-m-d'));
+
+        // Get journals for specific date
+        $jurnals = Jurnal::whereDate('tgl', $tanggal)
+            ->orderBy('tgl', 'desc')
+            ->get();
+
+        // Calculate summary
+        $totalPemasukan = Jurnal::whereDate('tgl', $tanggal)
+            ->where('jenis', 'pemasukan')
+            ->sum('nominal');
+
+        $totalPengeluaran = Jurnal::whereDate('tgl', $tanggal)
+            ->where('jenis', 'pengeluaran')
+            ->sum('nominal');
+
+        $jumlahPemasukan = Jurnal::whereDate('tgl', $tanggal)
+            ->where('jenis', 'pemasukan')
+            ->count();
+
+        $jumlahPengeluaran = Jurnal::whereDate('tgl', $tanggal)
+            ->where('jenis', 'pengeluaran')
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'jurnals' => $jurnals,
+                'totalPemasukan' => $totalPemasukan,
+                'totalPengeluaran' => $totalPengeluaran,
+                'jumlahPemasukan' => $jumlahPemasukan,
+                'jumlahPengeluaran' => $jumlahPengeluaran,
+                'saldoBersih' => $totalPemasukan - $totalPengeluaran,
+            ],
         ]);
     }
 }
