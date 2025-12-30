@@ -1,6 +1,23 @@
 @extends('layouts.kasir.index')
 
 @section('content')
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+
     <!-- Mobile Overlay -->
     <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
 
@@ -22,10 +39,14 @@
             <div class="space-y-4">
                 <!-- Header -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h2 class="text-2xl font-bold text-gray-900">Jurnal Harian</h2>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Jurnal Harian</h2>
+                        <p class="text-sm text-gray-500 mt-1">
+                        </p>
+                    </div>
                     <div class="flex space-x-2">
                         <form action="{{ route('kasir.jurnal.index') }}" method="GET" id="filterDateForm">
-                            <input type="date" name="tanggal" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg" value="{{ $tanggal }}" onchange="this.form.submit()">
+                            <input type="date" name="tanggal" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg" value="{{ $tanggal }}" onchange="handleDateChange()">
                         </form>
                         <button class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
                             <i class="fas fa-download mr-2"></i>Export
@@ -168,12 +189,14 @@
                                         {{ $jurnal->jenis == 'pemasukan' ? '+' : '-' }} Rp {{ number_format($jurnal->nominal, 0, ',', '.') }}
                                     </td>
                                     <td class="px-6 py-4">
-                                        <button onclick="editTransaction({{ $jurnal->id }})" class="text-green-600 hover:text-green-800 mr-2">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="deleteTransaction({{ $jurnal->id }})" class="text-red-500 hover:text-red-700">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        <div class="flex items-center justify-center gap-4">
+                                            <button onclick="editTransaction({{ $jurnal->id }})" class="text-green-600 hover:text-green-800 flex items-center gap-1">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button onclick="deleteTransaction({{ $jurnal->id }})" class="text-red-500 hover:text-red-700 flex items-center gap-1">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 @empty
@@ -278,6 +301,8 @@
         // CSRF Token setup for AJAX
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
         
+        let currentDate = '{{ $tanggal }}';
+        
         // Categories configuration
         const categories = {
             pemasukan: [
@@ -331,6 +356,106 @@
             if (dateTimeElement) {
                 dateTimeElement.textContent = dateTimeString;
             }
+        }
+
+        // Handle date change
+        function handleDateChange() {
+            currentDate = document.getElementById('filterDate').value;
+            fetchJurnalData();
+        }
+
+        // Fetch jurnal data from API
+        async function fetchJurnalData() {
+            try {
+                const url = `{{ route('kasir.jurnal.api.data') }}?tanggal=${currentDate}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateSummaryCards(result.data);
+                    updateTransactionTable(result.data.jurnals);
+                }
+            } catch (error) {
+                console.error('Error fetching jurnal data:', error);
+            }
+        }
+
+        // Update summary cards
+        function updateSummaryCards(data) {
+            // Update pemasukan
+            document.getElementById('summaryTotalRevenue').textContent = 'Rp ' + formatNumber(data.totalPemasukan);
+            document.getElementById('revenueCount').innerHTML = `<i class="fas fa-receipt mr-2"></i>${data.jumlahPemasukan} transaksi hari ini`;
+            
+            // Update pengeluaran
+            document.getElementById('summaryTotalExpense').textContent = 'Rp ' + formatNumber(data.totalPengeluaran);
+            document.getElementById('expenseCount').innerHTML = `<i class="fas fa-calendar-day mr-2"></i>${data.jumlahPengeluaran} transaksi hari ini`;
+            
+            // Update saldo bersih
+            const saldoEl = document.getElementById('summaryNetBalance');
+            saldoEl.textContent = 'Rp ' + formatNumber(data.saldoBersih);
+            saldoEl.className = 'text-3xl font-bold ' + (data.saldoBersih >= 0 ? 'text-green-600' : 'text-red-600');
+            
+            // Update footer
+            document.getElementById('footerTotalRevenue').textContent = 'Rp ' + formatNumber(data.totalPemasukan);
+            document.getElementById('footerTotalExpense').textContent = 'Rp ' + formatNumber(data.totalPengeluaran);
+            const footerSaldoEl = document.getElementById('footerNetBalance');
+            footerSaldoEl.textContent = 'Rp ' + formatNumber(data.saldoBersih);
+            footerSaldoEl.className = 'text-lg font-bold ' + (data.saldoBersih >= 0 ? 'text-green-600' : 'text-red-600');
+        }
+
+        // Update transaction table
+        function updateTransactionTable(jurnals) {
+            const tbody = document.querySelector('#transactionTable tbody');
+            
+            if (jurnals.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2"></i>
+                            <p>Belum ada transaksi untuk tanggal ini</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = jurnals.map(jurnal => {
+                const tgl = new Date(jurnal.tgl);
+                const formattedDate = tgl.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const isIncome = jurnal.jenis === 'pemasukan';
+                
+                return `
+                    <tr data-type="${jurnal.jenis}" data-category="${jurnal.kategori.toLowerCase()}" data-id="${jurnal.id}" class="animate-fade-in">
+                        <td class="px-6 py-4 text-sm text-gray-500">${formattedDate}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isIncome ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                <i class="fas fa-arrow-${isIncome ? 'up' : 'down'} mr-1"></i>
+                                ${jurnal.jenis.charAt(0).toUpperCase() + jurnal.jenis.slice(1)}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${jurnal.kategori}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${jurnal.keterangan}</td>
+                        <td class="px-6 py-4 text-sm font-medium ${isIncome ? 'text-green-600' : 'text-red-600'}">
+                            ${isIncome ? '+' : '-'} Rp ${formatNumber(jurnal.nominal)}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-center gap-4">
+                                <button onclick="editTransaction(${jurnal.id})" class="text-green-600 hover:text-green-800 flex items-center gap-1">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteTransaction(${jurnal.id})" class="text-red-500 hover:text-red-700 flex items-center gap-1">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Format number
+        function formatNumber(number) {
+            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         }
 
         // Open transaction modal
@@ -437,10 +562,8 @@
                     closeTransactionModal();
                     showSuccessMessage(result.message);
                     
-                    // Reload page to show updated data
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
+                    // Fetch new data immediately instead of reload
+                    fetchJurnalData();
                 } else {
                     alert('Gagal menyimpan transaksi!');
                 }
@@ -516,10 +639,8 @@
                 if (result.success) {
                     showSuccessMessage(result.message);
                     
-                    // Reload page to show updated data
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
+                    // Fetch new data immediately instead of reload
+                    fetchJurnalData();
                 } else {
                     alert('Gagal menghapus transaksi!');
                 }
