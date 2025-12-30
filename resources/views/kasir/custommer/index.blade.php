@@ -197,7 +197,7 @@
         }
 
         async function openEditModal(id) {
-            try {
+          try {
                 const response = await fetch(`/kasir/customer/${id}`, {
                     headers: {
                         'Accept': 'application/json',
