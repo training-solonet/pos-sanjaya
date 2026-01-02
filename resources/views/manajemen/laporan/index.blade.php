@@ -25,8 +25,8 @@
 
                 <!-- Date Filter -->
                 <div class="bg-white rounded-lg border border-gray-200 p-4">
-                    <form method="GET" action="{{ route('management.laporan.index') }}" class="flex flex-col sm:flex-row gap-4">
-                        <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <form method="GET" action="{{ route('management.laporan.index') }}" class="flex flex-col gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
                                 <input type="date" name="start_date" id="startDate" value="{{ request('start_date', now()->startOfMonth()->format('Y-m-d')) }}"
@@ -37,8 +37,19 @@
                                 <input type="date" name="end_date" id="endDate" value="{{ request('end_date', now()->format('Y-m-d')) }}"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                             </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                                <select name="kategori" id="kategori" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                                    <option value="">Pilih Kategori</option>
+                                    <option value="Roti dan Pastry" {{ request('kategori') == 'Roti dan Pastry' ? 'selected' : '' }}>Roti & Pastry</option>
+                                    <option value="Kue dan Dessert" {{ request('kategori') == 'Kue dan Dessert' ? 'selected' : '' }}>Kue & Dessert</option>
+                                    <option value="Minuman" {{ request('kategori') == 'Minuman' ? 'selected' : '' }}>Minuman</option>
+                                    <option value="Makanan" {{ request('kategori') == 'Makanan' ? 'selected' : '' }}>Makanan Utama</option>
+                                    <option value="Snack" {{ request('kategori') == 'Snack' ? 'selected' : '' }}>Snack</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="flex items-end gap-2">
+                        <div class="flex gap-2">
                             <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors">
                                 <i class="fas fa-filter mr-2"></i>Filter
                             </button>

@@ -15,6 +15,7 @@ class LaporanController extends Controller
         // Get filter dates from request or use defaults
         $startDate = request('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = request('end_date', Carbon::now()->toDateString());
+        $kategori = request('kategori'); // Filter kategori: makanan, minuman, snack
 
         // Validate and parse dates
         try {
@@ -25,28 +26,69 @@ class LaporanController extends Controller
             $endDate = Carbon::now()->endOfDay();
         }
 
-        // Total penjualan dengan filter tanggal
-        $totalSales = Transaksi::whereBetween('tgl', [$startDate, $endDate])->sum('bayar') ?? 0;
+        // Total penjualan dengan filter tanggal dan kategori
+        if ($kategori) {
+            // Jika ada filter kategori, hitung total penjualan dari detail transaksi yang sesuai kategori
+            $totalSales = DB::table('detail_transaksi')
+                ->join('transaksi', 'detail_transaksi.id_transaksi', '=', 'transaksi.id')
+                ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
+                ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
+                ->whereBetween('transaksi.tgl', [$startDate, $endDate])
+                ->where('resep.kategori', $kategori)
+                ->sum(DB::raw('detail_transaksi.jumlah * detail_transaksi.harga')) ?? 0;
+        } else {
+            // Jika tidak ada filter kategori, hitung total penjualan dari semua transaksi
+            $totalSales = Transaksi::whereBetween('tgl', [$startDate, $endDate])->sum('bayar') ?? 0;
+        }
 
-        // Jumlah transaksi dengan filter
-        $totalTransactions = Transaksi::whereBetween('tgl', [$startDate, $endDate])->count();
+        // Jumlah transaksi dengan filter kategori
+        if ($kategori) {
+            // Jika ada filter kategori, hitung jumlah transaksi yang memiliki produk dengan kategori tertentu
+            $totalTransactions = DB::table('transaksi')
+                ->join('detail_transaksi', 'transaksi.id', '=', 'detail_transaksi.id_transaksi')
+                ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
+                ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
+                ->whereBetween('transaksi.tgl', [$startDate, $endDate])
+                ->where('resep.kategori', $kategori)
+                ->distinct('transaksi.id')
+                ->count('transaksi.id');
+        } else {
+            // Jika tidak ada filter kategori, hitung semua transaksi
+            $totalTransactions = Transaksi::whereBetween('tgl', [$startDate, $endDate])->count();
+        }
 
         // Rata-rata per transaksi
         $avgPerTransaction = $totalTransactions ? round($totalSales / $totalTransactions) : 0;
 
-        // Total produk terjual (dengan filter tanggal)
-        $totalProductsSold = DB::table('detail_transaksi')
+        // Total produk terjual (dengan filter tanggal dan kategori)
+        $totalProductsSoldQuery = DB::table('detail_transaksi')
             ->join('transaksi', 'detail_transaksi.id_transaksi', '=', 'transaksi.id')
-            ->whereBetween('transaksi.tgl', [$startDate, $endDate])
-            ->sum('detail_transaksi.jumlah') ?? 0;
+            ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
+            ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
+            ->whereBetween('transaksi.tgl', [$startDate, $endDate]);
+        
+        // Filter by kategori if provided
+        if ($kategori) {
+            $totalProductsSoldQuery->where('resep.kategori', $kategori);
+        }
+        
+        $totalProductsSold = $totalProductsSoldQuery->sum('detail_transaksi.jumlah') ?? 0;
 
-        // Top products (dengan filter tanggal)
-        $topProducts = DB::table('detail_transaksi')
+        // Top products (dengan filter tanggal dan kategori)
+        $topProductsQuery = DB::table('detail_transaksi')
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
             ->join('transaksi', 'detail_transaksi.id_transaksi', '=', 'transaksi.id')
-            ->whereBetween('transaksi.tgl', [$startDate, $endDate])
-            ->select('produk.id', 'produk.nama', DB::raw('SUM(detail_transaksi.jumlah) as total_qty'), DB::raw('SUM(detail_transaksi.jumlah * detail_transaksi.harga) as revenue'))
-            ->groupBy('produk.id', 'produk.nama')
+            ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
+            ->whereBetween('transaksi.tgl', [$startDate, $endDate]);
+        
+        // Filter by kategori if provided
+        if ($kategori) {
+            $topProductsQuery->where('resep.kategori', $kategori);
+        }
+        
+        $topProducts = $topProductsQuery
+            ->select('produk.id', 'produk.nama', 'resep.kategori', DB::raw('SUM(detail_transaksi.jumlah) as total_qty'), DB::raw('SUM(detail_transaksi.jumlah * detail_transaksi.harga) as revenue'))
+            ->groupBy('produk.id', 'produk.nama', 'resep.kategori')
             ->orderByDesc('total_qty')
             ->limit(6)
             ->get();
@@ -56,11 +98,19 @@ class LaporanController extends Controller
         $topSellerName = $topSeller->nama ?? null;
         $topSellerQty = $topSeller->total_qty ?? 0;
 
-        // Determine highest revenue product (dengan filter tanggal)
-        $highestRevenueRow = DB::table('detail_transaksi')
+        // Determine highest revenue product (dengan filter tanggal dan kategori)
+        $highestRevenueQuery = DB::table('detail_transaksi')
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
             ->join('transaksi', 'detail_transaksi.id_transaksi', '=', 'transaksi.id')
-            ->whereBetween('transaksi.tgl', [$startDate, $endDate])
+            ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
+            ->whereBetween('transaksi.tgl', [$startDate, $endDate]);
+        
+        // Filter by kategori if provided
+        if ($kategori) {
+            $highestRevenueQuery->where('resep.kategori', $kategori);
+        }
+        
+        $highestRevenueRow = $highestRevenueQuery
             ->select('produk.nama', DB::raw('SUM(detail_transaksi.jumlah * detail_transaksi.harga) as revenue'))
             ->groupBy('produk.nama')
             ->orderByDesc('revenue')
@@ -271,7 +321,8 @@ class LaporanController extends Controller
             'highestRevenueName',
             'highestRevenueValue',
             'startDate',
-            'endDate'
+            'endDate',
+            'kategori'
         ));
     }
 }
