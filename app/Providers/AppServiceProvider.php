@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\BahanBaku;
 use App\Models\Produk;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
         // Share notifications data with all views
         View::composer('*', function ($view) {
             // Cek role user yang login
-            $userRole = auth()->check() ? auth()->user()->role : null;
+            $userRole = Auth::check() ? Auth::user()->role : null;
 
             // Jika kasir, kosongkan notifikasi tapi tetap kirim variabel
             if ($userRole === 'kasir') {
@@ -79,7 +80,7 @@ class AppServiceProvider extends ServiceProvider
                 });
 
             // Gabungkan semua notifikasi
-            $notifications = $bahanBakuNotifications->merge($produkNotifications)->sortBy('stok');
+            $notifications = $bahanBakuNotifications->concat($produkNotifications)->sortBy('stok')->values();
 
             $notificationCount = $notifications->count();
 

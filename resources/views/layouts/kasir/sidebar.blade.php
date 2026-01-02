@@ -50,10 +50,10 @@
             <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Jurnal Harian</span>
         </a>
 
-        <a href="{{ route('kasir.custommer.index') }}"
-            class="nav-item group flex items-center px-4 py-3.5 text-sm font-medium {{ request()->routeIs('kasir.custommer*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Jurnal Harian">
-            <i class="fas fa-users mr-3 text-lg {{ request()->routeIs('kasir.custommer*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 text-lg transition-all duration-300"></i>
-            <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Data Custommer</span>
+        <a href="{{ route('kasir.customer.index') }}"
+            class="nav-item group flex items-center px-4 py-3.5 text-sm font-medium {{ request()->routeIs('kasir.customer*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Data Customer">
+            <i class="sidebar-icon fas fa-users {{ request()->routeIs('kasir.customer*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 text-lg transition-all duration-300"></i>
+            <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Data Customer</span>
         </a>
 
         <a href="{{ route('kasir.shift.index') }}"
