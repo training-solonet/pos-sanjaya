@@ -835,202 +835,192 @@ class ResepController extends Controller
             <meta charset="UTF-8">
             <title>'.htmlspecialchars($recipe['name']).'</title>
             <style>
+                @page { margin: 20mm 15mm; }
                 body { 
                     font-family: DejaVu Sans, sans-serif; 
-                    font-size: 11px; 
-                    margin: 15px; 
-                }
-                h1 { 
-                    text-align: center; 
-                    color: #fff; 
-                    font-size: 24px; 
+                    font-size: 10px; 
                     margin: 0;
                     padding: 0;
+                    color: #333;
+                }
+                .recipe-title {
+                    font-size: 18px;
                     font-weight: bold;
-                    letter-spacing: 0.5px;
+                    color: #4CAF50;
+                    margin: 0 0 15px 0;
+                    padding: 0;
                 }
-                h2 { 
-                    color: #4CAF50; 
-                    font-size: 16px; 
-                    margin-top: 20px; 
-                    margin-bottom: 10px; 
-                    border-bottom: 2px solid #4CAF50; 
-                    padding-bottom: 5px; 
+                .info-table {
+                    width: 100%;
+                    margin-bottom: 15px;
+                    border-collapse: collapse;
                 }
-                h3 { 
-                    font-size: 13px; 
-                    color: #555; 
-                    margin: 12px 0 6px 0; 
+                .info-table td {
+                    padding: 5px;
+                    border: none;
                 }
-                .header { 
-                    text-align: center; 
-                    margin-bottom: 25px; 
-                    padding: 25px 15px;
-                    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-                    border-radius: 8px;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                .info-label {
+                    font-weight: bold;
+                    width: 130px;
                 }
-                .header-subtitle {
-                    color: #e8f5e9;
+                .section-title {
+                    font-weight: bold;
                     font-size: 11px;
-                    margin-top: 8px;
-                    font-weight: normal;
+                    margin: 15px 0 10px 0;
+                    padding: 0;
                 }
-                .header-brand {
-                    color: #fff;
-                    font-size: 10px;
-                    margin-top: 5px;
+                .ingredients-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 15px;
+                }
+                .ingredients-table th {
+                    background-color: #4CAF50;
+                    color: white;
+                    padding: 8px 6px;
+                    text-align: left;
+                    font-size: 9px;
                     font-weight: bold;
-                    letter-spacing: 1px;
+                    border: 1px solid #4CAF50;
                 }
-                .info-row { 
-                    padding: 5px 0; 
-                    border-bottom: 1px solid #eee; 
+                .ingredients-table td {
+                    padding: 6px;
+                    border: 1px solid #ddd;
+                    font-size: 9px;
                 }
-                .info-label { 
-                    font-weight: bold; 
-                    display: inline-block; 
-                    width: 150px; 
+                .ingredients-table tbody tr:nth-child(even) {
+                    background-color: #f9f9f9;
                 }
-                .info-value { 
-                    display: inline-block; 
+                .summary-box {
+                    background-color: #d4edda;
+                    border-left: 4px solid #4CAF50;
+                    padding: 12px 15px;
+                    margin: 15px 0;
                 }
-                table { 
-                    width: 100%; 
-                    border-collapse: collapse; 
-                    margin: 12px 0; 
+                .summary-box .title {
+                    font-weight: bold;
+                    font-size: 11px;
+                    margin: 0 0 8px 0;
                 }
-                th { 
-                    background-color: #4CAF50; 
-                    color: white; 
-                    padding: 8px; 
-                    text-align: left; 
-                    border: 1px solid #ddd; 
-                    font-size: 10px; 
+                .summary-item {
+                    margin: 5px 0;
                 }
-                td { 
-                    padding: 7px; 
-                    border: 1px solid #ddd; 
-                    font-size: 10px; 
+                .summary-label {
+                    font-weight: bold;
+                    display: inline-block;
                 }
-                .summary-box { 
-                    background-color: #e8f5e9; 
-                    padding: 15px; 
-                    margin: 15px 0; 
-                    border-left: 4px solid #4CAF50; 
-                    border-radius: 3px; 
+                .summary-value {
+                    float: right;
+                    font-weight: bold;
                 }
-                .instructions { 
-                    background-color: #fff9e6; 
-                    padding: 15px; 
-                    margin: 15px 0; 
-                    border-left: 4px solid #FFC107; 
-                    border-radius: 3px; 
+                .instructions-box {
+                    background-color: #fff8e1;
+                    border-left: 4px solid #FFC107;
+                    padding: 12px 15px;
+                    margin: 15px 0;
                 }
-                .notes { 
-                    background-color: #f3f3f3; 
-                    padding: 15px; 
-                    margin: 15px 0; 
-                    border-left: 4px solid #9E9E9E; 
-                    border-radius: 3px; 
+                .instructions-box .title {
+                    font-weight: bold;
+                    font-size: 11px;
+                    margin: 0 0 8px 0;
                 }
-                .footer { 
-                    text-align: center; 
-                    margin-top: 30px; 
-                    padding-top: 15px; 
-                    border-top: 1px solid #ddd; 
-                    font-size: 9px; 
-                    color: #666; 
+                .notes-box {
+                    background-color: #e3f2fd;
+                    border-left: 4px solid #2196F3;
+                    padding: 12px 15px;
+                    margin: 15px 0;
                 }
-                .badge { 
-                    display: inline-block; 
-                    padding: 4px 10px; 
-                    border-radius: 3px; 
-                    font-size: 9px; 
-                    font-weight: bold; 
+                .notes-box .title {
+                    font-weight: bold;
+                    font-size: 11px;
+                    margin: 0 0 8px 0;
                 }
-                .badge-active { 
-                    background-color: #4CAF50; 
-                    color: white; 
+                .badge {
+                    display: inline-block;
+                    padding: 3px 10px;
+                    border-radius: 3px;
+                    font-size: 8px;
+                    font-weight: bold;
+                    text-transform: uppercase;
                 }
-                .badge-draft { 
-                    background-color: #FFC107; 
-                    color: white; 
+                .badge-active {
+                    background-color: #4CAF50;
+                    color: white;
                 }
-                .badge-inactive { 
-                    background-color: #999; 
-                    color: white; 
+                .badge-nonaktif {
+                    background-color: #999;
+                    color: white;
                 }
+                .badge-draft {
+                    background-color: #FFC107;
+                    color: white;
+                }
+                .text-right { text-align: right; }
+                .text-center { text-align: center; }
+                .clearfix { clear: both; }
             </style>
         </head>
         <body>
-            <div class="header">
-                <div class="header-brand">ROTI & KUE SANJAYA</div>
-                <h1>'.htmlspecialchars($recipe['name']).'</h1>
-                <div class="header-subtitle">Resep Standar - Dokumentasi Produksi</div>
-                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3);">
-                    <span style="color: background-color: #f9fafb; padding: 15px; border-radius: 6px; border-left: 4px solid #4CAF50;">
-                <div class="info-row">
-                    <span class="info-label">Kategori:</span>
-                    <span class="info-value" style="color: #2196F3; font-weight: bold;">'.htmlspecialchars($recipe['category']).'</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Porsi:</span>
-                    <span class="info-value" style="font-weight: bold;">'.$recipe['yield'].' porsi</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Waktu Pembuatan:</span>
-                    <span class="info-value" style="font-weight: bold;">'.htmlspecialchars($recipe['duration']).'</span>
-                </div>
-                <div class="info-row" style="border-bottom: none;">
-                    <span class="info-label">Waktu Pembuatan:</span>
-                    <span class="info-value">'.htmlspecialchars($recipe['duration']).'</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Status:</span>
-                    <span class="info-value">';
-
+            <div class="recipe-title">Resep #'.$recipe['id'].': '.htmlspecialchars($recipe['name']).'</div>
+            
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Kategori:</td>
+                    <td>'.htmlspecialchars($recipe['category'] ?? '-').'</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Porsi/Yield:</td>
+                    <td>'.$recipe['yield'].' porsi</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Waktu Pembuatan:</td>
+                    <td>'.htmlspecialchars($recipe['duration'] ?? '-').'</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Status:</td>
+                    <td>';
+        
         $statusClass = 'badge-draft';
         if (strtolower($recipe['status']) === 'aktif') {
             $statusClass = 'badge-active';
         } elseif (strtolower($recipe['status']) === 'nonaktif') {
-            $statusClass = 'badge-inactive';
+            $statusClass = 'badge-nonaktif';
         }
         $html .= '<span class="badge '.$statusClass.'">'.htmlspecialchars($recipe['status']).'</span>';
+        
+        $html .= '</td>
+                </tr>
+            </table>
 
-        $html .= '</span>
-                </div>
-            </div>
-
-            <h2>Bahan-Bahan</h2>
-            <table>
+            <div class="section-title">📋 Bahan-Bahan</div>
+            <table class="ingredients-table">
                 <thead>
                     <tr>
-                        <th style="width: 5%;">No</th>
-                        <th style="width: 40%;">Nama Bahan</th>
-                        <th style="width: 12%; text-align: right;">Jumlah</th>
+                        <th style="width: 5%;" class="text-center">No</th>
+                        <th style="width: 35%;">Nama Bahan</th>
+                        <th style="width: 15%;" class="text-right">Jumlah</th>
                         <th style="width: 10%;">Satuan</th>
-                        <th style="width: 15%; text-align: right;">Harga/Unit</th>
-                        <th style="width: 18%; text-align: right;">Subtotal</th>
+                        <th style="width: 17%;" class="text-right">Harga/Unit</th>
+                        <th style="width: 18%;" class="text-right">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>';
 
-        if (! empty($recipe['ingredients'])) {
+        if (!empty($recipe['ingredients'])) {
             $no = 1;
             foreach ($recipe['ingredients'] as $ingredient) {
                 $html .= '
                     <tr>
-                        <td style="text-align: center;">'.$no++.'</td>
+                        <td class="text-center">'.$no++.'</td>
                         <td>'.htmlspecialchars($ingredient['name']).'</td>
-                        <td style="text-align: right;">'.number_format($ingredient['quantity'], 2, ',', '.').'</td>
+                        <td class="text-right">'.number_format($ingredient['quantity'], 2, ',', '.').'</td>
                         <td>'.htmlspecialchars($ingredient['unit']).'</td>
-                        <td style="text-align: right;">Rp '.number_format($ingredient['price'], 0, ',', '.').'</td>
-                        <td style="text-align: right;"><strong>Rp '.number_format($ingredient['subtotal'], 0, ',', '.').'</strong></td>
+                        <td class="text-right">Rp '.number_format($ingredient['price'], 0, ',', '.').'</td>
+                        <td class="text-right"><strong>Rp '.number_format($ingredient['subtotal'], 0, ',', '.').'</strong></td>
                     </tr>';
             }
         } else {
-            $html .= '<tr><td colspan="6" style="text-align: center; color: #999;">Tidak ada bahan</td></tr>';
+            $html .= '<tr><td colspan="6" class="text-center" style="padding: 15px; color: #999;">Tidak ada data bahan</td></tr>';
         }
 
         $html .= '
@@ -1038,52 +1028,51 @@ class ResepController extends Controller
             </table>
 
             <div class="summary-box">
-                <h3 style="margin-top: 0;">Ringkasan Biaya</h3>
-                <div style="padding: 5px 0;">
-                    <strong>Total Food Cost:</strong> 
-                    <span style="float: right; font-size: 13px;">Rp '.number_format($recipe['foodCost'], 0, ',', '.').'</span>
+                <div class="title">📊 Ringkasan Biaya</div>
+                <div class="summary-item">
+                    <span class="summary-label">Total Food Cost:</span>
+                    <span class="summary-value">Rp '.number_format($recipe['foodCost'], 0, ',', '.').'</span>
+                    <div class="clearfix"></div>
                 </div>
-                <div style="padding: 5px 0; clear: both;">
-                    <strong>Harga Jual Target:</strong> 
-                    <span style="float: right; font-size: 13px;">Rp '.number_format($recipe['sellingPrice'] ?? 0, 0, ',', '.').'</span>
+                <div class="summary-item">
+                    <span class="summary-label">Harga Jual Target:</span>
+                    <span class="summary-value">Rp '.number_format($recipe['sellingPrice'] ?? 0, 0, ',', '.').'</span>
+                    <div class="clearfix"></div>
                 </div>
-                <div style="padding: 5px 0; clear: both;">
-                    <strong>Margin Keuntungan:</strong> 
-                    <span style="float: right; font-size: 13px; color: #4CAF50;">'.$recipe['margin'].'%</span>
+                <div class="summary-item">
+                    <span class="summary-label">Margin Keuntungan:</span>
+                    <span class="summary-value" style="color: #4CAF50;">'.$recipe['margin'].'%</span>
+                    <div class="clearfix"></div>
                 </div>
-                <div style="padding: 5px 0; border-top: 1px solid #ccc; margin-top: 5px; padding-top: 8px; clear: both;">
-                    <strong>Keuntungan per Porsi:</strong> 
-                    <span style="float: right; font-size: 14px; color: #4CAF50;"><strong>Rp '.number_format(($recipe['sellingPrice'] ?? 0) - $recipe['foodCost'], 0, ',', '.').'</strong></span>
+                <div class="summary-item">
+                    <span class="summary-label">Keuntungan/Porsi:</span>
+                    <span class="summary-value" style="color: #4CAF50;">Rp '.number_format(($recipe['sellingPrice'] ?? 0) - $recipe['foodCost'], 0, ',', '.').'</span>
+                    <div class="clearfix"></div>
                 </div>
             </div>';
 
-        if (! empty($recipe['instructions'])) {
+        if (!empty($recipe['instructions'])) {
             $html .= '
-            <div class="instructions">
-                <h3 style="margin-top: 0;">Instruksi Pembuatan</h3>
-                <p style="margin: 0; line-height: 1.6;">'.nl2br(htmlspecialchars($recipe['instructions'])).'</p>
+            <div class="instructions-box">
+                <div class="title">📝 Instruksi Pembuatan</div>
+                <div style="line-height: 1.6;">'.nl2br(htmlspecialchars($recipe['instructions'])).'</div>
             </div>';
         }
 
-        if (! empty($recipe['notes'])) {
+        if (!empty($recipe['notes'])) {
             $html .= '
-            <div class="notes">
-                <h3 style="margin-top: 0;">Catatan Chef</h3>
-                <p style="margin: 0; line-height: 1.6;">'.nl2br(htmlspecialchars($recipe['notes'])).'</p>
+            <div class="notes-box">
+                <div class="title">💡 Catatan Chef</div>
+                <div style="line-height: 1.6;">'.nl2br(htmlspecialchars($recipe['notes'])).'</div>
             </div>';
         }
 
         $html .= '
-            <div class="footer">
-                <p style="margin: 5px 0;"><strong>ROTI & KUE SANJAYA</strong></p>
-                <p style="margin: 3px 0; font-size: 8px;">Jl. Contoh No. 123, Kota | Tel: (0271) 123456 | Email: info@sanjaya.com</p>
-                <p style="margin: 3px 0; font-size: 8px; color: #999;">Dokumen ini adalah milik Roti & Kue Sanjaya dan bersifat rahasia</p>
-            </div>
         </body>
         </html>';
 
         // Create PDF using DomPDF
-        $dompdf = new \Dompdf\Dompdf;
+        $dompdf = new \Dompdf\Dompdf();
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
