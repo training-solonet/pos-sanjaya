@@ -979,7 +979,7 @@ class ResepController extends Controller
                 <tr>
                     <td class="info-label">Status:</td>
                     <td>';
-        
+
         $statusClass = 'badge-draft';
         if (strtolower($recipe['status']) === 'aktif') {
             $statusClass = 'badge-active';
@@ -987,7 +987,7 @@ class ResepController extends Controller
             $statusClass = 'badge-nonaktif';
         }
         $html .= '<span class="badge '.$statusClass.'">'.htmlspecialchars($recipe['status']).'</span>';
-        
+
         $html .= '</td>
                 </tr>
             </table>
@@ -1006,7 +1006,7 @@ class ResepController extends Controller
                 </thead>
                 <tbody>';
 
-        if (!empty($recipe['ingredients'])) {
+        if (! empty($recipe['ingredients'])) {
             $no = 1;
             foreach ($recipe['ingredients'] as $ingredient) {
                 $html .= '
@@ -1051,7 +1051,7 @@ class ResepController extends Controller
                 </div>
             </div>';
 
-        if (!empty($recipe['instructions'])) {
+        if (! empty($recipe['instructions'])) {
             $html .= '
             <div class="instructions-box">
                 <div class="title">📝 Instruksi Pembuatan</div>
@@ -1059,7 +1059,7 @@ class ResepController extends Controller
             </div>';
         }
 
-        if (!empty($recipe['notes'])) {
+        if (! empty($recipe['notes'])) {
             $html .= '
             <div class="notes-box">
                 <div class="title">💡 Catatan Chef</div>
@@ -1072,7 +1072,7 @@ class ResepController extends Controller
         </html>';
 
         // Create PDF using DomPDF
-        $dompdf = new \Dompdf\Dompdf();
+        $dompdf = new \Dompdf\Dompdf;
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
