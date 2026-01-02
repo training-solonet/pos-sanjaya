@@ -66,12 +66,12 @@ class LaporanController extends Controller
             ->join('produk', 'detail_transaksi.id_produk', '=', 'produk.id')
             ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
             ->whereBetween('transaksi.tgl', [$startDate, $endDate]);
-        
+
         // Filter by kategori if provided
         if ($kategori) {
             $totalProductsSoldQuery->where('resep.kategori', $kategori);
         }
-        
+
         $totalProductsSold = $totalProductsSoldQuery->sum('detail_transaksi.jumlah') ?? 0;
 
         // Top products (dengan filter tanggal dan kategori)
@@ -80,12 +80,12 @@ class LaporanController extends Controller
             ->join('transaksi', 'detail_transaksi.id_transaksi', '=', 'transaksi.id')
             ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
             ->whereBetween('transaksi.tgl', [$startDate, $endDate]);
-        
+
         // Filter by kategori if provided
         if ($kategori) {
             $topProductsQuery->where('resep.kategori', $kategori);
         }
-        
+
         $topProducts = $topProductsQuery
             ->select('produk.id', 'produk.nama', 'resep.kategori', DB::raw('SUM(detail_transaksi.jumlah) as total_qty'), DB::raw('SUM(detail_transaksi.jumlah * detail_transaksi.harga) as revenue'))
             ->groupBy('produk.id', 'produk.nama', 'resep.kategori')
@@ -104,12 +104,12 @@ class LaporanController extends Controller
             ->join('transaksi', 'detail_transaksi.id_transaksi', '=', 'transaksi.id')
             ->leftJoin('resep', 'produk.id', '=', 'resep.id_produk')
             ->whereBetween('transaksi.tgl', [$startDate, $endDate]);
-        
+
         // Filter by kategori if provided
         if ($kategori) {
             $highestRevenueQuery->where('resep.kategori', $kategori);
         }
-        
+
         $highestRevenueRow = $highestRevenueQuery
             ->select('produk.nama', DB::raw('SUM(detail_transaksi.jumlah * detail_transaksi.harga) as revenue'))
             ->groupBy('produk.nama')
