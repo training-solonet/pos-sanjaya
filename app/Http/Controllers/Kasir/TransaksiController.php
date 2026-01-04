@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
 use App\Models\DetailTransaksi;
 use App\Models\Jurnal;
 use App\Models\Produk;
@@ -22,8 +23,9 @@ class TransaksiController extends Controller
     {
         $produks = Produk::where('stok', '>', 0)->get();
         $totalProduk = $produks->count();
+        $customers = Customer::orderBy('nama', 'asc')->get();
 
-        return view('kasir.transaksi.index', compact('produks', 'totalProduk'));
+        return view('kasir.transaksi.index', compact('produks', 'totalProduk', 'customers'));
     }
 
     /**
@@ -43,6 +45,7 @@ class TransaksiController extends Controller
             // Validasi input
             $validated = $request->validate([
                 'metode' => 'required|in:tunai,kartu,transfer,qris',
+                'id_customer' => 'nullable|exists:data_customer,id',
                 'items' => 'required|array|min:1',
                 'items.*.id' => 'required|exists:produk,id',
                 'items.*.quantity' => 'required|integer|min:1',
@@ -68,6 +71,7 @@ class TransaksiController extends Controller
             // Buat transaksi
             $transaksi = Transaksi::create([
                 'id_user' => Auth::id(),
+                'id_customer' => $validated['id_customer'] ?? null,
                 'tgl' => now(),
                 'metode' => $validated['metode'],
                 'ppn' => $ppn,

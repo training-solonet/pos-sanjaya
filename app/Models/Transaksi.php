@@ -12,6 +12,7 @@ class Transaksi extends Model
     protected $fillable = [
         'id_transaksi',
         'id_user',
+        'id_customer',
         'tgl',
         'metode',
         'ppn',
@@ -33,5 +34,10 @@ class Transaksi extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'id_customer');
     }
 }
