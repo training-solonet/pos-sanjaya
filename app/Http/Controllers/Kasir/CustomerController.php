@@ -44,13 +44,13 @@ class CustomerController extends Controller
             $customer = Customer::create([
                 'nama' => $request->nama,
                 'telepon' => $request->telepon,
-                'email' => $request->email ?: 'no-reply@example.com',
+                'email' => $request->email ?: null,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Customer berhasil ditambahkan',
-                'data' => $customer,
+                'customer' => $customer,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
