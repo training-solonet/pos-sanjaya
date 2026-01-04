@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\Jurnal;
-use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class JurnalController extends Controller
 {
@@ -210,7 +210,7 @@ class JurnalController extends Controller
         ];
 
         $pdf = Pdf::loadView('kasir.jurnal.export-pdf', $data);
-        
+
         return $pdf->download("Jurnal_Harian_{$tanggal}.pdf");
     }
 }
