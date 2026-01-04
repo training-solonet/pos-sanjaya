@@ -35,9 +35,10 @@
                                 </div>
                                 <input type="text" 
                                        id="searchInput"
-                                       placeholder="Cari produk..." 
+                                       placeholder="Ketik nama produk untuk mencari..." 
                                        class="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors bg-gray-50 focus:bg-white"
-                                       autocomplete="off">        
+                                       autocomplete="off"
+                                       oninput="searchProduct()">        
                                 <button id="clearSearchBtn" class="absolute inset-y-0 right-0 pr-4 flex items-center hidden" onclick="clearSearch()" title="Hapus pencarian">
                                     <i class="fas fa-times-circle text-gray-400 hover:text-red-500 transition-colors"></i>
                                 </button>
@@ -92,28 +93,31 @@
                                 
                                 @forelse($produks as $produk)
                                 <!-- Product Card: {{ $produk->nama }} -->
-                                <div class="product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+                                <div class="product-card group bg-white border-2 border-green-200 rounded-2xl p-5 hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
                                      data-nama="{{ strtolower($produk->nama) }}"
                                      data-id="{{ $produk->id }}"
                                      data-price="{{ $produk->harga }}"
                                      data-stock="{{ $produk->stok }}"
                                      onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg', {{ $produk->stok }})">  
-                                    <div class="relative product-image-wrapper">
-                                        <div class="aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                                            <i class="fas fa-bread-slice text-green-500 text-2xl group-hover:scale-110 transition-transform"></i>
+                                    <!-- Double Circle Badge with layered effect -->
+                                    <div class="relative mb-4">
+                                        <div class="absolute top-0 left-0">
+                                            <!-- Background circle (slightly higher) -->
+                                            <div class="absolute -top-2 left-0 w-12 h-12 bg-emerald-400 opacity-50 rounded-full"></div>
+                                            <!-- Front circle with stock number -->
+                                            <div class="relative w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center text-base font-bold product-stock-badge shadow-lg">
+                                                {{ $produk->stok }}
+                                            </div>
                                         </div>
-                                        <div class="absolute top-2 right-2 w-6 h-6 bg-success text-white rounded-full flex items-center justify-center text-xs font-bold product-stock-badge">{{ $produk->stok }}</div>
                                     </div>
-                                    <div class="product-details">
-                                        <div class="product-info space-y-1">
-                                            <h3 class="font-semibold text-gray-900 text-sm product-name">{{ $produk->nama }}</h3>
-                                            <p class="text-green-600 font-bold text-lg product-price">Rp {{ number_format($produk->harga, 0, ',', '.') }}</p>
-                                            <div class="flex items-center justify-between product-meta">
+                                    <div class="product-details pt-8">
+                                        <div class="product-info space-y-2">
+                                            <h3 class="font-semibold text-gray-900 text-base product-name leading-tight">{{ $produk->nama }}</h3>
+                                            <p class="text-green-600 font-bold text-xl product-price">Rp {{ number_format($produk->harga, 0, ',', '.') }}</p>
+                                            <div class="flex items-center space-x-1 product-status pt-1">
                                                 <span class="text-xs text-gray-500">Produk</span>
-                                                <div class="flex items-center space-x-1 product-status">
-                                                    <div class="w-2 h-2 {{ $produk->stok > 0 ? 'bg-success' : 'bg-red-500' }} rounded-full"></div>
-                                                    <span class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-medium">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
-                                                </div>
+                                                <div class="w-1.5 h-1.5 {{ $produk->stok > 0 ? 'bg-success' : 'bg-red-500' }} rounded-full"></div>
+                                                <span class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-medium">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -456,7 +460,6 @@
 
     <script>
         let cart = [];
-        let sidebarOpen = false;
         let currentCategory = 'semua';
         let currentView = 'grid'; // Default view
         let currentOrderNumber = null;
@@ -655,6 +658,8 @@
         // Search products
         function searchProduct() {
             const searchInput = document.getElementById('searchInput');
+            if (!searchInput) return;
+            
             const searchTerm = searchInput.value.toLowerCase().trim();
             const productCards = document.querySelectorAll('.product-card');
             const noResultsMessage = document.getElementById('noResultsMessage');
@@ -663,38 +668,40 @@
             
             // Show/hide clear button
             if (clearBtn) {
-                if (searchInput.value.length > 0) {
-                    clearBtn.classList.remove('hidden');
-                } else {
-                    clearBtn.classList.add('hidden');
-                }
+                clearBtn.classList.toggle('hidden', searchInput.value.length === 0);
             }
             
+            // Loop through all product cards
             productCards.forEach(card => {
-                const productName = card.getAttribute('data-nama');
-                const productCategory = getCategoryByName(productName);
+                // Skip if this is the no results message
+                if (card.id === 'noResultsMessage') return;
+                
+                const productName = card.getAttribute('data-nama') || '';
                 
                 // Check if product matches search term
-                const matchesSearch = searchTerm === '' || productName.includes(searchTerm);
+                let matchesSearch = true;
+                if (searchTerm !== '') {
+                    matchesSearch = productName.indexOf(searchTerm) !== -1;
+                }
                 
-                // Check if product matches current category
+                // Get product category for category filtering
+                const productCategory = getCategoryByName(productName);
                 const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
                 
-                // Show card if it matches both search and category
+                // Show or hide card based on search and category match
                 if (matchesSearch && matchesCategory) {
-                    // Remove hidden class to show card
+                    card.style.display = 'block';
                     card.classList.remove('hidden-card');
-                    card.style.display = currentView === 'list' ? 'flex' : 'block';
                     visibleCount++;
                 } else {
-                    // Add hidden class to hide card
+                    card.style.display = 'none';
                     card.classList.add('hidden-card');
                 }
             });
             
             // Show/hide no results message
             if (noResultsMessage) {
-                if (visibleCount === 0 && productCards.length > 0) {
+                if (visibleCount === 0) {
                     noResultsMessage.classList.remove('hidden');
                 } else {
                     noResultsMessage.classList.add('hidden');
@@ -702,7 +709,9 @@
             }
             
             // Update product count display
-            updateProductCountDisplay(visibleCount);
+            if (typeof updateProductCountDisplay === 'function') {
+                updateProductCountDisplay(visibleCount);
+            }
         }
         
         // Clear search input
@@ -759,6 +768,7 @@
                     } else {
                         // Add hidden class to hide card
                         card.classList.add('hidden-card');
+                        card.style.display = 'none';
                     }
                 }
             });
@@ -786,37 +796,6 @@
             });
         }
 
-        // Toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const hamburger = document.getElementById('hamburgerBtn');
-            
-            sidebarOpen = !sidebarOpen;
-            
-            if (sidebarOpen) {
-                sidebar.classList.add('show');
-                overlay.classList.add('show');
-                hamburger.classList.add('active');
-            } else {
-                sidebar.classList.remove('show');
-                overlay.classList.remove('show');
-                hamburger.classList.remove('active');
-            }
-        }
-
-            // Close sidebar
-            function closeSidebar() {
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                const hamburger = document.getElementById('hamburgerBtn');
-
-                sidebarOpen = false;
-                sidebar.classList.remove('show');
-                overlay.classList.remove('show');
-                hamburger.classList.remove('active');
-            }
-
             // Header action functions
             function showTransactionHistory() {
                 // Redirect to laporan page
@@ -826,13 +805,13 @@
             function showSettings() {
                 // closeSidebar();
                 // Implement settings modal
-                alert('Fitur pengaturan akan segera hadir');
+                showErrorNotification('Fitur dalam pengembangan');
             }
 
             function showNotifications() {
                 // closeSidebar();
                 // Implement notifications panel
-                alert('Tidak ada notifikasi baru');
+                showErrorNotification('Tidak ada notifikasi baru');
             }
 
             // Close sidebar when pressing Escape key (handled by layout)
@@ -847,15 +826,27 @@
             // Update current date and time
             function updateDateTime() {
                 const now = new Date();
-                const options = {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                };
-                document.getElementById('currentDateTime').textContent = now.toLocaleDateString('id-ID', options);
+                
+                const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                
+                const dayName = days[now.getDay()];
+                const date = now.getDate();
+                const monthName = months[now.getMonth()];
+                const year = now.getFullYear();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                
+                const dateElement = document.getElementById('currentDate');
+                const timeElement = document.getElementById('currentTime');
+                
+                if (dateElement) {
+                    dateElement.textContent = `${dayName}, ${date} ${monthName} ${year}`;
+                }
+                
+                if (timeElement) {
+                    timeElement.textContent = `${hours}:${minutes} WIB`;
+                }
             }
 
         // Add product to cart
@@ -1295,7 +1286,7 @@
             // Process payment
             async function processPayment() {
                 if (cart.length === 0) {
-                    alert('Keranjang masih kosong!');
+                    showErrorNotification('Keranjang masih kosong');
                     return;
                 }
 
@@ -1315,7 +1306,7 @@
                     const cashValue = cashInput.value.replace(/[^0-9]/g, '');
 
                     if (!cashValue || parseInt(cashValue) < finalTotal) {
-                        alert('Uang yang diterima tidak mencukupi!');
+                        showErrorNotification('Uang tidak mencukupi');
                         return;
                     }
 
@@ -1412,7 +1403,7 @@
                 if (cart.length === 0) return;
 
                 // Save transaction logic here
-                alert('Transaksi disimpan untuk nanti.');
+                showSuccessNotification('Transaksi disimpan');
             }
 
             // Clear cart
@@ -1519,7 +1510,7 @@
             // Connect to Bluetooth printer
             async function connectBluetoothPrinter() {
                 if (!isBluetoothSupported()) {
-                    alert('Browser Anda tidak mendukung Bluetooth API');
+                    showErrorNotification('Browser tidak mendukung Bluetooth');
                     return;
                 }
 
@@ -1595,13 +1586,13 @@
                     console.error('Bluetooth connection error:', error);
                     updatePrinterStatus('Gagal terhubung', 'error');
 
-                    let errorMessage = 'Gagal menghubungkan printer';
+                    let errorMessage = 'Gagal terhubung ke printer';
                     if (error.name === 'NotFoundError') {
-                        errorMessage = 'Printer tidak ditemukan. Pastikan printer dalam mode pairing.';
+                        errorMessage = 'Printer tidak ditemukan';
                     } else if (error.name === 'SecurityError') {
-                        errorMessage = 'Akses Bluetooth ditolak. Periksa pengaturan browser.';
+                        errorMessage = 'Akses Bluetooth ditolak';
                     }
-                    alert(errorMessage);
+                    showErrorNotification(errorMessage);
                 }
             }
 
@@ -1826,7 +1817,7 @@
             // Process payment with print
             async function processPaymentWithPrint() {
                 if (cart.length === 0) {
-                    alert('Keranjang masih kosong!');
+                    showErrorNotification('Keranjang masih kosong');
                     return;
                 }
 
@@ -1846,7 +1837,7 @@
                     const cashValue = cashInput.value.replace(/[^0-9]/g, '');
 
                     if (!cashValue || parseInt(cashValue) < finalTotal) {
-                        alert('Uang yang diterima tidak mencukupi!');
+                        showErrorNotification('Uang tidak mencukupi');
                         return;
                     }
 
@@ -2001,50 +1992,35 @@
             // Initialize search functionality
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
+                console.log('Search input found, attaching event listeners');
+                
+                // Remove any existing event listeners by cloning
+                const newSearchInput = searchInput.cloneNode(true);
+                searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+                
                 // Search on input (real-time)
-                searchInput.addEventListener('input', function() {
+                newSearchInput.addEventListener('input', function(e) {
+                    console.log('Input event triggered, value:', e.target.value);
                     searchProduct();
                 });
                 
-                // Also search on Enter key
-                searchInput.addEventListener('keypress', function(e) {
+                // Also search on keyup for immediate feedback
+                newSearchInput.addEventListener('keyup', function(e) {
+                    if (e.key !== 'Enter') {
+                        searchProduct();
+                    }
+                });
+                
+                // Search on Enter key
+                newSearchInput.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         searchProduct();
                     }
                 });
-                
-                // Support barcode scanner - typically sends Enter after barcode
-                let barcodeBuffer = '';
-                let barcodeTimeout;
-                
-                searchInput.addEventListener('keydown', function(e) {
-                    // Clear timeout if exists
-                    if (barcodeTimeout) {
-                        clearTimeout(barcodeTimeout);
-                    }
-                    
-                    // Add character to buffer
-                    if (e.key.length === 1) {
-                        barcodeBuffer += e.key;
-                    }
-                    
-                    // If Enter is pressed, process as barcode
-                    if (e.key === 'Enter' && barcodeBuffer.length > 3) {
-                        e.preventDefault();
-                        console.log('Barcode detected:', barcodeBuffer);
-                        // The search will automatically run from the input event
-                        barcodeBuffer = '';
-                        return;
-                    }
-                    
-                    // Reset buffer after 100ms (barcode scanners are fast)
-                    barcodeTimeout = setTimeout(() => {
-                        barcodeBuffer = '';
-                    }, 100);
-                });
+            } else {
+                console.error('Search input element not found!');
             }
-            sidebarOpen = false;
             
             // Check if Bluetooth is supported
             if (!isBluetoothSupported()) {

@@ -48,6 +48,39 @@
     .animate-pulse {
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
+    
+    /* Slide navigation styles */
+    .slide-nav-btn {
+        transition: all 0.3s ease;
+    }
+    
+    .slide-nav-btn:hover:not(:disabled) {
+        transform: scale(1.1);
+    }
+    
+    .slide-nav-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+    
+    .transaction-card {
+        transition: all 0.3s ease;
+    }
+    
+    .transaction-card.slide-in {
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
 </style>
 
 <!-- Mobile Overlay -->
@@ -153,10 +186,30 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="px-4 lg:px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                <div class="px-4 lg:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <p class="text-sm text-gray-500">
                         Menampilkan <span id="showingCount">0</span> dari <span id="totalCount">0</span> transaksi
+                        <span id="rangeInfo" class="text-gray-400"></span>
                     </p>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="previousPage()" 
+                                class="slide-nav-btn px-4 py-2 text-sm text-gray-600 hover:text-green-600 hover:bg-gray-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center space-x-2 border border-gray-200"
+                                id="prevBtnBottom">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                            <span>Sebelumnya</span>
+                        </button>
+                        <div class="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                            <span class="text-sm text-gray-600 font-medium">
+                                <span id="currentPage">1</span> / <span id="totalPages">1</span>
+                            </span>
+                        </div>
+                        <button onclick="nextPage()" 
+                                class="slide-nav-btn px-4 py-2 text-sm text-gray-600 hover:text-green-600 hover:bg-gray-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center space-x-2 border border-gray-200"
+                                id="nextBtnBottom">
+                            <span>Selanjutnya</span>
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -184,6 +237,10 @@
         let refreshInterval = null;
         const REFRESH_INTERVAL_MS = 5000; // 5 seconds
         let isInitialLoad = true; // Flag untuk initial load
+        
+        // Pagination settings
+        let currentPage = 1;
+        const itemsPerPage = 10; // Jumlah transaksi per halaman
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -193,11 +250,28 @@
             renderTransactions();
             setupSearch();
             setupFilterListeners();
+            setupKeyboardNavigation();
             restoreFilters();
             updateLastUpdateTime();
             updateRefreshButton();
             startAutoRefresh();
         });
+        
+        // Setup keyboard navigation for slide controls
+        function setupKeyboardNavigation() {
+            document.addEventListener('keydown', function(e) {
+                // Arrow left - previous page
+                if (e.key === 'ArrowLeft' && !e.target.matches('input, textarea, select')) {
+                    e.preventDefault();
+                    previousPage();
+                }
+                // Arrow right - next page
+                if (e.key === 'ArrowRight' && !e.target.matches('input, textarea, select')) {
+                    e.preventDefault();
+                    nextPage();
+                }
+            });
+        }
 
         // Restore filter values from URL
         function restoreFilters() {
@@ -474,10 +548,16 @@
                     t.products.toLowerCase().includes(currentFilters.search.toLowerCase())
                 );
             }
+            
+            // Calculate pagination
+            const totalPages = Math.ceil(transactions.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedTransactions = transactions.slice(startIndex, endIndex);
 
             // Add fade-in animation for new rows (hanya jika bukan initial load)
             const currentCount = tbody.querySelectorAll('tr').length;
-            const newCount = transactions.length;
+            const newCount = paginatedTransactions.length;
             const hasNewData = !isInitialLoad && newCount > currentCount;
 
             if (transactions.length === 0) {
@@ -493,16 +573,18 @@
                     </tr>
                 `;
             } else {
-                tbody.innerHTML = transactions.map((t, index) => `
-                    <tr class="hover:bg-gray-50 transition-all ${hasNewData && index === 0 ? 'animate-fade-in bg-green-50' : ''}">
+                tbody.innerHTML = paginatedTransactions.map((t, index) => `
+                    <tr class="transaction-card hover:bg-gray-50 transition-all ${hasNewData && index === 0 ? 'animate-fade-in bg-green-50' : ''} slide-in">
                         <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
                             <span class="text-sm font-medium text-gray-900">${t.invoice}</span>
                         </td>
                         <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
                             <span class="text-sm text-gray-900">${t.time}</span>
                         </td>
-                        <td class="px-4 lg:px-6 py-4">
-                            <span class="text-sm text-gray-900">${t.products}</span>
+                        <td class="px-4 lg:px-6 py-4 max-w-xs">
+                            <div class="text-sm text-gray-900">
+                                ${formatProductList(t.products)}
+                            </div>
                         </td>
                         <td class="px-4 lg:px-6 py-4 whitespace-nowrap">
                             <span class="text-sm text-gray-900">${t.quantity} item</span>
@@ -522,8 +604,11 @@
                 `).join('');
             }
 
-            document.getElementById('showingCount').textContent = transactions.length;
-            document.getElementById('totalCount').textContent = salesData.transactions.length;
+            document.getElementById('showingCount').textContent = paginatedTransactions.length;
+            document.getElementById('totalCount').textContent = transactions.length;
+            
+            // Update pagination controls
+            updatePaginationControls(totalPages, transactions.length);
 
             // Remove highlight after animation
             if (hasNewData) {
@@ -540,6 +625,70 @@
                 isInitialLoad = false;
             }
         }
+        
+        // Update pagination controls
+        function updatePaginationControls(totalPages, totalTransactions) {
+            document.getElementById('currentPage').textContent = totalTransactions > 0 ? currentPage : 0;
+            document.getElementById('totalPages').textContent = totalPages;
+            
+            const prevBtnBottom = document.getElementById('prevBtnBottom');
+            const nextBtnBottom = document.getElementById('nextBtnBottom');
+            
+            const isFirstPage = currentPage <= 1;
+            const isLastPage = currentPage >= totalPages || totalTransactions === 0;
+            
+            prevBtnBottom.disabled = isFirstPage;
+            nextBtnBottom.disabled = isLastPage;
+            
+            // Update range info
+            const startIndex = totalTransactions > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0;
+            const endIndex = Math.min(currentPage * itemsPerPage, totalTransactions);
+            const rangeInfo = document.getElementById('rangeInfo');
+            
+            if (totalTransactions > 0) {
+                rangeInfo.textContent = `(${startIndex}-${endIndex})`;
+            } else {
+                rangeInfo.textContent = '';
+            }
+        }
+        
+        // Navigate to previous page
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTransactions();
+                scrollToTop();
+            }
+        }
+        
+        // Navigate to next page
+        function nextPage() {
+            let transactions = salesData.transactions;
+            
+            // Apply search filter
+            if (currentFilters.search) {
+                transactions = transactions.filter(t => 
+                    t.invoice.toLowerCase().includes(currentFilters.search.toLowerCase()) ||
+                    t.products.toLowerCase().includes(currentFilters.search.toLowerCase())
+                );
+            }
+            
+            const totalPages = Math.ceil(transactions.length / itemsPerPage);
+            
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTransactions();
+                scrollToTop();
+            }
+        }
+        
+        // Scroll to top of table
+        function scrollToTop() {
+            const table = document.querySelector('.overflow-x-auto');
+            if (table) {
+                table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
 
         // Setup search
         function setupSearch() {
@@ -548,6 +697,7 @@
             
             searchInput.addEventListener('input', (e) => {
                 currentFilters.search = e.target.value;
+                currentPage = 1; // Reset to first page when searching
                 
                 // Debounce search to avoid too many requests
                 clearTimeout(searchTimeout);
@@ -564,6 +714,7 @@
             dateInput.addEventListener('change', (e) => {
                 console.log('Date changed to:', e.target.value);
                 currentFilters.date = e.target.value;
+                currentPage = 1; // Reset to first page
                 fetchTransactions();
             });
             
@@ -572,6 +723,7 @@
             paymentSelect.addEventListener('change', (e) => {
                 console.log('Payment method changed to:', e.target.value);
                 currentFilters.payment = e.target.value;
+                currentPage = 1; // Reset to first page
                 fetchTransactions();
             });
             
@@ -580,6 +732,7 @@
             cashierSelect.addEventListener('change', (e) => {
                 console.log('Cashier changed to:', e.target.value);
                 currentFilters.cashier = e.target.value;
+                currentPage = 1; // Reset to first page
                 fetchTransactions();
             });
         }
@@ -587,6 +740,42 @@
         // Utility functions
         function formatCurrency(amount) {
             return 'Rp ' + amount.toLocaleString('id-ID');
+        }
+
+        function formatProductList(productsStr) {
+            if (!productsStr) return '-';
+            
+            // Split by comma or common separators
+            const products = productsStr.split(',').map(p => p.trim()).filter(p => p);
+            
+            if (products.length === 0) return '-';
+            
+            // Warna badge yang berbeda untuk setiap produk
+            const badgeColors = [
+                'bg-blue-100 text-blue-700',
+                'bg-purple-100 text-purple-700',
+                'bg-pink-100 text-pink-700',
+                'bg-green-100 text-green-700',
+                'bg-yellow-100 text-yellow-700',
+                'bg-indigo-100 text-indigo-700',
+                'bg-red-100 text-red-700',
+                'bg-orange-100 text-orange-700'
+            ];
+            
+            // Tampilkan semua produk dengan format badge
+            return `<div class="flex flex-wrap gap-1.5 max-w-md">
+                ${products.map((p, idx) => {
+                    const colorClass = badgeColors[idx % badgeColors.length];
+                    // Extract product name and quantity if exists
+                    const parts = p.split(/(\d+)/).filter(x => x);
+                    return `
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${colorClass} whitespace-nowrap">
+                            <i class="fas fa-box text-[10px] mr-1.5 opacity-70"></i>
+                            ${p}
+                        </span>
+                    `;
+                }).join('')}
+            </div>`;
         }
 
         function getPaymentBadgeClass(payment) {

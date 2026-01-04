@@ -45,6 +45,7 @@ Route::middleware([IsKasir::class])->group(function () {
         Route::get('laporan/api/transactions', [KasirLaporanController::class, 'getTransactions'])->name('laporan.api.transactions');
         Route::get('jurnal/api/data', [KasirJurnalController::class, 'getJurnalData'])->name('jurnal.api.data');
         Route::get('transaksi/api/next-id', [TransaksiController::class, 'getNextId'])->name('transaksi.api.next-id');
+        Route::get('dashboard/api/chart-data', [KasirDashboardController::class, 'getChartData'])->name('dashboard.api.chart-data');
     });
 });
 

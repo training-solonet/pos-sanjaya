@@ -16,6 +16,19 @@
         .animate-fade-in {
             animation: fadeIn 0.5s ease-out;
         }
+        
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .animate-spin-slow {
+            animation: spin 2s linear infinite;
+        }
     </style>
 
     <!-- Mobile Overlay -->
@@ -263,13 +276,8 @@
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
-                        <select id="transactionCategory"
-                                class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400">
-                            <!-- Options will be dynamically populated -->
-                        </select>
-                    </div>
+                    <!-- Hidden category field - auto set based on transaction type -->
+                    <input type="hidden" id="transactionCategory" value="">
                     
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan</label>
@@ -338,6 +346,19 @@
             // Set today's date as default
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('transactionDate').value = today;
+            
+            // ============ AUTO REFRESH UNTUK REAL-TIME UPDATE ============
+            // Refresh data setiap 5 detik untuk menampilkan transaksi baru secara otomatis
+            setInterval(() => {
+                const filterDate = document.getElementById('filterDate').value;
+                const today = new Date().toISOString().split('T')[0];
+                
+                // Hanya refresh jika tanggal filter adalah hari ini
+                if (filterDate === today) {
+                    fetchJurnalData();
+                }
+            }, 5000); // 5000ms = 5 detik
+            // ==============================================================
         });
 
         // Update date time
@@ -367,6 +388,15 @@
         // Fetch jurnal data from API
         async function fetchJurnalData() {
             try {
+                // Tampilkan indikator loading
+                const indicator = document.getElementById('autoRefreshIndicator');
+                if (indicator) {
+                    const icon = indicator.querySelector('i');
+                    if (icon) {
+                        icon.classList.add('animate-spin-slow');
+                    }
+                }
+                
                 const url = `{{ route('kasir.jurnal.api.data') }}?tanggal=${currentDate}`;
                 const response = await fetch(url);
                 const result = await response.json();
@@ -375,8 +405,25 @@
                     updateSummaryCards(result.data);
                     updateTransactionTable(result.data.jurnals);
                 }
+                
+                // Hapus indikator loading
+                if (indicator) {
+                    const icon = indicator.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('animate-spin-slow');
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching jurnal data:', error);
+                
+                // Hapus indikator loading jika error
+                const indicator = document.getElementById('autoRefreshIndicator');
+                if (indicator) {
+                    const icon = indicator.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('animate-spin-slow');
+                    }
+                }
             }
         }
 
@@ -498,15 +545,13 @@
 
         // Populate categories based on transaction type
         function populateCategories(type) {
-            const categorySelect = document.getElementById('transactionCategory');
-            categorySelect.innerHTML = '';
-            
-            categories[type].forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.value;
-                option.textContent = cat.label;
-                categorySelect.appendChild(option);
-            });
+            const categoryInput = document.getElementById('transactionCategory');
+            // Auto set category based on type
+            if (type === 'pemasukan') {
+                categoryInput.value = 'Penjualan';
+            } else {
+                categoryInput.value = 'Operasional';
+            }
         }
 
         // Handle form submission
@@ -620,7 +665,23 @@
 
         // Delete transaction
         async function deleteTransaction(id) {
-            if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+            const result = await Swal.fire({
+                title: 'Hapus Transaksi?',
+                text: 'Apakah Anda yakin ingin menghapus transaksi ini? Data yang dihapus tidak dapat dikembalikan.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '<i class="fas fa-trash mr-2"></i>Ya, Hapus!',
+                cancelButtonText: '<i class="fas fa-times mr-2"></i>Batal',
+                reverseButtons: true,
+                customClass: {
+                    confirmButton: 'px-4 py-2 rounded-lg font-medium',
+                    cancelButton: 'px-4 py-2 rounded-lg font-medium'
+                }
+            });
+
+            if (!result.isConfirmed) {
                 return;
             }
 
@@ -634,19 +695,35 @@
                     }
                 });
 
-                const result = await response.json();
+                const data = await response.json();
 
-                if (result.success) {
-                    showSuccessMessage(result.message);
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: data.message || 'Transaksi berhasil dihapus',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
                     
                     // Fetch new data immediately instead of reload
                     fetchJurnalData();
                 } else {
-                    alert('Gagal menghapus transaksi!');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: data.message || 'Gagal menghapus transaksi',
+                        confirmButtonColor: '#3b82f6'
+                    });
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat menghapus transaksi!');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Terjadi kesalahan saat menghapus transaksi',
+                    confirmButtonColor: '#3b82f6'
+                });
             }
         }
 

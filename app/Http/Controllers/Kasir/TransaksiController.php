@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetailTransaksi;
+use App\Models\Jurnal;
 use App\Models\Produk;
-use App\Models\Transaksi;
-use App\Models\UpdateStokProduk; // PASTIKAN INI ADA
+use App\Models\Transaksi; // PASTIKAN INI ADA
+use App\Models\UpdateStokProduk; // TAMBAHKAN INI UNTUK AUTO JURNAL
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -118,6 +119,20 @@ class TransaksiController extends Controller
                 // Log untuk debugging
                 Log::info("Log stok TRANSAKSI dibuat: Produk ID {$item['id']}, Stok Awal: {$stokAwal}, Pengurangan: {$item['quantity']}, Stok Akhir: {$stokAkhir}");
             }
+
+            // ============ TAMBAHKAN ENTRY JURNAL OTOMATIS ============
+            // Buat entry jurnal untuk pemasukan dari penjualan
+            Jurnal::create([
+                'tgl' => now(),
+                'jenis' => 'pemasukan',
+                'keterangan' => 'Penjualan - Invoice INV-'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT).' ('.$validated['metode'].')',
+                'nominal' => $total,
+                'kategori' => 'Penjualan',
+                'role' => 'kasir',
+            ]);
+
+            Log::info("Entry jurnal OTOMATIS dibuat untuk transaksi ID: {$transaksi->id}, Total: {$total}");
+            // =========================================================
 
             DB::commit();
 

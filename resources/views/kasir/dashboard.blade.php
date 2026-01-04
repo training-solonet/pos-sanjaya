@@ -252,12 +252,12 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 class="text-xl font-bold text-gray-900">
-                                <i class="fas fa-chart-area text-purple-600 mr-2"></i>Grafik Penjualan
+                                Grafik Penjualan
                             </h3>
                             <p class="text-sm text-gray-500 mt-1">Ringkasan penjualan 7 hari terakhir</p>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <button onclick="changeChartPeriod('7days')" class="chart-period-btn active px-4 py-2 text-sm font-semibold bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">7 Hari</button>
+                            <button onclick="changeChartPeriod('7days')" class="chart-period-btn active px-4 py-2 text-sm font-semibold bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">7 Hari</button>
                             <button onclick="changeChartPeriod('30days')" class="chart-period-btn px-4 py-2 text-sm font-semibold bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">30 Hari</button>
                         </div>
                     </div>
@@ -268,26 +268,26 @@
                     </div>
                     <!-- Chart Summary -->
                     <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-gray-200">
-                        <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
-                            <div class="flex items-center justify-center space-x-2 mb-2">
-                                <div class="w-4 h-4 bg-green-500 rounded-full shadow-sm"></div>
-                                <span class="text-sm font-semibold text-gray-700">Total Penjualan</span>
+                        <div class="text-left">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600">Total Penjualan</span>
                             </div>
-                            <p class="text-xl font-bold text-gray-900" id="totalSales">Rp 0</p>
+                            <p class="text-2xl font-bold text-gray-900" id="totalSales">Rp 0</p>
                         </div>
-                        <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
-                            <div class="flex items-center justify-center space-x-2 mb-2">
-                                <div class="w-4 h-4 bg-blue-500 rounded-full shadow-sm"></div>
-                                <span class="text-sm font-semibold text-gray-700">Rata-rata Harian</span>
+                        <div class="text-left">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600">Rata-rata Harian</span>
                             </div>
-                            <p class="text-xl font-bold text-gray-900" id="avgDaily">Rp 0</p>
+                            <p class="text-2xl font-bold text-gray-900" id="avgDaily">Rp 0</p>
                         </div>
-                        <div class="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl">
-                            <div class="flex items-center justify-center space-x-2 mb-2">
-                                <div class="w-4 h-4 bg-yellow-500 rounded-full shadow-sm"></div>
-                                <span class="text-sm font-semibold text-gray-700">Total Transaksi</span>
+                        <div class="text-left">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600">Transaksi</span>
                             </div>
-                            <p class="text-xl font-bold text-gray-900" id="totalTransactions">0</p>
+                            <p class="text-2xl font-bold text-gray-900" id="totalTransactions">0</p>
                         </div>
                     </div>
                 </div>
@@ -331,191 +331,206 @@
 
 @section('scripts')
 <script>
-    // Sales Chart Data
+    // Sales Chart Data - Initialize with server-side data
     const salesData = {
-            '7days': {
-                labels: @json($labels7Hari),
-                sales: @json($penjualan7Hari),
-                transactions: @json($transaksi7Hari),
-                colors: {
-                    primary: 'rgba(34, 197, 94, 0.8)',
-                    secondary: 'rgba(59, 130, 246, 0.6)'
-                }
+        '7days': {
+            labels: @json($labels7Hari),
+            sales: @json($penjualan7Hari),
+            transactions: @json($transaksi7Hari)
+        },
+        '30days': {
+            labels: @json($labels30Hari),
+            sales: @json($penjualan30Hari),
+            transactions: @json($transaksi30Hari)
+        }
+    };
+
+    let currentChart = null;
+    let currentPeriod = '7days';
+
+    // Create Sales Chart
+    function createSalesChart(period = '7days') {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const data = salesData[period];
+        
+        // Destroy existing chart if it exists
+        if (currentChart) {
+            currentChart.destroy();
+        }
+
+        currentChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Penjualan (Rp)',
+                    data: data.sales,
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(74, 222, 128, 0.2)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgb(34, 197, 94)',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: 'rgb(34, 197, 94)',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 3
+                }]
             },
-            '30days': {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                sales: [15200000, 18500000, 17800000, 19200000],
-                transactions: [385, 461, 433, 478],
-                colors: {
-                    primary: 'rgba(34, 197, 94, 0.8)',
-                    secondary: 'rgba(59, 130, 246, 0.6)'
-                }
-            }
-        };
-
-        let currentChart = null;
-        let currentPeriod = '7days';
-
-        // Create Sales Chart
-        function createSalesChart(period = '7days') {
-            const ctx = document.getElementById('salesChart').getContext('2d');
-            const data = salesData[period];
-            
-            // Destroy existing chart if it exists
-            if (currentChart) {
-                currentChart.destroy();
-            }
-
-            currentChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        label: 'Penjualan (Rp)',
-                        data: data.sales,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
                         borderColor: 'rgb(34, 197, 94)',
-                        backgroundColor: data.colors.primary,
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: 'rgb(34, 197, 94)',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Penjualan: Rp ' + context.parsed.y.toLocaleString('id-ID');
+                            }
+                        }
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)',
+                            drawBorder: false
+                        },
+                        border: {
                             display: false
                         },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: 'rgb(34, 197, 94)',
-                            borderWidth: 1,
-                            cornerRadius: 8,
-                            displayColors: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Penjualan: Rp ' + context.parsed.y.toLocaleString('id-ID');
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                callback: function(value) {
+                        ticks: {
+                            callback: function(value) {
+                                if (value >= 1000000) {
                                     return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
-                                },
-                                color: 'rgb(107, 114, 128)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
+                                } else if (value >= 1000) {
+                                    return 'Rp ' + (value / 1000).toFixed(0) + 'K';
+                                }
+                                return 'Rp ' + value;
                             },
-                            ticks: {
-                                color: 'rgb(107, 114, 128)'
-                            }
+                            color: 'rgb(107, 114, 128)',
+                            padding: 8
                         }
                     },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        border: {
+                            display: false
+                        },
+                        ticks: {
+                            color: 'rgb(107, 114, 128)',
+                            padding: 8
+                        }
                     }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
                 }
-            });
-        }
-
-        // Change Chart Period
-        function changeChartPeriod(period) {
-            currentPeriod = period;
-            
-            // Update button states
-            document.querySelectorAll('.chart-period-btn').forEach(btn => {
-                btn.classList.remove('active', 'bg-green-100', 'text-green-600');
-                btn.classList.add('bg-gray-100', 'text-gray-600');
-            });
-            
-            event.target.classList.remove('bg-gray-100', 'text-gray-600');
-            event.target.classList.add('active', 'bg-green-100', 'text-green-600');
-            
-            // Update chart
-            createSalesChart(period);
-            updateSalesStats(period);
-        }
-
-        // Update Sales Statistics
-        function updateSalesStats(period) {
-            const data = salesData[period];
-            
-            // Calculate totals - ensure we're working with numbers
-            const totalSales = data.sales.reduce((sum, value) => {
-                const numValue = parseFloat(value) || 0;
-                return sum + numValue;
-            }, 0);
-            
-            const totalTransactions = data.transactions.reduce((sum, value) => {
-                const numValue = parseInt(value) || 0;
-                return sum + numValue;
-            }, 0);
-            
-            // Calculate average
-            const daysCount = period === '7days' ? 7 : 30;
-            const avgDaily = totalSales / daysCount;
-            
-            // Format with proper Indonesian number format
-            const formattedTotalSales = new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(totalSales);
-            
-            const formattedAvgDaily = new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(Math.round(avgDaily));
-            
-            // Update DOM
-            document.getElementById('totalSales').textContent = formattedTotalSales;
-            document.getElementById('avgDaily').textContent = formattedAvgDaily;
-            document.getElementById('totalTransactions').textContent = totalTransactions.toLocaleString('id-ID');
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            updateDateTime();
-            setInterval(updateDateTime, 60000);
-            
-            // Initialize mobile state
-            if (window.innerWidth < 1024) {
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('mobileOverlay');
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
             }
-            
-            // Initialize charts
-            setTimeout(() => {
-                createSalesChart('7days');
-                updateSalesStats('7days');
-                createProductsChart();
-                createHourlyChart();
-            }, 100);
         });
+    }
+
+    // Change Chart Period
+    function changeChartPeriod(period) {
+        currentPeriod = period;
+        
+        // Update button states
+        document.querySelectorAll('.chart-period-btn').forEach(btn => {
+            btn.classList.remove('active', 'bg-green-500', 'text-white');
+            btn.classList.add('bg-gray-100', 'text-gray-600');
+        });
+        
+        event.target.classList.remove('bg-gray-100', 'text-gray-600');
+        event.target.classList.add('active', 'bg-green-500', 'text-white');
+        
+        // Update subtitle based on period
+        const subtitle = period === '7days' ? 'Ringkasan penjualan 7 hari terakhir' : 'Ringkasan penjualan 30 hari terakhir';
+        document.querySelector('.px-6.py-5 p').textContent = subtitle;
+        
+        // Update chart and stats
+        createSalesChart(period);
+        updateSalesStats(period);
+    }
+
+    // Update Sales Statistics
+    function updateSalesStats(period) {
+        const data = salesData[period];
+        
+        // Calculate totals - ensure we're working with numbers
+        const totalSales = data.sales.reduce((sum, value) => {
+            const numValue = parseFloat(value) || 0;
+            return sum + numValue;
+        }, 0);
+        
+        const totalTransactions = data.transactions.reduce((sum, value) => {
+            const numValue = parseInt(value) || 0;
+            return sum + numValue;
+        }, 0);
+        
+        // Calculate average
+        const daysCount = period === '7days' ? 7 : 30;
+        const avgDaily = totalSales / daysCount;
+        
+        // Format with proper Indonesian number format
+        const formattedTotalSales = new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(totalSales);
+        
+        const formattedAvgDaily = new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(Math.round(avgDaily));
+        
+        // Update DOM
+        document.getElementById('totalSales').textContent = formattedTotalSales;
+        document.getElementById('avgDaily').textContent = formattedAvgDaily;
+        document.getElementById('totalTransactions').textContent = totalTransactions.toLocaleString('id-ID');
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+        
+        // Initialize mobile state
+        if (window.innerWidth < 1024) {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            if (sidebar) sidebar.classList.add('-translate-x-full');
+            if (overlay) overlay.classList.add('hidden');
+        }
+        
+        // Initialize charts with a small delay to ensure DOM is ready
+        setTimeout(() => {
+            createSalesChart('7days');
+            updateSalesStats('7days');
+            createProductsChart();
+            createHourlyChart();
+        }, 100);
+    });
 
         // Create Top Products Chart (Doughnut)
         function createProductsChart() {
