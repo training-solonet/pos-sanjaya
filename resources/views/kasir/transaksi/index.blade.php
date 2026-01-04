@@ -5,6 +5,28 @@
 
 @section('content')
 
+    <!-- Held Transactions Card -->
+    <div class="mb-6" id="heldTransactionsCard" style="display: none;">
+        <div class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl shadow-lg border border-orange-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-clock text-orange-600 text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">Transaksi Ditahan</h2>
+                        <p class="text-xs text-gray-600">Klik untuk melanjutkan transaksi</p>
+                    </div>
+                </div>
+                <span class="bg-orange-100 text-orange-700 text-sm px-3 py-1 rounded-lg font-semibold" id="heldCount">0 Transaksi</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="heldTransactionsList">
+                <!-- Held transactions will be inserted here -->
+            </div>
+        </div>
+    </div>
+
     <div class="mb-6">
         <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
             <div class="flex items-center justify-between mb-4">
@@ -68,6 +90,32 @@
                     </div>
                     <button onclick="clearCustomerSelection()" class="text-red-600 hover:text-red-800 text-sm">
                         <i class="fas fa-times mr-1"></i>Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Transaksi -->
+    <div id="deleteHeldModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 transform transition-all scale-95" id="deleteHeldModalContent">
+            <!-- Icon -->
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <i class="fas fa-trash-alt text-red-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Hapus Transaksi?</h3>
+                <p class="text-sm text-gray-600 mb-6">Transaksi yang dihapus tidak dapat dikembalikan</p>
+                
+                <!-- Buttons -->
+                <div class="flex gap-3">
+                    <button onclick="closeDeleteHeldModal()" 
+                        class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors">
+                        Batal
+                    </button>
+                    <button onclick="confirmDeleteHeldTransaction()" 
+                        class="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium rounded-xl transition-all shadow-lg hover:shadow-xl">
+                        Hapus
                     </button>
                 </div>
             </div>
@@ -507,7 +555,7 @@
                             </div>
                         </button>
                         <div class="grid grid-cols-2 gap-2">
-                            <button
+                            <button onclick="holdTransaction()"
                                 class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-3 rounded-lg transition-colors text-sm">
                                 <i class="fas fa-save text-xs mr-1"></i>Hold
                             </button>
@@ -1706,12 +1754,183 @@
             }
         }
 
+        // Held Transactions Storage
+        let heldTransactions = JSON.parse(localStorage.getItem('heldTransactions') || '[]');
+
         // Hold transaction
         function holdTransaction() {
-            if (cart.length === 0) return;
+            if (cart.length === 0) {
+                showErrorNotification('Keranjang kosong! Tambahkan produk terlebih dahulu.');
+                return;
+            }
 
-            // Save transaction logic here
-            showSuccessNotification('Transaksi disimpan');
+            const heldTransaction = {
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                cart: JSON.parse(JSON.stringify(cart)), // Deep copy
+                customer: selectedCustomer ? JSON.parse(JSON.stringify(selectedCustomer)) : null,
+                orderNumber: currentOrderNumber,
+                itemCount: cart.reduce((sum, item) => sum + item.quantity, 0),
+                total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+            };
+
+            heldTransactions.push(heldTransaction);
+            localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
+            
+            // Clear current transaction
+            cart = [];
+            selectedCustomer = null;
+            currentOrderNumber = null;
+            updateCartDisplay();
+            updateOrderInfo();
+            clearCustomerSelection();
+            
+            // Update held transactions display
+            updateHeldTransactionsDisplay();
+            
+            showSuccessNotification(`Transaksi ditahan (${heldTransaction.itemCount} item)`);
+        }
+
+        // Load held transaction
+        function loadHeldTransaction(heldId) {
+            const transaction = heldTransactions.find(t => t.id === heldId);
+            if (!transaction) return;
+
+            // Ask for confirmation if current cart is not empty
+            if (cart.length > 0) {
+                if (!confirm('Keranjang saat ini tidak kosong. Apakah Anda ingin mengganti dengan transaksi yang ditahan?')) {
+                    return;
+                }
+            }
+
+            // Load transaction data
+            cart = JSON.parse(JSON.stringify(transaction.cart));
+            selectedCustomer = transaction.customer ? JSON.parse(JSON.stringify(transaction.customer)) : null;
+            currentOrderNumber = transaction.orderNumber;
+            
+            // Update displays
+            updateCartDisplay();
+            updateOrderInfo();
+            
+            // Update customer selection display
+            if (selectedCustomer) {
+                const infoDiv = document.getElementById('selectedCustomerInfo');
+                const nameSpan = document.getElementById('selectedCustomerName');
+                const contactSpan = document.getElementById('selectedCustomerContact');
+                const customerSelect = document.getElementById('customerSelect');
+                
+                infoDiv.classList.remove('hidden');
+                nameSpan.textContent = selectedCustomer.name;
+                contactSpan.textContent = selectedCustomer.phone + (selectedCustomer.email !== '-' ? ' • ' + selectedCustomer.email : '');
+                
+                if (selectedCustomer.id === 'walk-in') {
+                    customerSelect.value = 'walk-in';
+                } else {
+                    customerSelect.value = selectedCustomer.id;
+                }
+            }
+            
+            // Remove from held transactions
+            heldTransactions = heldTransactions.filter(t => t.id !== heldId);
+            localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
+            updateHeldTransactionsDisplay();
+            
+            showSuccessNotification('Transaksi dimuat dari daftar ditahan');
+        }
+
+        // Store transaction ID to delete
+        let transactionToDelete = null;
+
+        // Delete held transaction
+        function deleteHeldTransaction(heldId, event) {
+            event.stopPropagation(); // Prevent loading the transaction
+            
+            transactionToDelete = heldId;
+            openDeleteHeldModal();
+        }
+
+        // Open delete confirmation modal
+        function openDeleteHeldModal() {
+            const modal = document.getElementById('deleteHeldModal');
+            const modalContent = document.getElementById('deleteHeldModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        // Close delete confirmation modal
+        function closeDeleteHeldModal() {
+            const modal = document.getElementById('deleteHeldModal');
+            const modalContent = document.getElementById('deleteHeldModalContent');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                transactionToDelete = null;
+            }, 200);
+        }
+
+        // Confirm delete held transaction
+        function confirmDeleteHeldTransaction() {
+            if (!transactionToDelete) return;
+            
+            heldTransactions = heldTransactions.filter(t => t.id !== transactionToDelete);
+            localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
+            updateHeldTransactionsDisplay();
+            closeDeleteHeldModal();
+            
+            showSuccessNotification('Transaksi ditahan dihapus');
+        }
+
+        // Update held transactions display
+        function updateHeldTransactionsDisplay() {
+            const heldCard = document.getElementById('heldTransactionsCard');
+            const heldList = document.getElementById('heldTransactionsList');
+            const heldCount = document.getElementById('heldCount');
+            
+            if (heldTransactions.length === 0) {
+                heldCard.style.display = 'none';
+                return;
+            }
+            
+            heldCard.style.display = 'block';
+            heldCount.textContent = `${heldTransactions.length} Transaksi`;
+            
+            heldList.innerHTML = heldTransactions.map(transaction => {
+                const date = new Date(transaction.timestamp);
+                const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                const customerName = transaction.customer ? transaction.customer.name : 'Walk-in Customer';
+                
+                return `
+                    <div onclick="loadHeldTransaction(${transaction.id})" 
+                         class="bg-white border-2 border-orange-200 rounded-xl p-4 hover:border-orange-400 hover:shadow-md transition-all cursor-pointer">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-receipt text-orange-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-900 text-sm">${customerName}</p>
+                                    <p class="text-xs text-gray-500">${timeStr}</p>
+                                </div>
+                            </div>
+                            <button onclick="deleteHeldTransaction(${transaction.id}, event)" 
+                                    class="text-red-500 hover:text-red-700 text-sm" 
+                                    title="Hapus">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs">
+                                <span class="text-gray-600">${transaction.itemCount} Item</span>
+                                <span class="font-semibold text-orange-600">Rp${transaction.total.toLocaleString('id-ID')}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // Clear cart
@@ -2062,6 +2281,12 @@
             receipt += `Tanggal: ${dateStr}\n`;
             receipt += `Waktu  : ${timeStr}\n`;
             receipt += `Kasir  : Admin\n`;
+            
+            // Add customer name if selected
+            if (selectedCustomer && selectedCustomer.name) {
+                receipt += `Customer: ${selectedCustomer.name}\n`;
+            }
+            
             receipt += `Order  : #001\n`;
             receipt += '================================\n';
 
@@ -2283,6 +2508,7 @@
             setInterval(updateDateTime, 60000);
             updateCartDisplay();
             updateOrderInfo();
+            updateHeldTransactionsDisplay(); // Load held transactions on page load
 
             // Initialize payment input formatting
             formatCashInput();

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\Jurnal;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class JurnalController extends Controller
@@ -172,5 +174,43 @@ class JurnalController extends Controller
                 'saldoBersih' => $totalPemasukan - $totalPengeluaran,
             ],
         ]);
+    }
+
+    /**
+     * Export jurnal to PDF for specific date
+     */
+    public function exportPdf(Request $request)
+    {
+        $tanggal = $request->get('tanggal', date('Y-m-d'));
+
+        // Get journals for specific date
+        $jurnals = Jurnal::whereDate('tgl', $tanggal)
+            ->orderBy('tgl', 'asc')
+            ->get();
+
+        // Calculate summary
+        $totalPemasukan = $jurnals->where('jenis', 'pemasukan')->sum('nominal');
+        $totalPengeluaran = $jurnals->where('jenis', 'pengeluaran')->sum('nominal');
+        $jumlahPemasukan = $jurnals->where('jenis', 'pemasukan')->count();
+        $jumlahPengeluaran = $jurnals->where('jenis', 'pengeluaran')->count();
+        $saldoBersih = $totalPemasukan - $totalPengeluaran;
+
+        // Format tanggal
+        $tanggalFormatted = Carbon::parse($tanggal)->locale('id')->translatedFormat('d F Y');
+
+        $data = [
+            'jurnals' => $jurnals,
+            'totalPemasukan' => $totalPemasukan,
+            'totalPengeluaran' => $totalPengeluaran,
+            'jumlahPemasukan' => $jumlahPemasukan,
+            'jumlahPengeluaran' => $jumlahPengeluaran,
+            'saldoBersih' => $saldoBersih,
+            'tanggal' => $tanggalFormatted,
+            'tanggalRaw' => $tanggal,
+        ];
+
+        $pdf = Pdf::loadView('kasir.jurnal.export-pdf', $data);
+
+        return $pdf->download("Jurnal_Harian_{$tanggal}.pdf");
     }
 }
