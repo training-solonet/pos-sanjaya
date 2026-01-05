@@ -18,9 +18,10 @@
                         <p class="text-xs text-gray-600">Klik untuk melanjutkan transaksi</p>
                     </div>
                 </div>
-                <span class="bg-orange-100 text-orange-700 text-sm px-3 py-1 rounded-lg font-semibold" id="heldCount">0 Transaksi</span>
+                <span class="bg-orange-100 text-orange-700 text-sm px-3 py-1 rounded-lg font-semibold" id="heldCount">0
+                    Transaksi</span>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="heldTransactionsList">
                 <!-- Held transactions will be inserted here -->
             </div>
@@ -46,22 +47,55 @@
                 <div>
                     <label class="text-sm font-medium text-gray-700 mb-2 block">Pilih Customer</label>
                     <div class="relative">
-                        <select id="customerSelect" onchange="selectCustomer()"
-                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-colors bg-white appearance-none">
+                        <input type="text" id="customerSearchInput" 
+                            placeholder="Ketik untuk mencari kode member atau nama..."
+                            autocomplete="off"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-colors bg-white">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i class="fas fa-search text-gray-400 text-sm"></i>
+                        </div>
+                        
+                        <!-- Dropdown Results -->
+                        <div id="customerDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                            <div class="p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100" onclick="selectCustomerById('')">
+                                <span class="text-gray-600 text-sm">-- Pilih Customer (Opsional) --</span>
+                            </div>
+                            <div class="p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" onclick="selectCustomerById('walk-in')">
+                                <span class="text-gray-700 text-sm font-medium">Walk-in Customer</span>
+                            </div>
+                            @foreach ($customers as $customer)
+                                <div class="customer-option p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0" 
+                                    data-customer-id="{{ $customer->id }}"
+                                    data-name="{{ $customer->nama }}"
+                                    data-kode="{{ $customer->kode_member }}"
+                                    data-poin="{{ $customer->total_poin ?? 0 }}"
+                                    data-phone="{{ $customer->telepon }}" 
+                                    data-email="{{ $customer->email }}"
+                                    data-search-text="{{ strtolower(($customer->kode_member ?? '') . ' ' . $customer->nama) }}"
+                                    onclick="selectCustomerById('{{ $customer->id }}')">
+                                    @if($customer->kode_member)
+                                        <span class="text-orange-600 font-semibold text-sm">[{{ $customer->kode_member }}]</span>
+                                    @endif
+                                    <span class="text-gray-700 text-sm ml-1">{{ $customer->nama }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                        
+                        <!-- Hidden select for compatibility -->
+                        <select id="customerSelect" class="hidden">
                             <option value="">-- Pilih Customer (Opsional) --</option>
                             <option value="walk-in">Walk-in Customer</option>
-                            @foreach($customers as $customer)
+                            @foreach ($customers as $customer)
                                 <option value="{{ $customer->id }}" 
-                                        data-name="{{ $customer->nama }}" 
-                                        data-phone="{{ $customer->telepon }}" 
-                                        data-email="{{ $customer->email }}">
-                                    {{ $customer->nama }} - {{ $customer->telepon }}
+                                    data-name="{{ $customer->nama }}"
+                                    data-kode="{{ $customer->kode_member }}"
+                                    data-poin="{{ $customer->total_poin ?? 0 }}"
+                                    data-phone="{{ $customer->telepon }}" 
+                                    data-email="{{ $customer->email }}">
+                                    {{ $customer->kode_member ? '['.$customer->kode_member.'] ' : '' }}{{ $customer->nama }}
                                 </option>
                             @endforeach
                         </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
-                        </div>
                     </div>
                 </div>
 
@@ -77,20 +111,37 @@
             </div>
 
             <!-- Selected Customer Info -->
-            <div id="selectedCustomerInfo" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl hidden">
+            <div id="selectedCustomerInfo" class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl hidden">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-blue-600"></i>
+                    <div class="flex items-center space-x-3 flex-1">
+                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                            <i class="fas fa-user text-white text-lg"></i>
                         </div>
-                        <div>
-                            <p class="font-semibold text-gray-900" id="selectedCustomerName">-</p>
-                            <p class="text-xs text-gray-600" id="selectedCustomerContact">-</p>
+                        <div class="flex-1">
+                            <p class="font-bold text-gray-900 text-lg" id="selectedCustomerName">-</p>
+                            <div class="flex items-center gap-3 mt-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800" id="selectedCustomerKode">
+                                    <i class="fas fa-id-card mr-1"></i> -
+                                </span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800" id="selectedCustomerPoin">
+                                    <i class="fas fa-coins mr-1"></i> - Poin
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-1" id="selectedCustomerContact">-</p>
                         </div>
                     </div>
-                    <button onclick="clearCustomerSelection()" class="text-red-600 hover:text-red-800 text-sm">
+                    <button onclick="clearCustomerSelection()" class="text-red-600 hover:text-red-800 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
                         <i class="fas fa-times mr-1"></i>Hapus
                     </button>
+                </div>
+                <!-- Informasi Poin yang Didapat -->
+                <div id="poinEarnedInfo" class="mt-3 p-3 bg-white rounded-lg border border-purple-200 hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-700 font-medium">
+                            <i class="fas fa-gift text-purple-600 mr-1"></i> Poin yang akan didapat:
+                        </span>
+                        <span class="text-sm font-bold text-purple-700" id="poinEarned">0 Poin</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -98,7 +149,8 @@
 
     <!-- Modal Konfirmasi Hapus Transaksi -->
     <div id="deleteHeldModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 transform transition-all scale-95" id="deleteHeldModalContent">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 transform transition-all scale-95"
+            id="deleteHeldModalContent">
             <!-- Icon -->
             <div class="p-6 text-center">
                 <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
@@ -106,14 +158,14 @@
                 </div>
                 <h3 class="text-xl font-bold text-gray-900 mb-2">Hapus Transaksi?</h3>
                 <p class="text-sm text-gray-600 mb-6">Transaksi yang dihapus tidak dapat dikembalikan</p>
-                
+
                 <!-- Buttons -->
                 <div class="flex gap-3">
-                    <button onclick="closeDeleteHeldModal()" 
+                    <button onclick="closeDeleteHeldModal()"
                         class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors">
                         Batal
                     </button>
-                    <button onclick="confirmDeleteHeldTransaction()" 
+                    <button onclick="confirmDeleteHeldTransaction()"
                         class="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium rounded-xl transition-all shadow-lg hover:shadow-xl">
                         Hapus
                     </button>
@@ -123,70 +175,72 @@
     </div>
 
     <!-- Modal Tambah Customer -->
-    <div id="addCustomerModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+    <div id="addCustomerModal"
+        class="fixed inset-0 bg-black/50 z-[9999] hidden items-center justify-center backdrop-blur-sm"
+        style="margin: 0 !important; padding: 0 !important;">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all relative z-[10000]">
             <!-- Header -->
-            <div class="p-6 border-b border-gray-200">
+            <div class="px-6 pt-6 pb-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-user-plus text-blue-600"></i>
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-plus text-blue-600 text-lg"></i>
                         </div>
                         <div>
-                            <h3 class="text-lg font-bold text-gray-900">Tambah Customer Baru</h3>
-                            <p class="text-xs text-gray-500">Lengkapi data customer</p>
+                            <h3 class="text-xl font-bold text-gray-900">Tambah Customer Baru</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Lengkapi data customer</p>
                         </div>
                     </div>
-                    <button onclick="closeAddCustomerModal()" class="text-gray-400 hover:text-gray-600">
+                    <button onclick="closeAddCustomerModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
             </div>
-            
+
             <!-- Form -->
-            <form id="addCustomerForm" class="p-6 space-y-4">
+            <form id="addCustomerForm" class="px-6 pb-6 space-y-4">
                 <!-- Nama -->
                 <div>
-                    <label class="text-sm font-medium text-gray-700 mb-2 block">
+                    <label class="text-sm font-semibold text-gray-700 mb-2 block">
                         Nama Lengkap <span class="text-red-500">*</span>
                     </label>
                     <input type="text" id="customerName" name="nama" required
-                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-colors"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                         placeholder="Masukkan nama customer">
                 </div>
-                
+
                 <!-- Telepon -->
                 <div>
-                    <label class="text-sm font-medium text-gray-700 mb-2 block">
+                    <label class="text-sm font-semibold text-gray-700 mb-2 block">
                         No. Telepon <span class="text-red-500">*</span>
                     </label>
                     <input type="tel" id="customerPhone" name="telepon" required
-                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-colors"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                         placeholder="Contoh: 08123456789">
                 </div>
-                
+
                 <!-- Email -->
                 <div>
-                    <label class="text-sm font-medium text-gray-700 mb-2 block">
-                        Email (Opsional)
+                    <label class="text-sm font-semibold text-gray-700 mb-2 block">
+                        Email (Optional)
                     </label>
                     <input type="email" id="customerEmail" name="email"
-                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-colors"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                         placeholder="customer@email.com">
                 </div>
+
+                <!-- Footer Buttons -->
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="closeAddCustomerModal()"
+                        class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">
+                        <i class="fas fa-times mr-1.5"></i>Batal
+                    </button>
+                    <button type="button" onclick="saveNewCustomer()"
+                        class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-sm">
+                        <i class="fas fa-check mr-1.5"></i>Simpan
+                    </button>
+                </div>
             </form>
-            
-            <!-- Footer -->
-            <div class="p-6 border-t border-gray-200 flex space-x-3">
-                <button onclick="closeAddCustomerModal()" 
-                    class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium">
-                    <i class="fas fa-times mr-2"></i>Batal
-                </button>
-                <button onclick="saveNewCustomer()" 
-                    class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all font-medium shadow-lg">
-                    <i class="fas fa-check mr-2"></i>Simpan
-                </button>
-            </div>
         </div>
     </div>
 
@@ -674,92 +728,204 @@
         let selectedCustomer = null; // Store selected customer data
 
         // ============ CUSTOMER MANAGEMENT FUNCTIONS ============
-        
-        // Select customer from dropdown
-        function selectCustomer() {
+
+        // Initialize customer search dropdown
+        function initializeCustomerSearch() {
+            const searchInput = document.getElementById('customerSearchInput');
+            const dropdown = document.getElementById('customerDropdown');
+            
+            if (!searchInput || !dropdown) {
+                console.error('Customer search elements not found');
+                return;
+            }
+            
+            console.log('Customer search initialized');
+            
+            // Show dropdown on focus
+            searchInput.addEventListener('focus', function() {
+                console.log('Search input focused');
+                dropdown.classList.remove('hidden');
+                filterCustomers(''); // Show all options
+            });
+            
+            // Hide dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+            
+            // Filter customers as user types
+            searchInput.addEventListener('input', function() {
+                const searchText = this.value.toLowerCase();
+                console.log('Searching for:', searchText);
+                filterCustomers(searchText);
+            });
+        }
+
+        // Filter customer options based on search text
+        function filterCustomers(searchText) {
+            const customerOptions = document.querySelectorAll('.customer-option');
+            let visibleCount = 0;
+            
+            console.log('Filtering with text:', searchText);
+            console.log('Total customer options:', customerOptions.length);
+            
+            customerOptions.forEach(option => {
+                const searchableText = option.dataset.searchText || '';
+                console.log('Checking:', searchableText, 'against', searchText);
+                
+                if (searchableText.includes(searchText)) {
+                    option.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+            
+            console.log('Visible options:', visibleCount);
+            
+            // Always show dropdown when input is focused
+            const dropdown = document.getElementById('customerDropdown');
+            dropdown.classList.remove('hidden');
+        }
+
+        // Select customer by ID
+        function selectCustomerById(customerId) {
             const select = document.getElementById('customerSelect');
+            const searchInput = document.getElementById('customerSearchInput');
+            const dropdown = document.getElementById('customerDropdown');
+            
+            // Set the hidden select value
+            select.value = customerId;
+            
+            // Get selected option
             const selectedOption = select.options[select.selectedIndex];
-            const customerId = select.value;
             
             if (customerId === '' || customerId === 'walk-in') {
                 // Clear selection or walk-in customer
-                selectedCustomer = customerId === 'walk-in' ? { 
-                    id: 'walk-in', 
-                    name: 'Walk-in Customer', 
-                    phone: '-', 
-                    email: '-' 
+                selectedCustomer = customerId === 'walk-in' ? {
+                    id: 'walk-in',
+                    name: 'Walk-in Customer',
+                    kode_member: null,
+                    poin: 0,
+                    phone: '-',
+                    email: '-'
                 } : null;
+                
+                searchInput.value = customerId === 'walk-in' ? 'Walk-in Customer' : '';
             } else {
                 // Store customer data
                 selectedCustomer = {
                     id: customerId,
                     name: selectedOption.dataset.name,
+                    kode_member: selectedOption.dataset.kode || null,
+                    poin: parseInt(selectedOption.dataset.poin) || 0,
                     phone: selectedOption.dataset.phone,
                     email: selectedOption.dataset.email
                 };
+                
+                // Update search input with selected customer
+                const displayText = selectedCustomer.kode_member 
+                    ? `[${selectedCustomer.kode_member}] ${selectedCustomer.name}`
+                    : selectedCustomer.name;
+                searchInput.value = displayText;
             }
             
+            // Hide dropdown
+            dropdown.classList.add('hidden');
+            
             updateCustomerInfoDisplay();
+            updatePoinEarned(); // Update poin yang akan didapat
         }
-        
+
+        // Select customer from dropdown (legacy function for compatibility)
+        function selectCustomer() {
+            const select = document.getElementById('customerSelect');
+            const customerId = select.value;
+            selectCustomerById(customerId);
+        }
+
         // Update customer info display
         function updateCustomerInfoDisplay() {
             const infoDiv = document.getElementById('selectedCustomerInfo');
             const nameSpan = document.getElementById('selectedCustomerName');
+            const kodeSpan = document.getElementById('selectedCustomerKode');
+            const poinSpan = document.getElementById('selectedCustomerPoin');
             const contactSpan = document.getElementById('selectedCustomerContact');
-            
+
             if (selectedCustomer) {
                 infoDiv.classList.remove('hidden');
                 nameSpan.textContent = selectedCustomer.name;
-                contactSpan.textContent = selectedCustomer.phone + (selectedCustomer.email !== '-' ? ' • ' + selectedCustomer.email : '');
+                
+                // Tampilkan kode member
+                if (selectedCustomer.kode_member) {
+                    kodeSpan.innerHTML = `<i class="fas fa-id-card mr-1"></i>${selectedCustomer.kode_member}`;
+                } else {
+                    kodeSpan.innerHTML = `<i class="fas fa-id-card mr-1"></i>No Member`;
+                }
+                
+                // Tampilkan total poin
+                poinSpan.innerHTML = `<i class="fas fa-coins mr-1"></i>${selectedCustomer.poin.toLocaleString('id-ID')} Poin`;
+                
+                contactSpan.textContent = selectedCustomer.phone + (selectedCustomer.email !== '-' ? ' • ' +
+                    selectedCustomer.email : '');
             } else {
                 infoDiv.classList.add('hidden');
             }
         }
-        
+
         // Clear customer selection
         function clearCustomerSelection() {
             selectedCustomer = null;
             document.getElementById('customerSelect').value = '';
+            document.getElementById('customerSearchInput').value = '';
             updateCustomerInfoDisplay();
         }
-        
+
         // Open add customer modal
         function openQuickAddCustomer() {
             const modal = document.getElementById('addCustomerModal');
-            modal.classList.remove('hidden');
-            // Reset form
-            document.getElementById('addCustomerForm').reset();
-            // Focus on first input
-            setTimeout(() => {
-                document.getElementById('customerName').focus();
-            }, 100);
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                // Reset form
+                document.getElementById('addCustomerForm').reset();
+                // Focus on first input
+                setTimeout(() => {
+                    const nameInput = document.getElementById('customerName');
+                    if (nameInput) nameInput.focus();
+                }, 100);
+            }
         }
-        
+
         // Close add customer modal
         function closeAddCustomerModal() {
             const modal = document.getElementById('addCustomerModal');
-            modal.classList.add('hidden');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
         }
-        
+
         // Save new customer
         async function saveNewCustomer() {
             const form = document.getElementById('addCustomerForm');
             const nama = document.getElementById('customerName').value.trim();
             const telepon = document.getElementById('customerPhone').value.trim();
             const email = document.getElementById('customerEmail').value.trim();
-            
+
             // Validation
             if (!nama) {
                 showErrorNotification('Nama customer harus diisi');
                 return;
             }
-            
+
             if (!telepon) {
                 showErrorNotification('No. telepon harus diisi');
                 return;
             }
-            
+
             try {
                 const response = await fetch('{{ route('kasir.customer.store') }}', {
                     method: 'POST',
@@ -774,12 +940,12 @@
                         email: email || null
                     })
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.success) {
                     showSuccessNotification('Customer berhasil ditambahkan');
-                    
+
                     // Add new option to select
                     const select = document.getElementById('customerSelect');
                     const newOption = document.createElement('option');
@@ -789,11 +955,11 @@
                     newOption.dataset.email = result.customer.email || '';
                     newOption.textContent = result.customer.nama + ' - ' + result.customer.telepon;
                     select.appendChild(newOption);
-                    
+
                     // Select the new customer
                     select.value = result.customer.id;
                     selectCustomer();
-                    
+
                     // Close modal
                     closeAddCustomerModal();
                 } else {
@@ -804,7 +970,7 @@
                 showErrorNotification('Terjadi kesalahan saat menyimpan customer');
             }
         }
-        
+
         // ============ END CUSTOMER MANAGEMENT FUNCTIONS ============
 
         // Generate order number from database
@@ -1456,6 +1622,25 @@
 
             // Enable/disable pay button
             updatePayButtonState();
+            
+            // Update poin yang didapat
+            updatePoinEarned();
+        }
+        
+        // Update poin yang didapat berdasarkan total belanja
+        function updatePoinEarned() {
+            const poinEarnedInfo = document.getElementById('poinEarnedInfo');
+            const poinEarnedSpan = document.getElementById('poinEarned');
+            
+            if (selectedCustomer && selectedCustomer.id !== 'walk-in' && cart.length > 0) {
+                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const poinEarned = Math.floor(subtotal / 10000); // 1 poin per 10.000
+                
+                poinEarnedInfo.classList.remove('hidden');
+                poinEarnedSpan.textContent = `${poinEarned.toLocaleString('id-ID')} Poin`;
+            } else {
+                poinEarnedInfo.classList.add('hidden');
+            }
         }
 
         // Payment related functions
@@ -1776,7 +1961,7 @@
 
             heldTransactions.push(heldTransaction);
             localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
-            
+
             // Clear current transaction
             cart = [];
             selectedCustomer = null;
@@ -1784,10 +1969,10 @@
             updateCartDisplay();
             updateOrderInfo();
             clearCustomerSelection();
-            
+
             // Update held transactions display
             updateHeldTransactionsDisplay();
-            
+
             showSuccessNotification(`Transaksi ditahan (${heldTransaction.itemCount} item)`);
         }
 
@@ -1798,7 +1983,8 @@
 
             // Ask for confirmation if current cart is not empty
             if (cart.length > 0) {
-                if (!confirm('Keranjang saat ini tidak kosong. Apakah Anda ingin mengganti dengan transaksi yang ditahan?')) {
+                if (!confirm(
+                    'Keranjang saat ini tidak kosong. Apakah Anda ingin mengganti dengan transaksi yang ditahan?')) {
                     return;
                 }
             }
@@ -1807,34 +1993,35 @@
             cart = JSON.parse(JSON.stringify(transaction.cart));
             selectedCustomer = transaction.customer ? JSON.parse(JSON.stringify(transaction.customer)) : null;
             currentOrderNumber = transaction.orderNumber;
-            
+
             // Update displays
             updateCartDisplay();
             updateOrderInfo();
-            
+
             // Update customer selection display
             if (selectedCustomer) {
                 const infoDiv = document.getElementById('selectedCustomerInfo');
                 const nameSpan = document.getElementById('selectedCustomerName');
                 const contactSpan = document.getElementById('selectedCustomerContact');
                 const customerSelect = document.getElementById('customerSelect');
-                
+
                 infoDiv.classList.remove('hidden');
                 nameSpan.textContent = selectedCustomer.name;
-                contactSpan.textContent = selectedCustomer.phone + (selectedCustomer.email !== '-' ? ' • ' + selectedCustomer.email : '');
-                
+                contactSpan.textContent = selectedCustomer.phone + (selectedCustomer.email !== '-' ? ' • ' +
+                    selectedCustomer.email : '');
+
                 if (selectedCustomer.id === 'walk-in') {
                     customerSelect.value = 'walk-in';
                 } else {
                     customerSelect.value = selectedCustomer.id;
                 }
             }
-            
+
             // Remove from held transactions
             heldTransactions = heldTransactions.filter(t => t.id !== heldId);
             localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
             updateHeldTransactionsDisplay();
-            
+
             showSuccessNotification('Transaksi dimuat dari daftar ditahan');
         }
 
@@ -1844,7 +2031,7 @@
         // Delete held transaction
         function deleteHeldTransaction(heldId, event) {
             event.stopPropagation(); // Prevent loading the transaction
-            
+
             transactionToDelete = heldId;
             openDeleteHeldModal();
         }
@@ -1875,12 +2062,12 @@
         // Confirm delete held transaction
         function confirmDeleteHeldTransaction() {
             if (!transactionToDelete) return;
-            
+
             heldTransactions = heldTransactions.filter(t => t.id !== transactionToDelete);
             localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
             updateHeldTransactionsDisplay();
             closeDeleteHeldModal();
-            
+
             showSuccessNotification('Transaksi ditahan dihapus');
         }
 
@@ -1889,20 +2076,23 @@
             const heldCard = document.getElementById('heldTransactionsCard');
             const heldList = document.getElementById('heldTransactionsList');
             const heldCount = document.getElementById('heldCount');
-            
+
             if (heldTransactions.length === 0) {
                 heldCard.style.display = 'none';
                 return;
             }
-            
+
             heldCard.style.display = 'block';
             heldCount.textContent = `${heldTransactions.length} Transaksi`;
-            
+
             heldList.innerHTML = heldTransactions.map(transaction => {
                 const date = new Date(transaction.timestamp);
-                const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                const timeStr = date.toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
                 const customerName = transaction.customer ? transaction.customer.name : 'Walk-in Customer';
-                
+
                 return `
                     <div onclick="loadHeldTransaction(${transaction.id})" 
                          class="bg-white border-2 border-orange-200 rounded-xl p-4 hover:border-orange-400 hover:shadow-md transition-all cursor-pointer">
@@ -2014,6 +2204,14 @@
         document.getElementById('mobileCartModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 toggleMobileCart();
+            }
+        });
+
+        // Close add customer modal when clicking outside
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('addCustomerModal');
+            if (modal && e.target === modal) {
+                closeAddCustomerModal();
             }
         });
 
@@ -2281,12 +2479,12 @@
             receipt += `Tanggal: ${dateStr}\n`;
             receipt += `Waktu  : ${timeStr}\n`;
             receipt += `Kasir  : Admin\n`;
-            
+
             // Add customer name if selected
             if (selectedCustomer && selectedCustomer.name) {
                 receipt += `Customer: ${selectedCustomer.name}\n`;
             }
-            
+
             receipt += `Order  : #001\n`;
             receipt += '================================\n';
 
@@ -2509,6 +2707,9 @@
             updateCartDisplay();
             updateOrderInfo();
             updateHeldTransactionsDisplay(); // Load held transactions on page load
+
+            // Initialize customer search
+            initializeCustomerSearch();
 
             // Initialize payment input formatting
             formatCashInput();

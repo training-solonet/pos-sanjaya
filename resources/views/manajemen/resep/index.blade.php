@@ -1657,7 +1657,11 @@
 
     // Hapus baris bahan dan hitung ulang total biaya
     function removeIngredient(button) {
-        button.parentElement.remove();
+        // Find the closest parent with class 'ingredient-item' and remove it
+        const ingredientRow = button.closest('.ingredient-item');
+        if (ingredientRow) {
+            ingredientRow.remove();
+        }
         calculateTotalCost();
         // when a row is removed, re-enable that bahan in other selects
         refreshBahanOptionsDisable();
