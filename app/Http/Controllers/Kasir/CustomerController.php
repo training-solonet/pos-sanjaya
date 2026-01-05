@@ -45,9 +45,9 @@ class CustomerController extends Controller
         try {
             // Generate kode member jika tidak diisi
             $kodeMember = $request->kode_member;
-            if (!$kodeMember) {
+            if (! $kodeMember) {
                 do {
-                    $kodeMember = 'MBR' . strtoupper(substr(md5(time() . rand()), 0, 8));
+                    $kodeMember = 'MBR'.strtoupper(substr(md5(time().rand()), 0, 8));
                 } while (Customer::where('kode_member', $kodeMember)->exists());
             }
 

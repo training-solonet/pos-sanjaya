@@ -145,10 +145,10 @@ class TransaksiController extends Controller
                 if ($customer && $customer->kode_member) {
                     // Hitung poin: 1 poin per Rp 10.000
                     $poinDapat = floor($total / 10000);
-                    
+
                     // Tambahkan poin ke total_poin customer
                     $customer->increment('total_poin', $poinDapat);
-                    
+
                     Log::info("Poin ditambahkan ke customer ID {$customer->id}: {$poinDapat} poin (Total transaksi: {$total})");
                 }
             }
