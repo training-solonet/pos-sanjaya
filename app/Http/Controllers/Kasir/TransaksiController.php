@@ -21,8 +21,8 @@ class TransaksiController extends Controller
      */
     public function index()
     {
-        $produks = Produk::where('stok', '>', 0)->get();
-        $totalProduk = $produks->count();
+        $produks = Produk::where('stok', '>', 0)->paginate(16);
+        $totalProduk = Produk::where('stok', '>', 0)->count();
         $customers = Customer::orderBy('nama', 'asc')->get();
 
         return view('kasir.transaksi.index', compact('produks', 'totalProduk', 'customers'));

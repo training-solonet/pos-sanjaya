@@ -366,6 +366,7 @@
                                 <thead>
                                     <tr class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <th class="pb-3 px-2">No. Transaksi</th>
+                                        <th class="pb-3 px-2">Customer</th>
                                         <th class="pb-3 px-2">Waktu</th>
                                         <th class="pb-3 px-2">Total</th>
                                         <th class="pb-3 px-2">Status</th>
@@ -376,6 +377,16 @@
                                     <tr class="hover:bg-gray-50">
                                         <td class="py-3 px-2 whitespace-nowrap">
                                             <span class="text-sm font-medium text-gray-900">#{{ $transaction->kode_transaksi ?? $transaction->id }}</span>
+                                        </td>
+                                        <td class="py-3 px-2 whitespace-nowrap">
+                                            @if($transaction->customer)
+                                            <div>
+                                                <span class="text-sm text-gray-900">{{ $transaction->customer->nama }}</span>
+                                                <span class="text-xs text-gray-500 block">ID: {{ $transaction->id_customer }}</span>
+                                            </div>
+                                            @else
+                                            <span class="text-sm text-gray-400">-</span>
+                                            @endif
                                         </td>
                                         <td class="py-3 px-2 whitespace-nowrap">
                                             <span class="text-sm text-gray-600">
@@ -396,7 +407,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="4" class="py-8 text-center">
+                                        <td colspan="5" class="py-8 text-center">
                                             <div class="flex flex-col items-center justify-center">
                                                 <i class="fas fa-receipt text-4xl text-gray-300 mb-2"></i>
                                                 <p class="text-gray-500">Belum ada transaksi hari ini</p>
