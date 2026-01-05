@@ -62,7 +62,7 @@ class DashboardController extends Controller
         $stokRendah = Produk::whereRaw('stok <= min_stok')->count();
 
         // 5. Transaksi Terakhir (3 transaksi terbaru hari ini)
-        $transaksiTerakhir = Transaksi::with('detailTransaksi.produk')
+        $transaksiTerakhir = Transaksi::with('detailTransaksi.produk', 'customer')
             ->whereDate('tgl', $today)
             ->orderBy('created_at', 'desc')
             ->limit(3)

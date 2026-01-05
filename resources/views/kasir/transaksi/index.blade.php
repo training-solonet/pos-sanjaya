@@ -333,7 +333,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
                         id="productGrid">
                         <!-- No results message (hidden by default) -->
                         <div id="noResultsMessage" class="col-span-full text-center py-12 hidden">
@@ -346,27 +346,23 @@
 
                         @forelse($produks as $produk)
                             <!-- Product Card: {{ $produk->nama }} -->
-                            <div class="product-card group bg-white border-2 border-green-200 rounded-2xl p-5 hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+                            <div class="product-card group bg-white border-2 border-green-200 rounded-2xl p-5 hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative"
                                 data-nama="{{ strtolower($produk->nama) }}" data-id="{{ $produk->id }}"
                                 data-price="{{ $produk->harga }}" data-stock="{{ $produk->stok }}"
                                 onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg', {{ $produk->stok }})">
-                                <!-- Double Circle Badge with layered effect -->
-                                <div class="relative mb-4">
-                                    <div class="absolute top-0 left-0">
-                                        <!-- Background circle (slightly higher) -->
-                                        <div
-                                            class="absolute -top-2 left-0 w-12 h-12 bg-emerald-400 opacity-50 rounded-full">
-                                        </div>
-                                        <!-- Front circle with stock number -->
-                                        <div
-                                            class="relative w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center text-base font-bold product-stock-badge shadow-lg">
-                                            {{ $produk->stok }}
-                                        </div>
+                                <!-- Double Circle Badge - Positioned at top right -->
+                                <div class="stock-badge-wrapper absolute -top-2 -right-2 z-10">
+                                    <!-- Background circle (slightly higher) -->
+                                    <div class="absolute -top-1 -right-1 w-14 h-14 bg-emerald-400 opacity-30 rounded-full"></div>
+                                    <!-- Front circle with stock number -->
+                                    <div class="relative w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-full flex items-center justify-center text-base font-bold product-stock-badge shadow-lg border-4 border-white">
+                                        {{ $produk->stok }}
                                     </div>
                                 </div>
-                                <div class="product-details pt-8">
+                                
+                                <div class="product-details">
                                     <div class="product-info space-y-2">
-                                        <h3 class="font-semibold text-gray-900 text-base product-name leading-tight">
+                                        <h3 class="font-semibold text-gray-900 text-base product-name leading-tight pr-8">
                                             {{ $produk->nama }}</h3>
                                         <p class="text-green-600 font-bold text-xl product-price">Rp
                                             {{ number_format($produk->harga, 0, ',', '.') }}</p>
@@ -392,6 +388,51 @@
                             </div>
                         @endforelse
                     </div>
+                    
+                    <!-- Pagination -->
+                    @if($produks->hasPages())
+                    <div class="mt-6 flex items-center justify-between">
+                        <div class="text-sm text-gray-600">
+                            Menampilkan {{ $produks->firstItem() }} - {{ $produks->lastItem() }} dari {{ $produks->total() }} produk
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            {{-- Previous Button --}}
+                            @if($produks->onFirstPage())
+                                <span class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
+                                    <i class="fas fa-chevron-left text-xs"></i>
+                                </span>
+                            @else
+                                <a href="{{ $produks->previousPageUrl() }}" class="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-chevron-left text-xs"></i>
+                                </a>
+                            @endif
+                            
+                            {{-- Page Numbers --}}
+                            @foreach($produks->getUrlRange(1, $produks->lastPage()) as $page => $url)
+                                @if($page == $produks->currentPage())
+                                    <span class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg font-semibold">
+                                        {{ $page }}
+                                    </span>
+                                @else
+                                    <a href="{{ $url }}" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                        {{ $page }}
+                                    </a>
+                                @endif
+                            @endforeach
+                            
+                            {{-- Next Button --}}
+                            @if($produks->hasMorePages())
+                                <a href="{{ $produks->nextPageUrl() }}" class="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-chevron-right text-xs"></i>
+                                </a>
+                            @else
+                                <span class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
+                                    <i class="fas fa-chevron-right text-xs"></i>
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -1016,13 +1057,14 @@
             if (viewType === 'grid') {
                 // Switch to grid view
                 productGrid.className =
-                    'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100';
+                    'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4';
 
                 // Update product cards for grid view
                 productCards.forEach(card => {
                     if (!card.id || card.id !== 'noResultsMessage') {
                         card.className =
-                            'product-card group bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1';
+                            'product-card group bg-white border-2 border-green-200 rounded-2xl p-5 hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative';
+                        card.style.display = '';
 
                         // Reset display based on current filter
                         const productName = card.getAttribute('data-nama');
@@ -1033,15 +1075,10 @@
                             card.classList.add('hidden-card');
                         }
 
-                        // Adjust image wrapper
-                        const imageWrapper = card.querySelector('.product-image-wrapper');
-                        if (imageWrapper) {
-                            imageWrapper.className = 'relative product-image-wrapper';
-                            const imgDiv = imageWrapper.querySelector('div:first-child');
-                            if (imgDiv) {
-                                imgDiv.className =
-                                    'aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-3 flex items-center justify-center overflow-hidden';
-                            }
+                        // Adjust stock badge wrapper - positioned at top right
+                        const stockBadgeWrapper = card.querySelector('.stock-badge-wrapper');
+                        if (stockBadgeWrapper) {
+                            stockBadgeWrapper.className = 'stock-badge-wrapper absolute -top-2 -right-2 z-10';
                         }
 
                         // Adjust product details
@@ -1052,17 +1089,22 @@
 
                         const info = card.querySelector('.product-info');
                         if (info) {
-                            info.className = 'product-info space-y-1';
+                            info.className = 'product-info space-y-2';
+                        }
+
+                        const name = card.querySelector('.product-name');
+                        if (name) {
+                            name.className = 'font-semibold text-gray-900 text-base product-name leading-tight pr-8';
                         }
 
                         const price = card.querySelector('.product-price');
                         if (price) {
-                            price.className = 'text-green-600 font-bold text-lg product-price';
+                            price.className = 'text-green-600 font-bold text-xl product-price';
                         }
 
-                        const meta = card.querySelector('.product-meta');
-                        if (meta) {
-                            meta.className = 'flex items-center justify-between product-meta';
+                        const status = card.querySelector('.product-status');
+                        if (status) {
+                            status.className = 'flex items-center space-x-1 product-status pt-1';
                         }
                     }
                 });
@@ -1073,13 +1115,13 @@
             } else {
                 // Switch to list view
                 productGrid.className =
-                    'flex flex-col gap-3 overflow-y-auto max-h-[calc(100vh-16rem)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100';
+                    'flex flex-col gap-3';
 
                 // Update product cards for list view
                 productCards.forEach(card => {
                     if (!card.id || card.id !== 'noResultsMessage') {
                         card.className =
-                            'product-card list-view group bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer';
+                            'product-card list-view group bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer relative';
 
                         // Reset display based on current filter  
                         const productName = card.getAttribute('data-nama');
@@ -1092,21 +1134,16 @@
                             card.classList.add('hidden-card');
                         }
 
-                        // Adjust image wrapper for list
-                        const imageWrapper = card.querySelector('.product-image-wrapper');
-                        if (imageWrapper) {
-                            imageWrapper.className = 'relative product-image-wrapper flex-shrink-0';
-                            const imgDiv = imageWrapper.querySelector('div:first-child');
-                            if (imgDiv) {
-                                imgDiv.className =
-                                    'w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center overflow-hidden';
-                            }
+                        // Adjust stock badge wrapper for list - keep at top right
+                        const stockBadgeWrapper = card.querySelector('.stock-badge-wrapper');
+                        if (stockBadgeWrapper) {
+                            stockBadgeWrapper.className = 'stock-badge-wrapper absolute -top-2 -right-2 z-10';
                         }
 
                         // Adjust product details for list
                         const details = card.querySelector('.product-details');
                         if (details) {
-                            details.className = 'product-details flex-1 flex items-center justify-between gap-4';
+                            details.className = 'product-details flex-1';
                         }
 
                         const info = card.querySelector('.product-info');
@@ -1116,17 +1153,17 @@
 
                         const name = card.querySelector('.product-name');
                         if (name) {
-                            name.className = 'font-semibold text-gray-900 text-base product-name mb-1';
+                            name.className = 'font-semibold text-gray-900 text-base product-name mb-1 pr-16';
                         }
 
                         const price = card.querySelector('.product-price');
                         if (price) {
-                            price.className = 'text-green-600 font-bold text-xl product-price';
+                            price.className = 'text-green-600 font-bold text-xl product-price mb-1';
                         }
 
-                        const meta = card.querySelector('.product-meta');
-                        if (meta) {
-                            meta.className = 'flex items-center gap-3 product-meta mt-1';
+                        const status = card.querySelector('.product-status');
+                        if (status) {
+                            status.className = 'flex items-center space-x-1 product-status';
                         }
                     }
                 });
@@ -2449,7 +2486,7 @@
         }
 
         // Generate receipt text for ESC/POS printer
-        function generateReceipt() {
+        function generateReceipt(transactionId = null) {
             const now = new Date();
             const dateStr = now.toLocaleDateString('id-ID');
             const timeStr = now.toLocaleTimeString('id-ID');
@@ -2457,6 +2494,17 @@
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const tax = subtotal * 0.1;
             const total = subtotal + tax;
+
+            // Helper function to format price without dot separator
+            const formatPrice = (price) => {
+                return Math.round(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            };
+
+            // Helper function to pad string to right align
+            const padRight = (str, length) => {
+                const spaces = length - str.length;
+                return spaces > 0 ? ' '.repeat(spaces) + str : str;
+            };
 
             let receipt = '';
 
@@ -2485,25 +2533,49 @@
                 receipt += `Customer: ${selectedCustomer.name}\n`;
             }
 
-            receipt += `Order  : #001\n`;
+            // Use actual transaction ID from database
+            const orderNumber = transactionId ? `#${String(transactionId).padStart(3, '0')}` : '#001';
+            receipt += `Order  : ${orderNumber}\n`;
             receipt += '================================\n';
 
-            // Items
+            // Items - Format: Name on first line, qty x price aligned with total on second line
             cart.forEach(item => {
-                receipt += `${item.name}\n`;
-                receipt += `${item.quantity} x Rp${item.price.toLocaleString('id-ID')}`;
-                receipt +=
-                    `${' '.repeat(Math.max(1, 32 - (`${item.quantity} x Rp${item.price.toLocaleString('id-ID')}` + `Rp${(item.price * item.quantity).toLocaleString('id-ID')}`).length))}`;
-                receipt += `Rp${(item.price * item.quantity).toLocaleString('id-ID')}\n`;
+                const itemName = item.name.length > 32 ? item.name.substring(0, 29) + '...' : item.name;
+                receipt += `${itemName}\n`;
+                
+                const qtyPrice = `${item.quantity} x Rp${formatPrice(item.price)}`;
+                const itemTotal = `Rp${formatPrice(item.price * item.quantity)}`;
+                const totalWidth = 32;
+                const spacing = totalWidth - qtyPrice.length - itemTotal.length;
+                
+                receipt += qtyPrice;
+                if (spacing > 0) {
+                    receipt += ' '.repeat(spacing);
+                }
+                receipt += itemTotal + '\n';
             });
 
             receipt += '================================\n';
-            receipt += `Subtotal:${' '.repeat(15)}Rp${subtotal.toLocaleString('id-ID')}\n`;
-            receipt += `Pajak (10%):${' '.repeat(13)}Rp${Math.round(tax).toLocaleString('id-ID')}\n`;
+            
+            // Subtotal
+            const subtotalLabel = 'Subtotal:';
+            const subtotalValue = `Rp${formatPrice(subtotal)}`;
+            receipt += subtotalLabel + padRight(subtotalValue, 32 - subtotalLabel.length) + '\n';
+            
+            // Tax
+            const taxLabel = 'Pajak (10%):';
+            const taxValue = `Rp${formatPrice(Math.round(tax))}`;
+            receipt += taxLabel + padRight(taxValue, 32 - taxLabel.length) + '\n';
+            
             receipt += '--------------------------------\n';
+            
+            // Total
             receipt += BOLD_ON;
-            receipt += `TOTAL:${' '.repeat(18)}Rp${Math.round(total).toLocaleString('id-ID')}\n`;
+            const totalLabel = 'TOTAL:';
+            const totalValue = `Rp${formatPrice(Math.round(total))}`;
+            receipt += totalLabel + padRight(totalValue, 32 - totalLabel.length) + '\n';
             receipt += BOLD_OFF;
+            
             receipt += '================================\n';
             receipt += CENTER;
             receipt += 'Terima Kasih!\n';
@@ -2515,7 +2587,7 @@
         }
 
         // Print receipt
-        async function printReceipt() {
+        async function printReceipt(transactionId = null) {
             if (!printerConnected || !bluetoothCharacteristic) {
                 // Try to reconnect to saved printer
                 const reconnected = await reconnectSavedPrinter();
@@ -2526,7 +2598,7 @@
             }
 
             try {
-                const receipt = generateReceipt();
+                const receipt = generateReceipt(transactionId);
                 const encoder = new TextEncoder();
                 const data = encoder.encode(receipt);
 
@@ -2619,7 +2691,10 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    // Try to print receipt
+                    // Get transaction ID from response
+                    const transactionId = result.data?.transaksi_id || null;
+                    
+                    // Try to print receipt with actual transaction ID
                     let printSuccess = false;
                     if (isBluetoothSupported()) {
                         payButton.innerHTML = `
@@ -2628,7 +2703,7 @@
                                 <span>Mencetak...</span>
                             </div>
                         `;
-                        printSuccess = await printReceipt();
+                        printSuccess = await printReceipt(transactionId);
                     }
 
                     // Success message
