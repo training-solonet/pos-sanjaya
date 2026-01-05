@@ -13,8 +13,10 @@ class Customer extends Model
 
     protected $fillable = [
         'nama',
+        'kode_member',
         'telepon',
         'email',
+        'total_poin',
     ];
 
     protected $casts = [

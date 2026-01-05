@@ -23,9 +23,11 @@
                         <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                             <tr>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Kode Member</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Customer</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Telepon</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Poin</th>
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
@@ -33,6 +35,16 @@
                             @forelse($customers as $index => $customer)
                             <tr class="hover:bg-green-50 transition-colors">
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ ($customers->currentPage() - 1) * $customers->perPage() + $index + 1 }}</td>
+                                <td class="px-6 py-4 text-sm">
+                                    @if($customer->kode_member)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                            <i class="fas fa-id-card mr-1"></i>
+                                            {{ $customer->kode_member }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400 italic text-xs">-</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $customer->nama }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-700">
                                     @if($customer->telepon)
@@ -55,6 +67,12 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-sm text-center">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800">
+                                        <i class="fas fa-coins mr-1"></i>
+                                        {{ number_format($customer->total_poin ?? 0) }} Poin
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <button onclick="openEditModal({{ $customer->id }})" class="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-medium transition shadow-sm">
                                             <i class="fas fa-edit mr-1"></i> Edit
@@ -67,7 +85,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
+                                <td colspan="7" class="px-6 py-12 text-center">
                                     <i class="fas fa-users text-gray-300 text-4xl mb-3"></i>
                                     <p class="text-sm text-gray-500 font-medium">Belum ada customer</p>
                                     <p class="text-xs text-gray-400 mt-1">Klik tombol "Tambah Customer" untuk menambahkan</p>
@@ -139,6 +157,7 @@
                             <i class="fas fa-user text-green-600 mr-1"></i> Nama Customer <span class="text-red-500">*</span>
                         </label>
                         <input id="customerName" name="nama" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" placeholder="Masukkan nama customer" required>
+                        <p class="text-xs text-gray-500 mt-1"><i class="fas fa-info-circle mr-1"></i>Kode member akan dibuat otomatis</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -162,6 +181,32 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus -->
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[70] backdrop-blur-sm">
+        <div class="bg-white rounded-xl w-full max-w-md p-6 shadow-2xl animate-fadeIn">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-gray-900">Konfirmasi Hapus</h4>
+                        <p class="text-xs text-gray-500 mt-0.5">Tindakan ini tidak dapat dibatalkan</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 mb-6">Yakin ingin menghapus customer ini?</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeDeleteModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition text-sm">
+                    <i class="fas fa-times mr-1"></i> Batal
+                </button>
+                <button onclick="confirmDelete()" class="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition shadow-sm text-sm">
+                    <i class="fas fa-trash mr-1"></i> Hapus
+                </button>
+            </div>
         </div>
     </div>
 
@@ -214,7 +259,7 @@
                     const customerEmail = document.getElementById('customerEmail');
                     const modal = document.getElementById('customerModal');
                     
-                    if (modalTitle) modalTitle.textContent = 'Edit Customer';
+                    if (modalTitle) modalTitle.textContent = `Edit Customer - ${customer.kode_member || 'No Member'}`;
                     if (customerId) customerId.value = customer.id;
                     if (customerName) customerName.value = customer.nama;
                     if (customerPhone) customerPhone.value = customer.telepon || '';
@@ -312,11 +357,36 @@
         });
         }
 
-        async function deleteCustomer(id) {
-            if (!confirm('Yakin ingin menghapus customer ini?')) return;
+        let customerToDelete = null;
+
+        function deleteCustomer(id) {
+            customerToDelete = id;
+            const modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+            customerToDelete = null;
+        }
+
+        async function confirmDelete() {
+            if (!customerToDelete) return;
+            
+            const deleteBtn = event.target;
+            const originalText = deleteBtn.innerHTML;
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Menghapus...';
             
             try {
-                const response = await fetch(`/kasir/customer/${id}`, {
+                const response = await fetch(`/kasir/customer/${customerToDelete}`, {
                     method: 'DELETE',
                     headers: {
                         'Accept': 'application/json',
@@ -328,13 +398,18 @@
                 
                 if (result.success) {
                     showToast(result.message, 'success');
+                    closeDeleteModal();
                     setTimeout(() => window.location.reload(), 500);
                 } else {
                     showToast(result.message || 'Gagal menghapus customer', 'error');
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = originalText;
                 }
             } catch (error) {
                 console.error('Error:', error);
                 showToast('Terjadi kesalahan saat menghapus customer', 'error');
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalText;
             }
         }
     </script>

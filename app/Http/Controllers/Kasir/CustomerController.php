@@ -26,10 +26,12 @@ class CustomerController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
+            'kode_member' => 'nullable|string|max:20|unique:data_customer,kode_member',
             'telepon' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
         ], [
             'nama.required' => 'Nama customer wajib diisi',
+            'kode_member.unique' => 'Kode member sudah digunakan',
             'email.email' => 'Format email tidak valid',
         ]);
 
@@ -41,10 +43,20 @@ class CustomerController extends Controller
         }
 
         try {
+            // Generate kode member jika tidak diisi
+            $kodeMember = $request->kode_member;
+            if (!$kodeMember) {
+                do {
+                    $kodeMember = 'MBR' . strtoupper(substr(md5(time() . rand()), 0, 8));
+                } while (Customer::where('kode_member', $kodeMember)->exists());
+            }
+
             $customer = Customer::create([
                 'nama' => $request->nama,
+                'kode_member' => $kodeMember,
                 'telepon' => $request->telepon,
                 'email' => $request->email ?: null,
+                'total_poin' => 0,
             ]);
 
             return response()->json([
@@ -87,10 +99,12 @@ class CustomerController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
+            'kode_member' => 'nullable|string|max:20|unique:data_customer,kode_member,'.$id,
             'telepon' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
         ], [
             'nama.required' => 'Nama customer wajib diisi',
+            'kode_member.unique' => 'Kode member sudah digunakan',
             'email.email' => 'Format email tidak valid',
         ]);
 
@@ -105,6 +119,7 @@ class CustomerController extends Controller
             $customer = Customer::findOrFail($id);
             $customer->update([
                 'nama' => $request->nama,
+                'kode_member' => $request->kode_member,
                 'telepon' => $request->telepon,
                 'email' => $request->email ?: 'no-reply@example.com',
             ]);
