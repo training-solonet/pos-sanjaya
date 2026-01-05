@@ -132,6 +132,7 @@ class ProdukController extends Controller
                 }
 
                 // Create product dengan bahan baku yang valid
+                // SKU akan di-generate otomatis oleh model boot method
                 $produk = Produk::create([
                     'nama' => $request->nama,
                     'id_bahan_baku' => $bahanBaku->id,
@@ -191,6 +192,7 @@ class ProdukController extends Controller
 
             return response()->json([
                 'id' => $produk->id,
+                'sku' => $produk->sku, // Tambahkan SKU ke response
                 'nama' => $produk->nama,
                 'stok' => $produk->stok,
                 'min_stok' => $produk->min_stok,
