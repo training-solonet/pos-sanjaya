@@ -11,7 +11,7 @@ class Produk extends Model
     protected $table = 'produk';
 
     protected $fillable = [
-        'sku',
+        'sku', // Tambahkan ini
         'nama',
         'kategori',
         'stok',
@@ -24,6 +24,40 @@ class Produk extends Model
     protected $casts = [
         'kadaluarsa' => 'datetime',
     ];
+
+    /**
+     * Boot method untuk generate SKU otomatis
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($produk) {
+            // Generate SKU hanya jika belum ada
+            if (empty($produk->sku)) {
+                $produk->sku = self::generateSKU();
+            }
+        });
+
+        static::created(function ($produk) {
+            // Jika masih belum ada SKU (misalnya dari seeder), generate setelah create
+            if (empty($produk->sku)) {
+                $produk->sku = 'PROD-'.str_pad($produk->id, 6, '0', STR_PAD_LEFT);
+                $produk->saveQuietly(); // save tanpa memanggil event
+            }
+        });
+    }
+
+    /**
+     * Generate SKU unik
+     */
+    public static function generateSKU()
+    {
+        $latestProduct = self::latest('id')->first();
+        $nextId = $latestProduct ? $latestProduct->id + 1 : 1;
+
+        return 'PROD-'.str_pad($nextId, 6, '0', STR_PAD_LEFT);
+    }
 
     // Relasi ke update stok produk
     public function updateStokHistory()
