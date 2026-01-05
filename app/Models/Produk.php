@@ -42,7 +42,7 @@ class Produk extends Model
         static::created(function ($produk) {
             // Jika masih belum ada SKU (misalnya dari seeder), generate setelah create
             if (empty($produk->sku)) {
-                $produk->sku = 'PROD-' . str_pad($produk->id, 6, '0', STR_PAD_LEFT);
+                $produk->sku = 'PROD-'.str_pad($produk->id, 6, '0', STR_PAD_LEFT);
                 $produk->saveQuietly(); // save tanpa memanggil event
             }
         });
@@ -55,8 +55,8 @@ class Produk extends Model
     {
         $latestProduct = self::latest('id')->first();
         $nextId = $latestProduct ? $latestProduct->id + 1 : 1;
-        
-        return 'PROD-' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
+
+        return 'PROD-'.str_pad($nextId, 6, '0', STR_PAD_LEFT);
     }
 
     // Relasi ke update stok produk
