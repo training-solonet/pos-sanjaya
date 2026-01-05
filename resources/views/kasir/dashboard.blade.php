@@ -310,17 +310,17 @@
                     </div>
                 </div>
 
-                <!-- Sales by Hour -->
+                <!-- Sales by Day -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200">
                     <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
                         <h3 class="text-xl font-bold text-gray-900">
-                            <i class="fas fa-clock text-indigo-600 mr-2"></i>Penjualan per Jam
+                            <i class="fas fa-calendar-day text-indigo-600 mr-2"></i>Penjualan Harian
                         </h3>
-                        <p class="text-sm text-gray-500 mt-1">Distribusi penjualan hari ini</p>
+                        <p class="text-sm text-gray-500 mt-1">Distribusi penjualan 7 hari terakhir</p>
                     </div>
                     <div class="p-6">
                         <div class="h-64 relative">
-                            <canvas id="hourlyChart"></canvas>
+                            <canvas id="dailyChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -528,7 +528,7 @@
             createSalesChart('7days');
             updateSalesStats('7days');
             createProductsChart();
-            createHourlyChart();
+            createDailyChart();
         }, 100);
     });
 
@@ -604,21 +604,21 @@
             });
         }
 
-        // Create Hourly Sales Chart (Bar)
-        function createHourlyChart() {
-            const ctx = document.getElementById('hourlyChart').getContext('2d');
+        // Create Daily Sales Chart (Bar)
+        function createDailyChart() {
+            const ctx = document.getElementById('dailyChart').getContext('2d');
             
-            // Data penjualan per jam dari controller
-            const hourlyLabels = @json($labelJam);
-            const hourlyData = @json($penjualanPerJam);
+            // Data penjualan harian dari controller
+            const dailyLabels = @json($labelHari);
+            const dailyData = @json($penjualanPerHari);
             
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: hourlyLabels,
+                    labels: dailyLabels,
                     datasets: [{
-                        label: 'Transaksi',
-                        data: hourlyData,
+                        label: 'Penjualan (Rp)',
+                        data: dailyData,
                         backgroundColor: 'rgba(59, 130, 246, 0.8)',
                         borderColor: 'rgb(59, 130, 246)',
                         borderWidth: 1,
@@ -642,7 +642,7 @@
                             cornerRadius: 8,
                             callbacks: {
                                 label: function(context) {
-                                    return 'Transaksi: ' + context.parsed.y;
+                                    return 'Penjualan: Rp ' + context.parsed.y.toLocaleString('id-ID');
                                 }
                             }
                         }
@@ -654,7 +654,14 @@
                                 color: 'rgba(0, 0, 0, 0.05)'
                             },
                             ticks: {
-                                stepSize: 5,
+                                callback: function(value) {
+                                    if (value >= 1000000) {
+                                        return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000) {
+                                        return 'Rp ' + (value / 1000).toFixed(0) + 'K';
+                                    }
+                                    return 'Rp ' + value;
+                                },
                                 color: 'rgb(107, 114, 128)'
                             }
                         },

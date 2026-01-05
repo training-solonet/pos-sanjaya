@@ -61,7 +61,7 @@
                         <form action="{{ route('kasir.jurnal.index') }}" method="GET" id="filterDateForm">
                             <input type="date" name="tanggal" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg" value="{{ $tanggal }}" onchange="handleDateChange()">
                         </form>
-                        <button class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
+                        <button onclick="exportToPdf()" class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
                             <i class="fas fa-download mr-2"></i>Export
                         </button>
                     </div>
@@ -346,19 +346,6 @@
             // Set today's date as default
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('transactionDate').value = today;
-            
-            // ============ AUTO REFRESH UNTUK REAL-TIME UPDATE ============
-            // Refresh data setiap 5 detik untuk menampilkan transaksi baru secara otomatis
-            setInterval(() => {
-                const filterDate = document.getElementById('filterDate').value;
-                const today = new Date().toISOString().split('T')[0];
-                
-                // Hanya refresh jika tanggal filter adalah hari ini
-                if (filterDate === today) {
-                    fetchJurnalData();
-                }
-            }, 5000); // 5000ms = 5 detik
-            // ==============================================================
         });
 
         // Update date time
@@ -785,6 +772,14 @@
                     notification.remove();
                 }, 300);
             }, 3000);
+        }
+
+        // Export to PDF function
+        function exportToPdf() {
+            const tanggal = document.getElementById('filterDate').value;
+            
+            // Redirect to export route with date parameter
+            window.location.href = "{{ route('kasir.jurnal.export-pdf') }}" + "?tanggal=" + tanggal;
         }
 
         // Close modal when clicking outside

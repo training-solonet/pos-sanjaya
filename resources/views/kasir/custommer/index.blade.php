@@ -169,31 +169,27 @@
         // CSRF Token
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
         
-        // Sidebar toggle (mobile)
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('-translate-x-full');
-        }
-
-        // Date/time
-        function updateDateTime() {
-            const now = new Date();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-            const dateTimeElement = document.getElementById('currentDateTime');
-            if (dateTimeElement) dateTimeElement.textContent = now.toLocaleDateString('id-ID', options);
-        }
-
         let editingId = null;
 
         function openAddModal() {
             editingId = null;
-            document.getElementById('modalTitle').textContent = 'Tambah Customer';
-            document.getElementById('customerId').value = '';
-            document.getElementById('customerName').value = '';
-            document.getElementById('customerPhone').value = '';
-            document.getElementById('customerEmail').value = '';
-            document.getElementById('customerModal').classList.remove('hidden');
-            document.getElementById('customerModal').classList.add('flex');
+            const modal = document.getElementById('customerModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const customerId = document.getElementById('customerId');
+            const customerName = document.getElementById('customerName');
+            const customerPhone = document.getElementById('customerPhone');
+            const customerEmail = document.getElementById('customerEmail');
+            
+            if (modalTitle) modalTitle.textContent = 'Tambah Customer';
+            if (customerId) customerId.value = '';
+            if (customerName) customerName.value = '';
+            if (customerPhone) customerPhone.value = '';
+            if (customerEmail) customerEmail.value = '';
+            
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
         }
 
         async function openEditModal(id) {
@@ -210,13 +206,24 @@
                 if (result.success) {
                     const customer = result.data;
                     editingId = id;
-                    document.getElementById('modalTitle').textContent = 'Edit Customer';
-                    document.getElementById('customerId').value = customer.id;
-                    document.getElementById('customerName').value = customer.nama;
-                    document.getElementById('customerPhone').value = customer.telepon || '';
-                    document.getElementById('customerEmail').value = customer.email !== 'no-reply@example.com' ? customer.email : '';
-                    document.getElementById('customerModal').classList.remove('hidden');
-                    document.getElementById('customerModal').classList.add('flex');
+                    
+                    const modalTitle = document.getElementById('modalTitle');
+                    const customerId = document.getElementById('customerId');
+                    const customerName = document.getElementById('customerName');
+                    const customerPhone = document.getElementById('customerPhone');
+                    const customerEmail = document.getElementById('customerEmail');
+                    const modal = document.getElementById('customerModal');
+                    
+                    if (modalTitle) modalTitle.textContent = 'Edit Customer';
+                    if (customerId) customerId.value = customer.id;
+                    if (customerName) customerName.value = customer.nama;
+                    if (customerPhone) customerPhone.value = customer.telepon || '';
+                    if (customerEmail) customerEmail.value = customer.email !== 'no-reply@example.com' ? customer.email : '';
+                    
+                    if (modal) {
+                        modal.classList.remove('hidden');
+                        modal.classList.add('flex');
+                    }
                 } else {
                     alert(result.message || 'Customer tidak ditemukan');
                 }
@@ -227,8 +234,11 @@
         }
 
         function closeModal() {
-            document.getElementById('customerModal').classList.add('hidden');
-            document.getElementById('customerModal').classList.remove('flex');
+            const modal = document.getElementById('customerModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
         }
 
         // Toast notification
@@ -250,8 +260,10 @@
         }
 
         // Handle form submit
-        document.getElementById('customerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        const customerForm = document.getElementById('customerForm');
+        if (customerForm) {
+            customerForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
             
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
@@ -298,6 +310,7 @@
                 submitBtn.innerHTML = originalText;
             }
         });
+        }
 
         async function deleteCustomer(id) {
             if (!confirm('Yakin ingin menghapus customer ini?')) return;
@@ -324,10 +337,5 @@
                 showToast('Terjadi kesalahan saat menghapus customer', 'error');
             }
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            updateDateTime();
-            setInterval(updateDateTime, 60000);
-        });
     </script>
 @endsection

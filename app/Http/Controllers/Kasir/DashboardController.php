@@ -115,18 +115,18 @@ class DashboardController extends Controller
             $labels30Hari[] = $date->format('d/m');
         }
 
-        // 8. Data penjualan per jam hari ini
-        $penjualanPerJam = [];
-        $labelJam = [];
+        // 8. Data penjualan harian 7 hari terakhir (untuk diagram batang)
+        $penjualanPerHari = [];
+        $labelHari = [];
 
-        for ($hour = 8; $hour <= 17; $hour++) {
-            $labelJam[] = sprintf('%02d:00', $hour);
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+            $labelHari[] = $dayNames[$date->dayOfWeek];
 
-            $count = Transaksi::whereDate('tgl', $today)
-                ->whereRaw('HOUR(created_at) = ?', [$hour])
-                ->count();
+            $total = Transaksi::whereDate('tgl', $date)
+                ->sum('bayar');
 
-            $penjualanPerJam[] = $count;
+            $penjualanPerHari[] = $total;
         }
 
         return view('kasir.dashboard', compact(
@@ -146,8 +146,8 @@ class DashboardController extends Controller
             'penjualan30Hari',
             'transaksi30Hari',
             'labels30Hari',
-            'penjualanPerJam',
-            'labelJam'
+            'penjualanPerHari',
+            'labelHari'
         ));
     }
 
