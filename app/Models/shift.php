@@ -16,6 +16,9 @@ class Shift extends Model
         'durasi',
         'modal',
         'total_penjualan',
+        'penjualan_tunai',
+        'total_transaksi',
+        'uang_aktual',
         'selisih',
     ];
 

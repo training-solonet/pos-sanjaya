@@ -36,7 +36,39 @@
                                 <h3 class="text-xl font-bold text-gray-900">Shift Aktif</h3>
                                 <span class="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full animate-pulse">AKTIF</span>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div class="bg-white bg-opacity-50 p-3 rounded-lg">
+                                    <p class="text-gray-600 text-xs mb-1">Total Penjualan</p>
+                                    <p class="font-semibold text-green-600 text-lg" id="activeShiftSales">
+                                        @if($activeShift && isset($activeShift->total_penjualan_calculated))
+                                            Rp {{ number_format($activeShift->total_penjualan_calculated, 0, ',', '.') }}
+                                        @else
+                                            Rp 0
+                                        @endif
+                                    </p>
+                                </div>
+                                <div class="bg-white bg-opacity-50 p-3 rounded-lg">
+                                    <p class="text-gray-600 text-xs mb-1">Penjualan Tunai</p>
+                                    <p class="font-semibold text-blue-600 text-lg" id="activeShiftCashSales">
+                                        @if($activeShift && isset($activeShift->penjualan_tunai_calculated))
+                                            Rp {{ number_format($activeShift->penjualan_tunai_calculated, 0, ',', '.') }}
+                                        @else
+                                            Rp 0
+                                        @endif
+                                    </p>
+                                </div>
+                                <div class="bg-white bg-opacity-50 p-3 rounded-lg">
+                                    <p class="text-gray-600 text-xs mb-1">Total Transaksi</p>
+                                    <p class="font-semibold text-purple-600 text-lg" id="activeShiftTransactions">
+                                        @if($activeShift && isset($activeShift->total_transaksi_calculated))
+                                            {{ $activeShift->total_transaksi_calculated }}
+                                        @else
+                                            0
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                                 <div>
                                     <p class="text-gray-600">Kasir: <span class="font-semibold text-gray-900">{{ Auth::user()->name }}</span></p>
                                     <p class="text-gray-600">Mulai: <span class="font-semibold text-gray-900" id="activeShiftStart">
@@ -56,8 +88,7 @@
                                             Rp 0
                                         @endif
                                     </span></p>
-                                    <p class="text-gray-600">Transaksi: <span class="font-semibold text-blue-600" id="activeShiftTransactions">0</span></p>
-                                    <p class="text-gray-600">Total Penjualan: <span class="font-semibold text-green-600" id="activeShiftSales">Rp 0</span></p>
+                                    <p class="text-gray-600">Shift ID: <span class="font-semibold text-gray-900">#{{ $activeShift ? str_pad($activeShift->id, 6, '0', STR_PAD_LEFT) : '-' }}</span></p>
                                 </div>
                             </div>
                         </div>
@@ -75,10 +106,10 @@
                 <h3 class="text-lg font-semibold text-gray-900">Riwayat Shift</h3>
                 <div class="flex items-center space-x-2">
                     <select id="filterPeriod" onchange="filterShifts()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
-                        <option value="today">Hari Ini</option>
-                        <option value="week">Minggu Ini</option>
-                        <option value="month">Bulan Ini</option>
-                        <option value="all">Semua</option>
+                        <option value="today" {{ request('period') == 'today' ? 'selected' : '' }}>Hari Ini</option>
+                        <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}>Minggu Ini</option>
+                        <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}>Bulan Ini</option>
+                        <option value="all" {{ !request('period') || request('period') == 'all' ? 'selected' : '' }}>Semua</option>
                     </select>
                 </div>
             </div>
@@ -206,7 +237,7 @@
                 <!-- Shift Summary -->
                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
                     <h5 class="font-semibold text-gray-900 mb-3">Ringkasan Shift</h5>
-                    <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         <div>
                             <p class="text-gray-600">Kasir:</p>
                             <p class="font-semibold text-gray-900">{{ Auth::user()->name }}</p>
@@ -223,9 +254,13 @@
                             <p class="text-gray-600">Total Transaksi:</p>
                             <p class="font-semibold text-blue-600" id="endShiftTotalTrx">0</p>
                         </div>
-                        <div class="col-span-2">
+                        <div class="md:col-span-2">
                             <p class="text-gray-600">Total Penjualan:</p>
                             <p class="font-semibold text-lg text-green-600" id="endShiftTotalSales">Rp 0</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <p class="text-gray-600">Penjualan Tunai:</p>
+                            <p class="font-semibold text-lg text-blue-600" id="endShiftCashSales">Rp 0</p>
                         </div>
                     </div>
                 </div>
@@ -341,13 +376,18 @@
         
         const durationText = `${hours}j ${minutes}m ${seconds}d`;
         document.getElementById('activeShiftDuration').textContent = durationText;
+        
+        // Update duration in end shift modal if open
+        if (document.getElementById('endShiftModal').classList.contains('flex')) {
+            document.getElementById('endShiftDuration').textContent = durationText;
+        }
     }
 
     // Load real-time statistics for active shift
     function loadShiftStatistics() {
         if (!activeShift || !activeShift.id) return;
         
-        fetch(`{{ url('kasir/shift') }}/${activeShift.id}`, {
+        fetch(`/kasir/shift/${activeShift.id}`, {
             headers: {
                 'Accept': 'application/json'
             }
@@ -355,24 +395,60 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                const shift = data.data.shift;
                 const stats = data.data.statistik;
                 
-                // Update display
+                // Update display in active shift card
                 document.getElementById('activeShiftTransactions').textContent = stats.total_transaksi;
                 document.getElementById('activeShiftSales').textContent = 
                     'Rp ' + parseInt(stats.total_penjualan).toLocaleString('id-ID');
                 document.getElementById('activeShiftCashSales').textContent = 
                     'Rp ' + parseInt(stats.penjualan_tunai).toLocaleString('id-ID');
                 
-                // Update data attributes for end shift modal
-                document.getElementById('activeShiftCard').dataset.totalPenjualan = stats.total_penjualan;
-                document.getElementById('activeShiftCard').dataset.penjualanTunai = stats.penjualan_tunai;
-                document.getElementById('activeShiftCard').dataset.totalTransaksi = stats.total_transaksi;
+                // Store data for end shift modal
+                activeShift.total_penjualan = stats.total_penjualan;
+                activeShift.penjualan_tunai = stats.penjualan_tunai;
+                activeShift.total_transaksi = stats.total_transaksi;
+                
+                // If end shift modal is open, update it
+                if (document.getElementById('endShiftModal').classList.contains('flex')) {
+                    updateEndShiftModal(shift, stats);
+                }
             }
         })
         .catch(error => {
             console.error('Error loading shift statistics:', error);
         });
+    }
+
+    // Update end shift modal with current data
+    function updateEndShiftModal(shift, stats) {
+        if (!shift || !stats) return;
+        
+        document.getElementById('endShiftModalAwal').textContent = 
+            'Rp ' + parseInt(shift.modal).toLocaleString('id-ID');
+        document.getElementById('endShiftTotalTrx').textContent = stats.total_transaksi;
+        document.getElementById('endShiftTotalSales').textContent = 
+            'Rp ' + parseInt(stats.total_penjualan).toLocaleString('id-ID');
+        document.getElementById('endShiftCashSales').textContent = 
+            'Rp ' + parseInt(stats.penjualan_tunai).toLocaleString('id-ID');
+        
+        // Calculate expected cash (initial cash + cash sales)
+        const expectedCash = parseInt(shift.modal) + parseInt(stats.penjualan_tunai);
+        document.getElementById('expectedCash').textContent = 
+            'Rp ' + expectedCash.toLocaleString('id-ID');
+        
+        // Store data for calculation
+        const modalElement = document.getElementById('endShiftModal');
+        modalElement.dataset.expected = expectedCash;
+        modalElement.dataset.modal = shift.modal;
+        modalElement.dataset.penjualanTunai = stats.penjualan_tunai;
+        
+        // Recalculate difference if actual cash is entered
+        const actualInput = document.getElementById('endShiftActualCash').value;
+        if (actualInput) {
+            calculateDifference();
+        }
     }
 
     // Start Shift Modal
@@ -426,7 +502,7 @@
         if (!activeShift || !activeShift.id) return;
         
         // Load shift details for summary
-        fetch(`{{ url('kasir/shift') }}/${activeShift.id}`, {
+        fetch(`/kasir/shift/${activeShift.id}`, {
             headers: {
                 'Accept': 'application/json'
             }
@@ -449,9 +525,11 @@
                 document.getElementById('endShiftTotalTrx').textContent = stats.total_transaksi;
                 document.getElementById('endShiftTotalSales').textContent = 
                     'Rp ' + parseInt(stats.total_penjualan).toLocaleString('id-ID');
+                document.getElementById('endShiftCashSales').textContent = 
+                    'Rp ' + parseInt(stats.penjualan_tunai).toLocaleString('id-ID');
                 
                 // Calculate expected cash (initial cash + cash sales)
-                const expectedCash = shift.modal + stats.penjualan_tunai;
+                const expectedCash = parseInt(shift.modal) + parseInt(stats.penjualan_tunai);
                 document.getElementById('expectedCash').textContent = 
                     'Rp ' + expectedCash.toLocaleString('id-ID');
                 
@@ -500,7 +578,7 @@
         if (difference > 0) {
             document.getElementById('cashSurplus').classList.remove('hidden');
             document.getElementById('surplusAmount').textContent = 
-                'Rp ' + difference.toLocaleString('id-ID');
+                'Rp ' + Math.abs(difference).toLocaleString('id-ID');
         } else if (difference < 0) {
             document.getElementById('cashShortage').classList.remove('hidden');
             document.getElementById('shortageAmount').textContent = 
@@ -524,7 +602,7 @@
             return;
         }
         
-        fetch(`{{ url('kasir/shift') }}/${activeShift.id}`, {
+        fetch(`/kasir/shift/${activeShift.id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -551,7 +629,7 @@
 
     // View shift detail
     function viewShiftDetail(shiftId) {
-        fetch(`{{ url('kasir/shift') }}/${shiftId}`, {
+        fetch(`/kasir/shift/${shiftId}`, {
             headers: {
                 'Accept': 'application/json'
             }
@@ -579,6 +657,7 @@
                                     <thead>
                                         <tr>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">No</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Invoice</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Waktu</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Metode</th>
                                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Total</th>
@@ -586,14 +665,10 @@
                                     </thead>
                                     <tbody>
                                         ${transaksis.map((transaksi, index) => {
-                                            let total = 0;
-                                            transaksi.detailTransaksis.forEach(detail => {
-                                                total += detail.jumlah * detail.harga;
-                                            });
-                                            
                                             return `
                                                 <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
                                                     <td class="px-3 py-2 text-sm text-gray-700">${index + 1}</td>
+                                                    <td class="px-3 py-2 text-sm text-gray-700">${transaksi.invoice}</td>
                                                     <td class="px-3 py-2 text-sm text-gray-700">
                                                         ${new Date(transaksi.tgl).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                                     </td>
@@ -603,7 +678,7 @@
                                                         </span>
                                                     </td>
                                                     <td class="px-3 py-2 text-sm text-green-600 font-semibold">
-                                                        Rp ${total.toLocaleString('id-ID')}
+                                                        Rp ${parseInt(transaksi.total).toLocaleString('id-ID')}
                                                     </td>
                                                 </tr>
                                             `;
@@ -674,7 +749,7 @@
                                 <div class="border-t border-green-200 pt-2 flex justify-between">
                                     <span class="font-semibold text-gray-900">Selisih:</span>
                                     <span class="font-bold text-lg ${shift.selisih === 0 ? 'text-blue-600' : shift.selisih > 0 ? 'text-green-600' : 'text-red-600'}">
-                                        ${shift.selisih === 0 ? 'Pas' : (shift.selisih > 0 ? '+' : '') + 'Rp ' + parseInt(shift.selisih).toLocaleString('id-ID')}
+                                        ${shift.selisih === 0 ? 'Pas' : (shift.selisih > 0 ? '+' : '') + 'Rp ' + Math.abs(parseInt(shift.selisih)).toLocaleString('id-ID')}
                                     </span>
                                 </div>
                                 ` : ''}
@@ -715,23 +790,18 @@
                 id: {{ $activeShift->id }},
                 mulai: '{{ $activeShift->mulai }}',
                 modal: {{ $activeShift->modal }},
-                total_penjualan: {{ $activeShift->total_penjualan ?? 0 }},
-                penjualan_tunai: {{ $activeShift->penjualan_tunai ?? 0 }},
-                total_transaksi: {{ $activeShift->total_transaksi ?? 0 }}
+                total_penjualan: {{ $activeShift->total_penjualan_calculated ?? 0 }},
+                penjualan_tunai: {{ $activeShift->penjualan_tunai_calculated ?? 0 }},
+                total_transaksi: {{ $activeShift->total_transaksi_calculated ?? 0 }}
             };
-            
-            // Update initial statistics display
-            document.getElementById('activeShiftTransactions').textContent = {{ $activeShift->total_transaksi ?? 0 }};
-            document.getElementById('activeShiftSales').textContent = 'Rp ' + parseInt({{ $activeShift->total_penjualan ?? 0 }}).toLocaleString('id-ID');
-            document.getElementById('activeShiftCashSales').textContent = 'Rp ' + parseInt({{ $activeShift->penjualan_tunai ?? 0 }}).toLocaleString('id-ID');
             
             // Start intervals
             updateShiftDuration();
             shiftDurationInterval = setInterval(updateShiftDuration, 1000);
             
-            // Load real-time statistics every 5 seconds
+            // Load real-time statistics every 3 seconds
             loadShiftStatistics();
-            statsUpdateInterval = setInterval(loadShiftStatistics, 5000);
+            statsUpdateInterval = setInterval(loadShiftStatistics, 3000);
         @endif
     });
 

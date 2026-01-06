@@ -11,7 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
         Schema::create('shift', function (Blueprint $table) {
             $table->id();
             $table->foreignId('id_user')->constrained('users')->onDelete('cascade');
@@ -20,6 +19,9 @@ return new class extends Migration
             $table->integer('durasi')->default(0);
             $table->unsignedBigInteger('modal')->default(0);
             $table->unsignedBigInteger('total_penjualan')->default(0);
+            $table->unsignedBigInteger('penjualan_tunai')->default(0); // Tambahkan kolom ini
+            $table->unsignedBigInteger('total_transaksi')->default(0); // Tambahkan kolom ini
+            $table->unsignedBigInteger('uang_aktual')->nullable(); // Tambahkan kolom ini
             $table->integer('selisih')->default(0);
             $table->timestamps();
         });
@@ -30,7 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
         Schema::dropIfExists('shift');
     }
 };
