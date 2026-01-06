@@ -27,8 +27,19 @@
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <div class="flex flex-col sm:flex-row gap-4">
                     <div class="flex-1">
-                        <input type="text" id="searchInput" placeholder="Cari produk..."
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <form action="{{ route('management.produk.index') }}" method="GET" class="flex gap-2">
+                            <input type="text" name="search" id="searchInput" placeholder="Cari produk atau SKU..."
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                value="{{ request('search') }}">
+                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            @if(request('search'))
+                                <a href="{{ route('management.produk.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            @endif
+                        </form>
                     </div>
                     <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg">
                         <option value="">Semua Status</option>
@@ -45,222 +56,228 @@
                 </div>
             </div>
 
-<!-- Product Table -->
-<div class="bg-white rounded-lg border border-gray-200">
-    <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Stok</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expired Date</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200" id="productTableBody">
-                @forelse ($produk as $item)
-                    @php
-                        // Gunakan SKU dari database, jika tidak ada baru generate
-                        $sku = $item->sku ?? 'PROD-' . str_pad($item->id, 6, '0', STR_PAD_LEFT);
-                        
-                        // Hitung sisa hari dengan benar
-                        $kadaluarsa = \Carbon\Carbon::parse($item->kadaluarsa);
-                        $today = \Carbon\Carbon::today();
-                        $daysUntilExpired = $today->diffInDays($kadaluarsa, false);
-                        
-                        // Tentukan status expired
-                        $isExpired = $daysUntilExpired < 0;
-                        $isExpiredToday = $daysUntilExpired === 0;
-                        $isExpiredVerySoon = $daysUntilExpired > 0 && $daysUntilExpired <= 3; // Kurang dari 3 hari
-                        $isExpiredSoon = $daysUntilExpired > 3 && $daysUntilExpired <= 7;
-                        
-                        $stockStatus = $item->status_stok;
-                        
-                        // Warna untuk stok
-                        if ($stockStatus === 'habis') {
-                            $stockColor = 'text-red-600 font-medium';
-                            $stockBg = 'bg-red-100';
-                            $stockIcon = 'fas fa-times-circle';
-                            $stockText = 'Habis';
-                        } elseif ($stockStatus === 'rendah') {
-                            $stockColor = 'text-orange-600 font-medium';
-                            $stockBg = 'bg-orange-100';
-                            $stockIcon = 'fas fa-exclamation-triangle';
-                            $stockText = 'Rendah';
-                        } else {
-                            $stockColor = 'text-green-600 font-medium';
-                            $stockBg = 'bg-green-100';
-                            $stockIcon = 'fas fa-check-circle';
-                            $stockText = 'Aman';
-                        }
-                        
-                        // Warna untuk expired - PERUBAHAN UTAMA
-                        if ($isExpired) {
-                            $expiryColor = 'text-red-600 font-medium';
-                            $expiryBg = 'bg-red-100';
-                            $expiryIcon = 'fas fa-exclamation-triangle';
-                            $expiryText = 'Expired';
-                            $rowBgColor = 'bg-red-50'; // Warna merah untuk baris
-                        } elseif ($isExpiredVerySoon) {
-                            $expiryColor = 'text-red-600 font-medium';
-                            $expiryBg = 'bg-red-100';
-                            $expiryIcon = 'fas fa-exclamation-circle';
-                            $expiryText = $daysUntilExpired . ' hari';
-                            $rowBgColor = 'bg-red-50'; // Warna merah untuk baris
-                        } elseif ($isExpiredToday) {
-                            $expiryColor = 'text-orange-600 font-medium';
-                            $expiryBg = 'bg-orange-100';
-                            $expiryIcon = 'fas fa-exclamation-circle';
-                            $expiryText = 'Hari Ini';
-                            $rowBgColor = '';
-                        } elseif ($isExpiredSoon) {
-                            $expiryColor = 'text-orange-600 font-medium';
-                            $expiryBg = 'bg-orange-100';
-                            $expiryIcon = 'fas fa-clock';
-                            $expiryText = $daysUntilExpired . ' hari';
-                            $rowBgColor = '';
-                        } else {
-                            $expiryColor = 'text-green-600 font-medium';
-                            $expiryBg = 'bg-green-100';
-                            $expiryIcon = 'fas fa-check-circle';
-                            $expiryText = $daysUntilExpired . ' hari';
-                            $rowBgColor = '';
-                        }
-                    @endphp
-                    
-                    <tr class="product-row {{ $rowBgColor }}"
-                        data-status="{{ $stockStatus }}"
-                        data-expiry="{{ $isExpired ? 'expired' : ($isExpiredVerySoon ? 'expired_very_soon' : ($isExpiredToday ? 'today' : ($isExpiredSoon ? 'soon' : 'safe'))) }}"
-                        data-expiry-days="{{ $daysUntilExpired }}">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-3">
+            <!-- Product Table -->
+            <div class="bg-white rounded-lg border border-gray-200">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Stok</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expired Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200" id="productTableBody">
+                            @forelse ($produk as $item)
                                 @php
-                                    $iconColor = 'amber';
-                                    $iconClass = 'fas fa-bread-slice';
-
-                                    // Determine icon based on product name
-                                    if (
-                                        str_contains(strtolower($item->nama), 'cokelat') ||
-                                        str_contains(strtolower($item->nama), 'chocolate')
-                                    ) {
-                                        $iconColor = 'orange';
-                                        $iconClass = 'fas fa-cookie-bite';
-                                    } elseif (
-                                        str_contains(strtolower($item->nama), 'keju') ||
-                                        str_contains(strtolower($item->nama), 'cheese')
-                                    ) {
-                                        $iconColor = 'yellow';
-                                        $iconClass = 'fas fa-cheese';
-                                    } elseif (str_contains(strtolower($item->nama), 'strawberry')) {
-                                        $iconColor = 'pink';
-                                        $iconClass = 'fas fa-ice-cream';
-                                    } elseif (
-                                        str_contains(strtolower($item->nama), 'kismis') ||
-                                        str_contains(strtolower($item->nama), 'raisin')
-                                    ) {
-                                        $iconColor = 'purple';
-                                        $iconClass = 'fas fa-candy-cane';
-                                    } elseif (
-                                        str_contains(strtolower($item->nama), 'pisang') ||
-                                        str_contains(strtolower($item->nama), 'banana')
-                                    ) {
-                                        $iconColor = 'yellow';
-                                        $iconClass = 'fas fa-drumstick-bite';
-                                    } elseif (
-                                        str_contains(strtolower($item->nama), 'donat') ||
-                                        str_contains(strtolower($item->nama), 'donut')
-                                    ) {
-                                        $iconColor = 'brown';
-                                        $iconClass = 'fas fa-circle';
-                                    } elseif (str_contains(strtolower($item->nama), 'abon')) {
-                                        $iconColor = 'red';
-                                        $iconClass = 'fas fa-hotdog';
-                                    } elseif (str_contains(strtolower($item->nama), 'sobek')) {
-                                        $iconColor = 'amber';
-                                        $iconClass = 'fas fa-bread-slice';
-                                    } elseif (str_contains(strtolower($item->nama), 'croissant')) {
-                                        $iconColor = 'orange';
-                                        $iconClass = 'fas fa-moon';
+                                    // Gunakan SKU dari database, jika tidak ada baru generate
+                                    $sku = $item->sku ?? 'PROD-' . str_pad($item->id, 6, '0', STR_PAD_LEFT);
+                                    
+                                    // Hitung sisa hari dengan benar
+                                    $kadaluarsa = \Carbon\Carbon::parse($item->kadaluarsa);
+                                    $today = \Carbon\Carbon::today();
+                                    $daysUntilExpired = $today->diffInDays($kadaluarsa, false);
+                                    
+                                    // Tentukan status expired
+                                    $isExpired = $daysUntilExpired < 0;
+                                    $isExpiredToday = $daysUntilExpired === 0;
+                                    $isExpiredVerySoon = $daysUntilExpired > 0 && $daysUntilExpired <= 3; // Kurang dari 3 hari
+                                    $isExpiredSoon = $daysUntilExpired > 3 && $daysUntilExpired <= 7;
+                                    
+                                    $stockStatus = $item->status_stok;
+                                    
+                                    // Warna untuk stok
+                                    if ($stockStatus === 'habis') {
+                                        $stockColor = 'text-red-600 font-medium';
+                                        $stockBg = 'bg-red-100';
+                                        $stockIcon = 'fas fa-times-circle';
+                                        $stockText = 'Habis';
+                                    } elseif ($stockStatus === 'rendah') {
+                                        $stockColor = 'text-orange-600 font-medium';
+                                        $stockBg = 'bg-orange-100';
+                                        $stockIcon = 'fas fa-exclamation-triangle';
+                                        $stockText = 'Rendah';
+                                    } else {
+                                        $stockColor = 'text-green-600 font-medium';
+                                        $stockBg = 'bg-green-100';
+                                        $stockIcon = 'fas fa-check-circle';
+                                        $stockText = 'Aman';
+                                    }
+                                    
+                                    // Warna untuk expired - PERUBAHAN UTAMA
+                                    if ($isExpired) {
+                                        $expiryColor = 'text-red-600 font-medium';
+                                        $expiryBg = 'bg-red-100';
+                                        $expiryIcon = 'fas fa-exclamation-triangle';
+                                        $expiryText = 'Expired';
+                                        $rowBgColor = 'bg-red-50'; // Warna merah untuk baris
+                                    } elseif ($isExpiredVerySoon) {
+                                        $expiryColor = 'text-red-600 font-medium';
+                                        $expiryBg = 'bg-red-100';
+                                        $expiryIcon = 'fas fa-exclamation-circle';
+                                        $expiryText = $daysUntilExpired . ' hari';
+                                        $rowBgColor = 'bg-red-50'; // Warna merah untuk baris
+                                    } elseif ($isExpiredToday) {
+                                        $expiryColor = 'text-orange-600 font-medium';
+                                        $expiryBg = 'bg-orange-100';
+                                        $expiryIcon = 'fas fa-exclamation-circle';
+                                        $expiryText = 'Hari Ini';
+                                        $rowBgColor = '';
+                                    } elseif ($isExpiredSoon) {
+                                        $expiryColor = 'text-orange-600 font-medium';
+                                        $expiryBg = 'bg-orange-100';
+                                        $expiryIcon = 'fas fa-clock';
+                                        $expiryText = $daysUntilExpired . ' hari';
+                                        $rowBgColor = '';
+                                    } else {
+                                        $expiryColor = 'text-green-600 font-medium';
+                                        $expiryBg = 'bg-green-100';
+                                        $expiryIcon = 'fas fa-check-circle';
+                                        $expiryText = $daysUntilExpired . ' hari';
+                                        $rowBgColor = '';
                                     }
                                 @endphp
-                                <div
-                                    class="w-10 h-10 bg-{{ $iconColor }}-100 rounded-lg flex items-center justify-center">
-                                    <i class="{{ $iconClass }} text-{{ $iconColor }}-600"></i>
-                                </div>
-                                <div>
-                                    <span class="font-medium text-gray-900 block">{{ $item->nama }}</span>
-                                    <!-- SKU Display dari database -->
-                                    <span class="text-xs text-gray-500">{{ $sku }}</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-2">
-                                <span class="{{ $stockColor }}">{{ $item->stok }}</span>
-                                <span class="px-2 py-1 text-xs rounded-full {{ $stockBg }} {{ $stockColor }}">
-                                    <i class="{{ $stockIcon }} mr-1"></i>{{ $stockText }}
-                                </span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-500">{{ $item->min_stok }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-2">
-                                <div>
-                                    <span class="text-sm {{ $expiryColor }}">
-                                        {{ \Carbon\Carbon::parse($item->kadaluarsa)->format('d M Y') }}
-                                    </span>
-                                    <div class="text-xs {{ $expiryColor }}">
-                                        @if($isExpired)
-                                            Sudah expired
-                                        @elseif($isExpiredToday)
-                                            Kadaluarsa hari ini
-                                        @elseif($isExpiredVerySoon)
-                                            <strong>Hanya {{ $daysUntilExpired }} hari lagi!</strong>
-                                        @else
-                                            {{ $daysUntilExpired }} hari lagi
-                                        @endif
-                                    </div>
-                                </div>
-                                <span class="px-2 py-1 text-xs rounded-full {{ $expiryBg }} {{ $expiryColor }}">
-                                    <i class="{{ $expiryIcon }}"></i>
-                                </span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex space-x-2">
-                                <!-- Tombol Detail -->
-                                <button onclick="showProductDetail({{ $item->id }})"
-                                    class="text-blue-600 hover:text-blue-700" title="Lihat Detail">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <!-- Tombol Edit -->
-                                <button onclick="openEditProductModal({{ $item->id }})"
-                                    class="text-green-600 hover:text-green-700" title="Edit Produk">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <!-- Tombol Hapus -->
-                                <button onclick="deleteProduct({{ $item->id }})"
-                                    class="text-red-600 hover:text-red-700" title="Hapus Produk">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                            <i class="fas fa-box-open text-3xl mb-3 text-gray-300"></i>
-                            <p>Tidak ada produk ditemukan.</p>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
+                                
+                                <tr class="product-row {{ $rowBgColor }}"
+                                    data-status="{{ $stockStatus }}"
+                                    data-expiry="{{ $isExpired ? 'expired' : ($isExpiredVerySoon ? 'expired_very_soon' : ($isExpiredToday ? 'today' : ($isExpiredSoon ? 'soon' : 'safe'))) }}"
+                                    data-expiry-days="{{ $daysUntilExpired }}">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-3">
+                                            @php
+                                                $iconColor = 'amber';
+                                                $iconClass = 'fas fa-bread-slice';
+
+                                                // Determine icon based on product name
+                                                if (
+                                                    str_contains(strtolower($item->nama), 'cokelat') ||
+                                                    str_contains(strtolower($item->nama), 'chocolate')
+                                                ) {
+                                                    $iconColor = 'orange';
+                                                    $iconClass = 'fas fa-cookie-bite';
+                                                } elseif (
+                                                    str_contains(strtolower($item->nama), 'keju') ||
+                                                    str_contains(strtolower($item->nama), 'cheese')
+                                                ) {
+                                                    $iconColor = 'yellow';
+                                                    $iconClass = 'fas fa-cheese';
+                                                } elseif (str_contains(strtolower($item->nama), 'strawberry')) {
+                                                    $iconColor = 'pink';
+                                                    $iconClass = 'fas fa-ice-cream';
+                                                } elseif (
+                                                    str_contains(strtolower($item->nama), 'kismis') ||
+                                                    str_contains(strtolower($item->nama), 'raisin')
+                                                ) {
+                                                    $iconColor = 'purple';
+                                                    $iconClass = 'fas fa-candy-cane';
+                                                } elseif (
+                                                    str_contains(strtolower($item->nama), 'pisang') ||
+                                                    str_contains(strtolower($item->nama), 'banana')
+                                                ) {
+                                                    $iconColor = 'yellow';
+                                                    $iconClass = 'fas fa-drumstick-bite';
+                                                } elseif (
+                                                    str_contains(strtolower($item->nama), 'donat') ||
+                                                    str_contains(strtolower($item->nama), 'donut')
+                                                ) {
+                                                    $iconColor = 'brown';
+                                                    $iconClass = 'fas fa-circle';
+                                                } elseif (str_contains(strtolower($item->nama), 'abon')) {
+                                                    $iconColor = 'red';
+                                                    $iconClass = 'fas fa-hotdog';
+                                                } elseif (str_contains(strtolower($item->nama), 'sobek')) {
+                                                    $iconColor = 'amber';
+                                                    $iconClass = 'fas fa-bread-slice';
+                                                } elseif (str_contains(strtolower($item->nama), 'croissant')) {
+                                                    $iconColor = 'orange';
+                                                    $iconClass = 'fas fa-moon';
+                                                }
+                                            @endphp
+                                            <div
+                                                class="w-10 h-10 bg-{{ $iconColor }}-100 rounded-lg flex items-center justify-center">
+                                                <i class="{{ $iconClass }} text-{{ $iconColor }}-600"></i>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium text-gray-900 block">{{ $item->nama }}</span>
+                                                <!-- SKU Display dari database -->
+                                                <span class="text-xs text-gray-500">{{ $sku }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="{{ $stockColor }}">{{ $item->stok }}</span>
+                                            <span class="px-2 py-1 text-xs rounded-full {{ $stockBg }} {{ $stockColor }}">
+                                                <i class="{{ $stockIcon }} mr-1"></i>{{ $stockText }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ $item->min_stok }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900">Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <div>
+                                                <span class="text-sm {{ $expiryColor }}">
+                                                    {{ \Carbon\Carbon::parse($item->kadaluarsa)->format('d M Y') }}
+                                                </span>
+                                                <div class="text-xs {{ $expiryColor }}">
+                                                    @if($isExpired)
+                                                        Sudah expired
+                                                    @elseif($isExpiredToday)
+                                                        Kadaluarsa hari ini
+                                                    @elseif($isExpiredVerySoon)
+                                                        <strong>Hanya {{ $daysUntilExpired }} hari lagi!</strong>
+                                                    @else
+                                                        {{ $daysUntilExpired }} hari lagi
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <span class="px-2 py-1 text-xs rounded-full {{ $expiryBg }} {{ $expiryColor }}">
+                                                <i class="{{ $expiryIcon }}"></i>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex space-x-2">
+                                            <!-- Tombol Detail -->
+                                            <button onclick="showProductDetail({{ $item->id }})"
+                                                class="text-blue-600 hover:text-blue-700" title="Lihat Detail">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <!-- Tombol Edit -->
+                                            <button onclick="openEditProductModal({{ $item->id }})"
+                                                class="text-green-600 hover:text-green-700" title="Edit Produk">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <!-- Tombol Hapus -->
+                                            <button onclick="deleteProduct({{ $item->id }})"
+                                                class="text-red-600 hover:text-red-700" title="Hapus Produk">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                        <i class="fas fa-box-open text-3xl mb-3 text-gray-300"></i>
+                                        <p>
+                                            @if(request()->has('search') && !empty(request('search')))
+                                                Tidak ada produk ditemukan dengan kata kunci "{{ request('search') }}"
+                                            @else
+                                                Tidak ada produk ditemukan.
+                                            @endif
+                                        </p>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             @if($produk->count() > 0)
                 <!-- Pagination -->
@@ -286,7 +303,7 @@
                                         <i class="fas fa-chevron-left"></i>
                                     </span>
                                 @else
-                                    <a href="{{ $produk->previousPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <a href="{{ $produk->previousPageUrl() }}{{ request('search') ? '&search=' . request('search') : '' }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                         <span class="sr-only">Sebelumnya</span>
                                         <i class="fas fa-chevron-left"></i>
                                     </a>
@@ -301,7 +318,7 @@
                                 @endphp
 
                                 @if($start > 1)
-                                    <a href="{{ $produk->url(1) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <a href="{{ $produk->url(1) }}{{ request('search') ? '&search=' . request('search') : '' }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                         1
                                     </a>
                                     @if($start > 2)
@@ -317,7 +334,7 @@
                                             {{ $page }}
                                         </span>
                                     @else
-                                        <a href="{{ $produk->url($page) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <a href="{{ $produk->url($page) }}{{ request('search') ? '&search=' . request('search') : '' }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                             {{ $page }}
                                         </a>
                                     @endif
@@ -329,14 +346,14 @@
                                             ...
                                         </span>
                                     @endif
-                                    <a href="{{ $produk->url($last) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <a href="{{ $produk->url($last) }}{{ request('search') ? '&search=' . request('search') : '' }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                         {{ $last }}
                                     </a>
                                 @endif
 
                                 {{-- Tombol Next --}}
                                 @if ($produk->hasMorePages())
-                                    <a href="{{ $produk->nextPageUrl() }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <a href="{{ $produk->nextPageUrl() }}{{ request('search') ? '&search=' . request('search') : '' }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                         <span class="sr-only">Berikutnya</span>
                                         <i class="fas fa-chevron-right"></i>
                                     </a>
@@ -987,11 +1004,7 @@
         });
     }
 
-    // Search and filter functionality
-    document.getElementById('searchInput').addEventListener('input', function() {
-        filterProducts();
-    });
-
+    // Client-side filter functionality (for status and expiry)
     document.getElementById('statusFilter').addEventListener('change', function() {
         filterProducts();
     });
@@ -1001,19 +1014,15 @@
     });
 
     function filterProducts() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const statusFilter = document.getElementById('statusFilter').value;
         const expiryFilter = document.getElementById('expiryFilter').value;
         const rows = document.querySelectorAll('.product-row');
 
         rows.forEach(row => {
-            const productName = row.querySelector('td:first-child .font-medium').textContent.toLowerCase();
-            const sku = row.querySelector('td:first-child .text-xs').textContent.toLowerCase();
             const productStatus = row.getAttribute('data-status');
             const expiryStatus = row.getAttribute('data-expiry');
             const expiryDays = parseInt(row.getAttribute('data-expiry-days'));
 
-            const matchesSearch = productName.includes(searchTerm) || sku.includes(searchTerm);
             const matchesStatus = !statusFilter || productStatus === statusFilter;
             
             let matchesExpiry = true;
@@ -1025,7 +1034,7 @@
                 matchesExpiry = expiryDays < 0;
             }
 
-            if (matchesSearch && matchesStatus && matchesExpiry) {
+            if (matchesStatus && matchesExpiry) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
