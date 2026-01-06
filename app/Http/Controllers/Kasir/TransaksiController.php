@@ -137,7 +137,7 @@ class TransaksiController extends Controller
             Jurnal::create([
                 'tgl' => now(),
                 'jenis' => 'pemasukan',
-                'keterangan' => 'Penjualan - Invoice INV-'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT).' ('.$validated['metode'].')',
+                'keterangan' => 'Penjualan - INV '.$transaksi->id_transaksi.' ('.$validated['metode'].')',
                 'nominal' => $total,
                 'kategori' => 'Penjualan',
                 'role' => 'kasir',

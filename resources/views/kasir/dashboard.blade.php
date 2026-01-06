@@ -159,9 +159,9 @@
                                         <div>
                                             <p class="text-sm font-bold text-gray-900">
                                                 @if($transaksi->customer)
-                                                    {{ $transaksi->customer->nama }}-{{ str_pad($transaksi->id, 3, '0', STR_PAD_LEFT) }}
+                                                    {{ $transaksi->customer->nama }} - {{ $transaksi->id_transaksi }}
                                                 @else
-                                                    #TRX-{{ str_pad($transaksi->id, 3, '0', STR_PAD_LEFT) }}
+                                                    Umum - {{ $transaksi->id_transaksi }}
                                                 @endif
                                             </p>
                                             <p class="text-xs text-gray-600">{{ $totalItem }} item • {{ $transaksi->created_at->format('H:i') }}</p>
