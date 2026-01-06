@@ -19,10 +19,24 @@ class ProdukController extends Controller
     public function index(Request $request)
     {
         try {
-            // Ambil semua produk dengan data terkait dan urutkan berdasarkan kadaluarsa terdekat (FEFO)
-            $produk = Produk::with(['updateStokHistory' => function ($query) {
+            // Ambil parameter search dari request
+            $search = $request->input('search');
+            
+            // Query produk dengan pencarian
+            $produkQuery = Produk::with(['updateStokHistory' => function ($query) {
                 $query->orderBy('tanggal_update', 'desc');
-            }])->orderBy('kadaluarsa', 'asc')->paginate(10); // Ubah get() menjadi paginate(10)
+            }]);
+            
+            // Filter berdasarkan search (nama atau SKU)
+            if ($search) {
+                $produkQuery->where(function ($query) use ($search) {
+                    $query->where('nama', 'LIKE', "%{$search}%")
+                          ->orWhere('sku', 'LIKE', "%{$search}%");
+                });
+            }
+            
+            // Urutkan berdasarkan kadaluarsa terdekat (FEFO)
+            $produk = $produkQuery->orderBy('kadaluarsa', 'asc')->paginate(10);
 
             // Cek untuk notifikasi stok rendah/habis
             $lowStockProducts = Produk::where('stok', '<', DB::raw('min_stok'))
@@ -89,7 +103,7 @@ class ProdukController extends Controller
                 }
             }
 
-            return view('manajemen.produk.index', compact('produk'));
+            return view('manajemen.produk.index', compact('produk', 'search'));
 
         } catch (\Exception $e) {
             Log::error('Index Product Error: '.$e->getMessage());
