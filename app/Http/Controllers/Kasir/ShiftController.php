@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
+use App\Models\Jurnal;
 use App\Models\Shift;
 use App\Models\Transaksi;
 use Carbon\Carbon;
@@ -21,11 +22,45 @@ class ShiftController extends Controller
             ->whereNull('selesai')
             ->first();
 
-        $shifts = Shift::where('id_user', Auth::id())
+        // Jika ada shift aktif, hitung statistik real-time dari JURNAL
+        if ($activeShift) {
+            $statistik = $this->calculateTransactionStatistics($activeShift->mulai, now());
+
+            // Tambahkan statistik sebagai property ke objek activeShift
+            $activeShift->total_penjualan_calculated = $statistik['total_penjualan'];
+            $activeShift->penjualan_tunai_calculated = $statistik['penjualan_tunai'];
+            $activeShift->total_transaksi_calculated = $statistik['total_transaksi'];
+
+            // Juga simpan data statistik ke dalam atribut shift untuk view
+            $activeShift->total_penjualan = $statistik['total_penjualan'];
+            $activeShift->penjualan_tunai = $statistik['penjualan_tunai'];
+            $activeShift->total_transaksi = $statistik['total_transaksi'];
+        }
+
+        $period = $request->get('period', 'today');
+        $shiftsQuery = Shift::where('id_user', Auth::id())
             ->whereNotNull('selesai')
-            ->orderBy('selesai', 'desc')
-            ->limit(50)
-            ->get();
+            ->orderBy('selesai', 'desc');
+
+        // Filter berdasarkan periode
+        switch ($period) {
+            case 'today':
+                $shiftsQuery->whereDate('selesai', Carbon::today());
+                break;
+            case 'week':
+                $shiftsQuery->whereBetween('selesai', [
+                    Carbon::now()->startOfWeek(),
+                    Carbon::now()->endOfWeek(),
+                ]);
+                break;
+            case 'month':
+                $shiftsQuery->whereMonth('selesai', Carbon::now()->month)
+                    ->whereYear('selesai', Carbon::now()->year);
+                break;
+                // 'all' tidak perlu filter tambahan
+        }
+
+        $shifts = $shiftsQuery->limit(50)->get();
 
         return view('kasir.shift.index', compact('activeShift', 'shifts'));
     }
@@ -58,6 +93,8 @@ class ShiftController extends Controller
                 'mulai' => now(),
                 'modal' => $request->modal,
                 'total_penjualan' => 0,
+                'penjualan_tunai' => 0,
+                'total_transaksi' => 0,
                 'selisih' => 0,
                 'durasi' => 0,
             ]);
@@ -93,43 +130,54 @@ class ShiftController extends Controller
             ], 403);
         }
 
-        // Hitung statistik real-time
-        $transaksis = Transaksi::where('id_user', $shift->id_user)
-            ->whereBetween('tgl', [$shift->mulai, $shift->selesai ?: now()])
-            ->with('detailTransaksis')
-            ->get();
+        // Hitung statistik real-time DARI JURNAL (lebih akurat)
+        $statistik = $this->calculateTransactionStatistics($shift->mulai, $shift->selesai ?: now());
 
-        $totalPenjualan = $transaksis->sum(function ($transaksi) {
-            return $transaksi->detailTransaksis->sum(function ($detail) {
-                return $detail->jumlah * $detail->harga;
-            });
-        });
-
-        $penjualanTunai = Transaksi::where('id_user', $shift->id_user)
-            ->whereBetween('tgl', [$shift->mulai, $shift->selesai ?: now()])
-            ->where('metode', 'tunai')
-            ->with('detailTransaksis')
+        // Ambil 10 transaksi terbaru dari jurnal untuk menampilkan detail
+        $jurnals = Jurnal::whereDate('tgl', '>=', $shift->mulai)
+            ->whereDate('tgl', '<=', $shift->selesai ?: now())
+            ->where('kategori', 'Penjualan')
+            ->where('jenis', 'pemasukan')
+            ->orderBy('tgl', 'desc')
+            ->take(10)
             ->get()
-            ->sum(function ($transaksi) {
-                return $transaksi->detailTransaksis->sum(function ($detail) {
-                    return $detail->jumlah * $detail->harga;
-                });
+            ->map(function ($jurnal) {
+                // Parse invoice number dan metode dari keterangan
+                preg_match('/Invoice INV-(\d+) \((.+?)\)/', $jurnal->keterangan, $matches);
+                $invoiceNumber = isset($matches[1]) ? $matches[1] : null;
+                $metode = isset($matches[2]) ? $matches[2] : 'unknown';
+
+                return [
+                    'invoice' => $invoiceNumber ? 'INV-'.str_pad($invoiceNumber, 5, '0', STR_PAD_LEFT) : '-',
+                    'keterangan' => $jurnal->keterangan,
+                    'tgl' => $jurnal->tgl,
+                    'metode' => $metode,
+                    'total' => $jurnal->nominal,
+                ];
             });
 
-        $totalTransaksi = $transaksis->count();
+        // Hitung transaksi dari database transaksi untuk jumlah (lebih cepat)
+        $totalTransaksiFromTransaksi = Transaksi::where('id_user', $shift->id_user)
+            ->whereBetween('tgl', [$shift->mulai, $shift->selesai ?: now()])
+            ->count();
 
         return response()->json([
             'success' => true,
             'data' => [
-                'shift' => $shift,
-                'statistik' => [
-                    'total_penjualan' => $totalPenjualan,
-                    'penjualan_tunai' => $penjualanTunai,
-                    'total_transaksi' => $totalTransaksi,
-                    'uang_seharusnya' => $shift->modal + $penjualanTunai,
+                'shift' => [
+                    'id' => $shift->id,
+                    'mulai' => $shift->mulai,
+                    'selesai' => $shift->selesai,
+                    'modal' => $shift->modal,
+                    'total_penjualan' => $statistik['total_penjualan'],
+                    'penjualan_tunai' => $statistik['penjualan_tunai'],
+                    'total_transaksi' => $totalTransaksiFromTransaksi,
+                    'uang_aktual' => $shift->uang_aktual ?? 0,
                     'selisih' => $shift->selisih,
+                    'durasi' => $shift->durasi,
                 ],
-                'transaksis' => $transaksis->take(10),
+                'statistik' => $statistik,
+                'transaksis' => $jurnals,
             ],
         ]);
     }
@@ -158,38 +206,26 @@ class ShiftController extends Controller
             $selesai = now();
             $durasi = $mulai->diffInMinutes($selesai);
 
-            // Hitung statistik penjualan
-            $transaksis = Transaksi::where('id_user', Auth::id())
+            // Hitung statistik penjualan terakhir DARI JURNAL
+            $statistik = $this->calculateTransactionStatistics($shift->mulai, $selesai);
+
+            // Hitung total transaksi dari tabel transaksi
+            $totalTransaksiFromTransaksi = Transaksi::where('id_user', Auth::id())
                 ->whereBetween('tgl', [$shift->mulai, $selesai])
-                ->with('detailTransaksis')
-                ->get();
+                ->count();
 
-            $totalPenjualan = $transaksis->sum(function ($transaksi) {
-                return $transaksi->detailTransaksis->sum(function ($detail) {
-                    return $detail->jumlah * $detail->harga;
-                });
-            });
-
-            $penjualanTunai = Transaksi::where('id_user', Auth::id())
-                ->whereBetween('tgl', [$shift->mulai, $selesai])
-                ->where('metode', 'tunai')
-                ->with('detailTransaksis')
-                ->get()
-                ->sum(function ($transaksi) {
-                    return $transaksi->detailTransaksis->sum(function ($detail) {
-                        return $detail->jumlah * $detail->harga;
-                    });
-                });
-
-            $totalTransaksi = $transaksis->count();
-            $uangSeharusnya = $shift->modal + $penjualanTunai;
+            // Hitung selisih
+            $uangSeharusnya = $shift->modal + $statistik['penjualan_tunai'];
             $selisih = $request->uang_aktual - $uangSeharusnya;
 
             // Update shift
             $shift->update([
                 'selesai' => $selesai,
                 'durasi' => $durasi,
-                'total_penjualan' => $totalPenjualan,
+                'total_penjualan' => $statistik['total_penjualan'],
+                'penjualan_tunai' => $statistik['penjualan_tunai'],
+                'total_transaksi' => $totalTransaksiFromTransaksi,
+                'uang_aktual' => $request->uang_aktual,
                 'selisih' => $selisih,
             ]);
 
@@ -212,89 +248,64 @@ class ShiftController extends Controller
     }
 
     /**
-     * Get active shift data
+     * Get active shift statistics
      */
-    public function getActiveShift()
+    public function getActiveStats(Shift $shift)
     {
-        $activeShift = Shift::where('id_user', Auth::id())
-            ->whereNull('selesai')
-            ->first();
-
-        if (! $activeShift) {
+        if ($shift->id_user != Auth::id() || $shift->selesai !== null) {
             return response()->json([
                 'success' => false,
-                'message' => 'Tidak ada shift aktif',
-            ], 404);
+                'message' => 'Akses ditolak',
+            ], 403);
         }
 
-        // Hitung statistik real-time
-        $transaksis = Transaksi::where('id_user', Auth::id())
-            ->where('tgl', '>=', $activeShift->mulai)
-            ->with('detailTransaksis')
-            ->get();
-
-        $totalPenjualan = $transaksis->sum(function ($transaksi) {
-            return $transaksi->detailTransaksis->sum(function ($detail) {
-                return $detail->jumlah * $detail->harga;
-            });
-        });
-
-        $penjualanTunai = Transaksi::where('id_user', Auth::id())
-            ->where('tgl', '>=', $activeShift->mulai)
-            ->where('metode', 'tunai')
-            ->with('detailTransaksis')
-            ->get()
-            ->sum(function ($transaksi) {
-                return $transaksi->detailTransaksis->sum(function ($detail) {
-                    return $detail->jumlah * $detail->harga;
-                });
-            });
-
-        $totalTransaksi = $transaksis->count();
+        $statistik = $this->calculateTransactionStatistics($shift->mulai, now());
 
         return response()->json([
             'success' => true,
             'data' => [
-                'shift' => $activeShift,
-                'statistik' => [
-                    'total_penjualan' => $totalPenjualan,
-                    'penjualan_tunai' => $penjualanTunai,
-                    'total_transaksi' => $totalTransaksi,
+                'shift' => [
+                    'id' => $shift->id,
+                    'modal' => $shift->modal,
                 ],
+                'statistik' => $statistik,
             ],
         ]);
     }
 
     /**
-     * Get shift history with period filter
+     * Calculate transaction statistics for a shift using JURNAL data (more accurate)
      */
-    public function getHistory(Request $request)
+    private function calculateTransactionStatistics($startTime, $endTime)
     {
-        $period = $request->get('period', 'today');
-        $query = Shift::where('id_user', Auth::id())
-            ->whereNotNull('selesai')
-            ->orderBy('selesai', 'desc');
+        // Hitung dari JURNAL karena data lebih akurat dan sudah include semua metode pembayaran
+        $jurnals = Jurnal::where('kategori', 'Penjualan')
+            ->where('jenis', 'pemasukan')
+            ->whereBetween('tgl', [$startTime, $endTime])
+            ->get();
 
-        switch ($period) {
-            case 'today':
-                $query->whereDate('selesai', today());
-                break;
-            case 'week':
-                $query->whereBetween('selesai', [now()->startOfWeek(), now()->endOfWeek()]);
-                break;
-            case 'month':
-                $query->whereMonth('selesai', now()->month)
-                    ->whereYear('selesai', now()->year);
-                break;
-                // 'all' tidak ada filter tambahan
+        $totalPenjualan = 0;
+        $penjualanTunai = 0;
+
+        foreach ($jurnals as $jurnal) {
+            $totalPenjualan += $jurnal->nominal;
+
+            // Cek jika metode pembayaran adalah tunai dari keterangan
+            if (strpos($jurnal->keterangan, '(tunai)') !== false) {
+                $penjualanTunai += $jurnal->nominal;
+            }
         }
 
-        $shifts = $query->limit(100)->get();
+        // Hitung total transaksi dari tabel transaksi (lebih cepat untuk count)
+        $totalTransaksi = Transaksi::where('id_user', Auth::id())
+            ->whereBetween('tgl', [$startTime, $endTime])
+            ->count();
 
-        return response()->json([
-            'success' => true,
-            'data' => $shifts,
-        ]);
+        return [
+            'total_penjualan' => $totalPenjualan,
+            'penjualan_tunai' => $penjualanTunai,
+            'total_transaksi' => $totalTransaksi,
+        ];
     }
 
     /**
@@ -302,7 +313,6 @@ class ShiftController extends Controller
      */
     public function destroy(Shift $shift)
     {
-        // Tidak ada penghapusan shift
         return response()->json([
             'success' => false,
             'message' => 'Fitur ini tidak tersedia',
