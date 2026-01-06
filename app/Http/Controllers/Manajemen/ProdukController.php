@@ -21,20 +21,20 @@ class ProdukController extends Controller
         try {
             // Ambil parameter search dari request
             $search = $request->input('search');
-            
+
             // Query produk dengan pencarian
             $produkQuery = Produk::with(['updateStokHistory' => function ($query) {
                 $query->orderBy('tanggal_update', 'desc');
             }]);
-            
+
             // Filter berdasarkan search (nama atau SKU)
             if ($search) {
                 $produkQuery->where(function ($query) use ($search) {
                     $query->where('nama', 'LIKE', "%{$search}%")
-                          ->orWhere('sku', 'LIKE', "%{$search}%");
+                        ->orWhere('sku', 'LIKE', "%{$search}%");
                 });
             }
-            
+
             // Urutkan berdasarkan kadaluarsa terdekat (FEFO)
             $produk = $produkQuery->orderBy('kadaluarsa', 'asc')->paginate(10);
 

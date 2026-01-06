@@ -5,11 +5,10 @@ namespace App\Http\Controllers\Kasir;
 use App\Http\Controllers\Controller;
 use App\Models\Shift;
 use App\Models\Transaksi;
-use App\Models\DetailTransaksi;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class ShiftController extends Controller
 {
@@ -60,7 +59,7 @@ class ShiftController extends Controller
                 'modal' => $request->modal,
                 'total_penjualan' => 0,
                 'selisih' => 0,
-                'durasi' => 0
+                'durasi' => 0,
             ]);
 
             DB::commit();
@@ -68,14 +67,15 @@ class ShiftController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Shift berhasil dimulai!',
-                'data' => $shift
+                'data' => $shift,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal memulai shift: ' . $e->getMessage(),
+                'message' => 'Gagal memulai shift: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -89,7 +89,7 @@ class ShiftController extends Controller
         if ($shift->id_user != Auth::id()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Akses ditolak'
+                'message' => 'Akses ditolak',
             ], 403);
         }
 
@@ -99,8 +99,8 @@ class ShiftController extends Controller
             ->with('detailTransaksis')
             ->get();
 
-        $totalPenjualan = $transaksis->sum(function($transaksi) {
-            return $transaksi->detailTransaksis->sum(function($detail) {
+        $totalPenjualan = $transaksis->sum(function ($transaksi) {
+            return $transaksi->detailTransaksis->sum(function ($detail) {
                 return $detail->jumlah * $detail->harga;
             });
         });
@@ -110,8 +110,8 @@ class ShiftController extends Controller
             ->where('metode', 'tunai')
             ->with('detailTransaksis')
             ->get()
-            ->sum(function($transaksi) {
-                return $transaksi->detailTransaksis->sum(function($detail) {
+            ->sum(function ($transaksi) {
+                return $transaksi->detailTransaksis->sum(function ($detail) {
                     return $detail->jumlah * $detail->harga;
                 });
             });
@@ -127,10 +127,10 @@ class ShiftController extends Controller
                     'penjualan_tunai' => $penjualanTunai,
                     'total_transaksi' => $totalTransaksi,
                     'uang_seharusnya' => $shift->modal + $penjualanTunai,
-                    'selisih' => $shift->selisih
+                    'selisih' => $shift->selisih,
                 ],
-                'transaksis' => $transaksis->take(10)
-            ]
+                'transaksis' => $transaksis->take(10),
+            ],
         ]);
     }
 
@@ -143,7 +143,7 @@ class ShiftController extends Controller
         if ($shift->id_user != Auth::id() || $shift->selesai !== null) {
             return response()->json([
                 'success' => false,
-                'message' => 'Shift sudah ditutup atau bukan milik Anda'
+                'message' => 'Shift sudah ditutup atau bukan milik Anda',
             ], 403);
         }
 
@@ -164,8 +164,8 @@ class ShiftController extends Controller
                 ->with('detailTransaksis')
                 ->get();
 
-            $totalPenjualan = $transaksis->sum(function($transaksi) {
-                return $transaksi->detailTransaksis->sum(function($detail) {
+            $totalPenjualan = $transaksis->sum(function ($transaksi) {
+                return $transaksi->detailTransaksis->sum(function ($detail) {
                     return $detail->jumlah * $detail->harga;
                 });
             });
@@ -175,8 +175,8 @@ class ShiftController extends Controller
                 ->where('metode', 'tunai')
                 ->with('detailTransaksis')
                 ->get()
-                ->sum(function($transaksi) {
-                    return $transaksi->detailTransaksis->sum(function($detail) {
+                ->sum(function ($transaksi) {
+                    return $transaksi->detailTransaksis->sum(function ($detail) {
                         return $detail->jumlah * $detail->harga;
                     });
                 });
@@ -198,14 +198,15 @@ class ShiftController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Shift berhasil ditutup!',
-                'data' => $shift
+                'data' => $shift,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menutup shift: ' . $e->getMessage(),
+                'message' => 'Gagal menutup shift: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -219,7 +220,7 @@ class ShiftController extends Controller
             ->whereNull('selesai')
             ->first();
 
-        if (!$activeShift) {
+        if (! $activeShift) {
             return response()->json([
                 'success' => false,
                 'message' => 'Tidak ada shift aktif',
@@ -232,8 +233,8 @@ class ShiftController extends Controller
             ->with('detailTransaksis')
             ->get();
 
-        $totalPenjualan = $transaksis->sum(function($transaksi) {
-            return $transaksi->detailTransaksis->sum(function($detail) {
+        $totalPenjualan = $transaksis->sum(function ($transaksi) {
+            return $transaksi->detailTransaksis->sum(function ($detail) {
                 return $detail->jumlah * $detail->harga;
             });
         });
@@ -243,8 +244,8 @@ class ShiftController extends Controller
             ->where('metode', 'tunai')
             ->with('detailTransaksis')
             ->get()
-            ->sum(function($transaksi) {
-                return $transaksi->detailTransaksis->sum(function($detail) {
+            ->sum(function ($transaksi) {
+                return $transaksi->detailTransaksis->sum(function ($detail) {
                     return $detail->jumlah * $detail->harga;
                 });
             });
@@ -259,8 +260,8 @@ class ShiftController extends Controller
                     'total_penjualan' => $totalPenjualan,
                     'penjualan_tunai' => $penjualanTunai,
                     'total_transaksi' => $totalTransaksi,
-                ]
-            ]
+                ],
+            ],
         ]);
     }
 
@@ -283,16 +284,16 @@ class ShiftController extends Controller
                 break;
             case 'month':
                 $query->whereMonth('selesai', now()->month)
-                      ->whereYear('selesai', now()->year);
+                    ->whereYear('selesai', now()->year);
                 break;
-            // 'all' tidak ada filter tambahan
+                // 'all' tidak ada filter tambahan
         }
 
         $shifts = $query->limit(100)->get();
 
         return response()->json([
             'success' => true,
-            'data' => $shifts
+            'data' => $shifts,
         ]);
     }
 
@@ -304,7 +305,7 @@ class ShiftController extends Controller
         // Tidak ada penghapusan shift
         return response()->json([
             'success' => false,
-            'message' => 'Fitur ini tidak tersedia'
+            'message' => 'Fitur ini tidak tersedia',
         ], 400);
     }
 

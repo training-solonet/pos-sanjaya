@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Shift extends Model
 {
     protected $table = 'shift';
-    
+
     protected $fillable = [
         'id_user',
         'mulai',
@@ -16,7 +16,7 @@ class Shift extends Model
         'durasi',
         'modal',
         'total_penjualan',
-        'selisih'
+        'selisih',
     ];
 
     protected $casts = [
