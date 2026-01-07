@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('kode_promo')->unique();
             $table->string('nama_promo');
-            $table->enum('jenis',['diskon_persen','diskon_nominal','bundle','point','cashback']);
+            $table->enum('jenis', ['diskon_persen', 'diskon_nominal', 'bundle', 'point', 'cashback']);
             $table->integer('nilai');
             $table->integer('min_transaksi')->default(0);
             $table->integer('maks_potongan')->nullable();
