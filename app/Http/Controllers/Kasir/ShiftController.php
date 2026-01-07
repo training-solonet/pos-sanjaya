@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
-use App\Models\Jurnal;
 use App\Models\Shift;
 use App\Models\Transaksi;
 use Carbon\Carbon;
@@ -22,7 +21,7 @@ class ShiftController extends Controller
             ->whereNull('selesai')
             ->first();
 
-        // Jika ada shift aktif, hitung statistik real-time dari JURNAL
+        // Jika ada shift aktif, hitung statistik real-time
         if ($activeShift) {
             $statistik = $this->calculateTransactionStatistics($activeShift->mulai, now());
 
@@ -130,36 +129,32 @@ class ShiftController extends Controller
             ], 403);
         }
 
-        // Hitung statistik real-time DARI JURNAL (lebih akurat)
+        // Hitung statistik real-time
         $statistik = $this->calculateTransactionStatistics($shift->mulai, $shift->selesai ?: now());
 
-        // Ambil 10 transaksi terbaru dari jurnal untuk menampilkan detail
-        $jurnals = Jurnal::whereDate('tgl', '>=', $shift->mulai)
-            ->whereDate('tgl', '<=', $shift->selesai ?: now())
-            ->where('kategori', 'Penjualan')
-            ->where('jenis', 'pemasukan')
+        // Ambil 10 transaksi terbaru dari tabel transaksi
+        $transaksis = Transaksi::where('id_user', $shift->id_user)
+            ->whereBetween('tgl', [$shift->mulai, $shift->selesai ?: now()])
+            ->with('customer')
             ->orderBy('tgl', 'desc')
             ->take(10)
             ->get()
-            ->map(function ($jurnal) {
-                // Parse invoice number dan metode dari keterangan
-                preg_match('/Invoice INV-(\d+) \((.+?)\)/', $jurnal->keterangan, $matches);
-                $invoiceNumber = isset($matches[1]) ? $matches[1] : null;
-                $metode = isset($matches[2]) ? $matches[2] : 'unknown';
+            ->map(function ($transaksi) {
+                // Format invoice dari id_transaksi (T1767757306)
+                $invoice = $transaksi->id_transaksi;
+
+                // Total transaksi adalah nilai di kolom 'bayar'
+                $total = $transaksi->bayar;
 
                 return [
-                    'invoice' => $invoiceNumber ? 'INV-'.str_pad($invoiceNumber, 5, '0', STR_PAD_LEFT) : '-',
-                    'keterangan' => $jurnal->keterangan,
-                    'tgl' => $jurnal->tgl,
-                    'metode' => $metode,
-                    'total' => $jurnal->nominal,
+                    'id_transaksi' => $transaksi->id_transaksi,
+                    'invoice' => $invoice,
+                    'tgl' => $transaksi->tgl,
+                    'metode' => $transaksi->metode,
+                    'total' => $total,
+                    'customer' => $transaksi->customer ? $transaksi->customer->nama : 'Non-Member',
                 ];
             });
-
-        // Hitung transaksi dari database transaksi untuk jumlah (lebih cepat)
-        $totalTransaksiFromTransaksi = Transaksi::where('id_user', $shift->id_user)
-            ->whereBetween('tgl', [$shift->mulai, $shift->selesai ?: now()])
-            ->count();
 
         return response()->json([
             'success' => true,
@@ -171,13 +166,13 @@ class ShiftController extends Controller
                     'modal' => $shift->modal,
                     'total_penjualan' => $statistik['total_penjualan'],
                     'penjualan_tunai' => $statistik['penjualan_tunai'],
-                    'total_transaksi' => $totalTransaksiFromTransaksi,
+                    'total_transaksi' => $statistik['total_transaksi'],
                     'uang_aktual' => $shift->uang_aktual ?? 0,
                     'selisih' => $shift->selisih,
                     'durasi' => $shift->durasi,
                 ],
                 'statistik' => $statistik,
-                'transaksis' => $jurnals,
+                'transaksis' => $transaksis,
             ],
         ]);
     }
@@ -206,11 +201,11 @@ class ShiftController extends Controller
             $selesai = now();
             $durasi = $mulai->diffInMinutes($selesai);
 
-            // Hitung statistik penjualan terakhir DARI JURNAL
+            // Hitung statistik penjualan terakhir
             $statistik = $this->calculateTransactionStatistics($shift->mulai, $selesai);
 
-            // Hitung total transaksi dari tabel transaksi
-            $totalTransaksiFromTransaksi = Transaksi::where('id_user', Auth::id())
+            // Hitung total transaksi
+            $totalTransaksi = Transaksi::where('id_user', Auth::id())
                 ->whereBetween('tgl', [$shift->mulai, $selesai])
                 ->count();
 
@@ -224,7 +219,7 @@ class ShiftController extends Controller
                 'durasi' => $durasi,
                 'total_penjualan' => $statistik['total_penjualan'],
                 'penjualan_tunai' => $statistik['penjualan_tunai'],
-                'total_transaksi' => $totalTransaksiFromTransaksi,
+                'total_transaksi' => $totalTransaksi,
                 'uang_aktual' => $request->uang_aktual,
                 'selisih' => $selisih,
             ]);
@@ -245,6 +240,37 @@ class ShiftController extends Controller
                 'message' => 'Gagal menutup shift: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Calculate transaction statistics for a shift using TRANSAKSI data
+     */
+    private function calculateTransactionStatistics($startTime, $endTime)
+    {
+        // Ambil semua transaksi dalam rentang waktu
+        $transaksis = Transaksi::where('id_user', Auth::id())
+            ->whereBetween('tgl', [$startTime, $endTime])
+            ->get();
+
+        $totalPenjualan = 0;
+        $penjualanTunai = 0;
+        $totalTransaksi = $transaksis->count();
+
+        foreach ($transaksis as $transaksi) {
+            // Total transaksi adalah nilai di kolom 'bayar'
+            $totalPenjualan += $transaksi->bayar;
+
+            // Jika metode pembayaran tunai, tambahkan ke penjualan tunai
+            if ($transaksi->metode === 'tunai') {
+                $penjualanTunai += $transaksi->bayar;
+            }
+        }
+
+        return [
+            'total_penjualan' => $totalPenjualan,
+            'penjualan_tunai' => $penjualanTunai,
+            'total_transaksi' => $totalTransaksi,
+        ];
     }
 
     /**
@@ -271,41 +297,6 @@ class ShiftController extends Controller
                 'statistik' => $statistik,
             ],
         ]);
-    }
-
-    /**
-     * Calculate transaction statistics for a shift using JURNAL data (more accurate)
-     */
-    private function calculateTransactionStatistics($startTime, $endTime)
-    {
-        // Hitung dari JURNAL karena data lebih akurat dan sudah include semua metode pembayaran
-        $jurnals = Jurnal::where('kategori', 'Penjualan')
-            ->where('jenis', 'pemasukan')
-            ->whereBetween('tgl', [$startTime, $endTime])
-            ->get();
-
-        $totalPenjualan = 0;
-        $penjualanTunai = 0;
-
-        foreach ($jurnals as $jurnal) {
-            $totalPenjualan += $jurnal->nominal;
-
-            // Cek jika metode pembayaran adalah tunai dari keterangan
-            if (strpos($jurnal->keterangan, '(tunai)') !== false) {
-                $penjualanTunai += $jurnal->nominal;
-            }
-        }
-
-        // Hitung total transaksi dari tabel transaksi (lebih cepat untuk count)
-        $totalTransaksi = Transaksi::where('id_user', Auth::id())
-            ->whereBetween('tgl', [$startTime, $endTime])
-            ->count();
-
-        return [
-            'total_penjualan' => $totalPenjualan,
-            'penjualan_tunai' => $penjualanTunai,
-            'total_transaksi' => $totalTransaksi,
-        ];
     }
 
     /**
