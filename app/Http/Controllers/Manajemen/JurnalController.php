@@ -6,46 +6,108 @@ use App\Http\Controllers\Controller;
 use App\Models\Jurnal;
 use App\Models\Transaksi;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class JurnalController extends Controller
 {
     public function index(Request $request)
     {
-        // Jika request meminta data JSON (untuk AJAX)
-        if ($request->ajax() || $request->has('data')) {
-            return $this->getData($request);
+        // Default filter
+        $period = $request->get('period', 'daily');
+        $date = $request->get('date', date('Y-m-d'));
+        $jenis = $request->get('jenis');
+        $kategori = $request->get('kategori');
+        $search = $request->get('search');
+
+        // Mulai query untuk data transaksi
+        $query = Jurnal::query();
+
+        // Filter berdasarkan periode
+        $this->applyPeriodFilter($query, $period, $date);
+
+        // Filter jenis
+        if ($jenis) {
+            $query->where('jenis', $jenis);
         }
 
-        // Jika request meminta summary
-        if ($request->has('summary')) {
-            return $this->getSummary($request);
+        // Filter kategori
+        if ($kategori) {
+            $query->where('kategori', $kategori);
         }
 
-        // Ambil data jurnal untuk hari ini (default view) - GABUNGAN data manual dan transaksi
-        $today = now()->format('Y-m-d');
+        // Filter pencarian
+        if ($search) {
+            $query->where('keterangan', 'like', '%'.$search.'%');
+        }
 
-        // Ambil data jurnal manual (role manajemen)
-        $jurnalsManual = Jurnal::whereDate('tgl', $today)
-            ->where('role', 'manajemen')
-            ->orderBy('tgl', 'desc')
-            ->get();
+        // Order by tanggal terbaru
+        $query->orderBy('tgl', 'desc')->orderBy('id', 'desc');
 
-        // Ambil data transaksi hari ini dan konversi ke format jurnal
-        $transaksiHariIni = Transaksi::whereDate('tgl', $today)->get();
+        // Pagination 10 data per halaman
+        $transactions = $query->paginate(10);
 
-        // Gabungkan data
-        $jurnals = $jurnalsManual->concat($this->convertTransactionsToJurnals($transaksiHariIni))
-            ->sortByDesc('tgl');
+        // **PERBAIKAN UTAMA: Hitung summary berdasarkan filter yang sama TANPA pagination**
+        $summaryQuery = Jurnal::query();
+        $this->applyPeriodFilter($summaryQuery, $period, $date);
 
-        // Hitung total penjualan hari ini UNTUK TAMPILAN DI JURNAL
-        $todaySales = Transaksi::whereDate('tgl', $today)
-            ->sum(DB::raw('bayar - kembalian'));
+        if ($jenis) {
+            $summaryQuery->where('jenis', $jenis);
+        }
 
-        // Hitung total transaksi hari ini
-        $todayTransactions = Transaksi::whereDate('tgl', $today)->count();
+        if ($kategori) {
+            $summaryQuery->where('kategori', $kategori);
+        }
 
-        return view('manajemen.jurnal.index', compact('jurnals', 'todaySales', 'todayTransactions'));
+        if ($search) {
+            $summaryQuery->where('keterangan', 'like', '%'.$search.'%');
+        }
+
+        // Hitung total summary
+        $totalPemasukan = (clone $summaryQuery)->where('jenis', 'pemasukan')->sum('nominal');
+        $totalPengeluaran = (clone $summaryQuery)->where('jenis', 'pengeluaran')->sum('nominal');
+        $countPemasukan = (clone $summaryQuery)->where('jenis', 'pemasukan')->count();
+        $countPengeluaran = (clone $summaryQuery)->where('jenis', 'pengeluaran')->count();
+
+        $summary = [
+            'total_revenue' => $totalPemasukan,
+            'total_expense' => $totalPengeluaran,
+            'revenue_count' => $countPemasukan,
+            'expense_count' => $countPengeluaran,
+            'net_balance' => $totalPemasukan - $totalPengeluaran,
+            'period' => $period,
+            'date' => $date,
+        ];
+
+        // Tambahkan parameter filter ke pagination links
+        $transactions->appends([
+            'period' => $period,
+            'date' => $date,
+            'jenis' => $jenis,
+            'kategori' => $kategori,
+            'search' => $search,
+        ]);
+
+        return view('manajemen.jurnal.index', compact('transactions', 'summary'));
+    }
+
+    /**
+     * Apply period filter to query
+     */
+    private function applyPeriodFilter($query, $period, $date)
+    {
+        if ($period === 'daily') {
+            $query->whereDate('tgl', $date);
+        } elseif ($period === 'weekly') {
+            $startOfWeek = Carbon::parse($date)->startOfWeek();
+            $endOfWeek = Carbon::parse($date)->endOfWeek();
+            $query->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
+        } elseif ($period === 'monthly') {
+            $startOfMonth = Carbon::parse($date)->startOfMonth();
+            $endOfMonth = Carbon::parse($date)->endOfMonth();
+            $query->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
+        }
+
+        return $query;
     }
 
     public function store(Request $request)
