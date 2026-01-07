@@ -117,19 +117,19 @@ class CustomerController extends Controller
 
         try {
             $customer = Customer::findOrFail($id);
-            
+
             // Prepare update data
             $updateData = [
                 'nama' => $request->nama,
                 'telepon' => $request->telepon,
                 'email' => $request->email ?: null,
             ];
-            
+
             // Only update kode_member if it's provided in the request
             if ($request->filled('kode_member')) {
                 $updateData['kode_member'] = $request->kode_member;
             }
-            
+
             $customer->update($updateData);
 
             return response()->json([
