@@ -68,15 +68,23 @@ class TransaksiController extends Controller
             $diskon = $validated['diskon'] ?? 0;
             $total = $subtotal + $ppn - $diskon;
 
+            // Generate ID Transaksi Unik (11 karakter: T + 10 digit angka)
+            // Format: TXXXXXXXXXX (T + timestamp 10 digit)
+            $timestamp = now()->timestamp; // Unix timestamp
+            $idTransaksi = 'T'.substr($timestamp, -10); // Ambil 10 digit terakhir dari timestamp
+
             // Buat transaksi
+            // Kolom 'bayar' berisi total yang harus dibayar (bukan uang yang diterima)
+            // Kolom 'kembalian' berisi selisih antara uang diterima dengan total
             $transaksi = Transaksi::create([
+                'id_transaksi' => $idTransaksi,
                 'id_user' => Auth::id(),
                 'id_customer' => $validated['id_customer'] ?? null,
                 'tgl' => now(),
                 'metode' => $validated['metode'],
                 'ppn' => $ppn,
                 'diskon' => $diskon,
-                'bayar' => $validated['bayar'] ?? $total,
+                'bayar' => $total, // Total yang harus dibayar
                 'kembalian' => $validated['kembalian'] ?? 0,
             ]);
 
@@ -129,7 +137,7 @@ class TransaksiController extends Controller
             Jurnal::create([
                 'tgl' => now(),
                 'jenis' => 'pemasukan',
-                'keterangan' => 'Penjualan - Invoice INV-'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT).' ('.$validated['metode'].')',
+                'keterangan' => 'Penjualan - INV '.$transaksi->id_transaksi.' ('.$validated['metode'].')',
                 'nominal' => $total,
                 'kategori' => 'Penjualan',
                 'role' => 'kasir',
@@ -160,6 +168,7 @@ class TransaksiController extends Controller
                 'success' => true,
                 'message' => 'Transaksi berhasil disimpan',
                 'data' => [
+                    'id_transaksi' => $idTransaksi,
                     'invoice' => 'INV-'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
                     'transaksi_id' => $transaksi->id,
                     'total' => $total,

@@ -1875,7 +1875,7 @@
             const paymentMethod = document.querySelector('.payment-method.active').dataset.method;
 
             // Get payment amount for cash
-            let bayar = finalTotal;
+            let uangDiterima = finalTotal;
             let kembalian = 0;
 
             if (paymentMethod === 'tunai') {
@@ -1887,8 +1887,8 @@
                     return;
                 }
 
-                bayar = parseInt(cashValue);
-                kembalian = bayar - finalTotal;
+                uangDiterima = parseInt(cashValue);
+                kembalian = uangDiterima - finalTotal;
             }
 
             // Prepare data
@@ -1902,7 +1902,7 @@
                 })),
                 ppn: ppn,
                 diskon: 0,
-                bayar: bayar,
+                bayar: finalTotal, // Simpan total yang harus dibayar, bukan uang yang diterima
                 kembalian: kembalian
             };
 
