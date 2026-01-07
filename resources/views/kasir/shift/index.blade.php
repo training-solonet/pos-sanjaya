@@ -665,16 +665,36 @@
                                     </thead>
                                     <tbody>
                                         ${transaksis.map((transaksi, index) => {
+                                            let metodeClass = 'bg-gray-100 text-gray-700';
+                                            let metodeText = transaksi.metode || 'unknown';
+                                            
+                                            if (transaksi.metode === 'tunai') {
+                                                metodeClass = 'bg-green-100 text-green-700';
+                                                metodeText = 'Tunai';
+                                            } else if (transaksi.metode === 'kartu') {
+                                                metodeClass = 'bg-blue-100 text-blue-700';
+                                                metodeText = 'Kartu';
+                                            } else if (transaksi.metode === 'transfer') {
+                                                metodeClass = 'bg-purple-100 text-purple-700';
+                                                metodeText = 'Transfer';
+                                            } else if (transaksi.metode === 'qris') {
+                                                metodeClass = 'bg-orange-100 text-orange-700';
+                                                metodeText = 'QRIS';
+                                            }
+                                            
+                                            // Gunakan id_transaksi sebagai invoice (T1767757306)
+                                            const invoice = transaksi.id_transaksi || transaksi.invoice || '-';
+                                            
                                             return `
                                                 <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
                                                     <td class="px-3 py-2 text-sm text-gray-700">${index + 1}</td>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">${transaksi.invoice}</td>
+                                                    <td class="px-3 py-2 text-sm text-gray-700 font-semibold">${invoice}</td>
                                                     <td class="px-3 py-2 text-sm text-gray-700">
                                                         ${new Date(transaksi.tgl).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                                     </td>
                                                     <td class="px-3 py-2 text-sm">
-                                                        <span class="px-2 py-1 ${transaksi.metode === 'tunai' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'} rounded text-xs">
-                                                            ${transaksi.metode}
+                                                        <span class="px-2 py-1 ${metodeClass} rounded text-xs font-medium">
+                                                            ${metodeText}
                                                         </span>
                                                     </td>
                                                     <td class="px-3 py-2 text-sm text-green-600 font-semibold">
