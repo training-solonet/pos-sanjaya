@@ -145,6 +145,11 @@
                                 <i class="fas fa-redo text-sm"></i>
                                 <span>Reset</span>
                             </button>
+                            <button onclick="exportPDF()" 
+                                    class="px-6 py-2 bg-gradient-to-r from-red-500 to-red-700 text-white rounded-lg hover:opacity-90 flex items-center space-x-2 transition-all">
+                                <i class="fas fa-file-pdf text-sm"></i>
+                                <span>Export PDF</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -357,6 +362,17 @@
             setTodayDate();
             currentFilters.date = document.getElementById('filterDate').value;
             fetchTransactions();
+        }
+
+        // Export to PDF
+        function exportPDF() {
+            const params = new URLSearchParams();
+            if (currentFilters.date) params.append('tanggal', currentFilters.date);
+            if (currentFilters.payment) params.append('metode', currentFilters.payment);
+            if (currentFilters.cashier) params.append('kasir', currentFilters.cashier);
+            
+            const url = `{{ route('kasir.laporan.export-pdf') }}?${params.toString()}`;
+            window.open(url, '_blank');
         }
 
         // Fetch transactions from API

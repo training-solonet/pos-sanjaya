@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jurnal Harian - {{ $monthName }} {{ $year }}</title>
+    <title>Jurnal Harian - {{ $tanggal }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;

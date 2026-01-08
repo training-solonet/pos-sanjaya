@@ -20,7 +20,8 @@ class JurnalController extends Controller
         // Get journals for specific date (sudah include transaksi penjualan yang otomatis tercatat)
         $jurnals = Jurnal::whereDate('tgl', $tanggal)
             ->orderBy('tgl', 'desc')
-            ->get();
+            ->paginate(10)
+            ->appends(['tanggal' => $tanggal]);
 
         // Calculate summary
         $totalPemasukan = Jurnal::whereDate('tgl', $tanggal)
@@ -181,36 +182,48 @@ class JurnalController extends Controller
      */
     public function exportPdf(Request $request)
     {
-        $tanggal = $request->get('tanggal', date('Y-m-d'));
+        try {
+            $tanggal = $request->get('tanggal', date('Y-m-d'));
 
-        // Get journals for specific date
-        $jurnals = Jurnal::whereDate('tgl', $tanggal)
-            ->orderBy('tgl', 'asc')
-            ->get();
+            // Get journals for specific date
+            $jurnals = Jurnal::whereDate('tgl', $tanggal)
+                ->orderBy('tgl', 'asc')
+                ->get();
 
-        // Calculate summary
-        $totalPemasukan = $jurnals->where('jenis', 'pemasukan')->sum('nominal');
-        $totalPengeluaran = $jurnals->where('jenis', 'pengeluaran')->sum('nominal');
-        $jumlahPemasukan = $jurnals->where('jenis', 'pemasukan')->count();
-        $jumlahPengeluaran = $jurnals->where('jenis', 'pengeluaran')->count();
-        $saldoBersih = $totalPemasukan - $totalPengeluaran;
+            // Calculate summary
+            $totalPemasukan = $jurnals->where('jenis', 'pemasukan')->sum('nominal');
+            $totalPengeluaran = $jurnals->where('jenis', 'pengeluaran')->sum('nominal');
+            $jumlahPemasukan = $jurnals->where('jenis', 'pemasukan')->count();
+            $jumlahPengeluaran = $jurnals->where('jenis', 'pengeluaran')->count();
+            $saldoBersih = $totalPemasukan - $totalPengeluaran;
 
-        // Format tanggal
-        $tanggalFormatted = Carbon::parse($tanggal)->locale('id')->translatedFormat('d F Y');
+            // Format tanggal
+            $tanggalFormatted = Carbon::parse($tanggal)->locale('id')->translatedFormat('d F Y');
 
-        $data = [
-            'jurnals' => $jurnals,
-            'totalPemasukan' => $totalPemasukan,
-            'totalPengeluaran' => $totalPengeluaran,
-            'jumlahPemasukan' => $jumlahPemasukan,
-            'jumlahPengeluaran' => $jumlahPengeluaran,
-            'saldoBersih' => $saldoBersih,
-            'tanggal' => $tanggalFormatted,
-            'tanggalRaw' => $tanggal,
-        ];
+            $data = [
+                'jurnals' => $jurnals,
+                'totalPemasukan' => $totalPemasukan,
+                'totalPengeluaran' => $totalPengeluaran,
+                'jumlahPemasukan' => $jumlahPemasukan,
+                'jumlahPengeluaran' => $jumlahPengeluaran,
+                'saldoBersih' => $saldoBersih,
+                'tanggal' => $tanggalFormatted,
+                'tanggalRaw' => $tanggal,
+            ];
 
-        $pdf = Pdf::loadView('kasir.jurnal.export-pdf', $data);
+            $pdf = Pdf::loadView('kasir.jurnal.export-pdf', $data)
+                ->setPaper('a4', 'portrait')
+                ->setOption('margin-top', 10)
+                ->setOption('margin-right', 10)
+                ->setOption('margin-bottom', 10)
+                ->setOption('margin-left', 10);
 
-        return $pdf->download("Jurnal_Harian_{$tanggal}.pdf");
+            return $pdf->download("Jurnal_Harian_{$tanggal}.pdf");
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Gagal generate PDF: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

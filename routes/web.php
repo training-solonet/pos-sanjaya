@@ -43,6 +43,7 @@ Route::middleware([IsKasir::class])->group(function () {
 
         // API endpoint for real-time transaction updates
         Route::get('laporan/api/transactions', [KasirLaporanController::class, 'getTransactions'])->name('laporan.api.transactions');
+        Route::get('laporan/export-pdf', [KasirLaporanController::class, 'exportPDF'])->name('laporan.export-pdf');
         Route::get('jurnal/api/data', [KasirJurnalController::class, 'getJurnalData'])->name('jurnal.api.data');
         Route::get('jurnal/export-pdf', [KasirJurnalController::class, 'exportPdf'])->name('jurnal.export-pdf');
         Route::get('transaksi/api/next-id', [TransaksiController::class, 'getNextId'])->name('transaksi.api.next-id');

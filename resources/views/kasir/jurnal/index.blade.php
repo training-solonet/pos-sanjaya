@@ -241,6 +241,48 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Pagination -->
+                    <div class="px-6 py-4 border-t bg-white">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-gray-700">
+                                Menampilkan 
+                                <span class="font-medium">{{ $jurnals->count() }}</span> 
+                                dari 
+                                <span class="font-medium">{{ $jurnals->total() }}</span> 
+                                transaksi
+                                @if($jurnals->count() > 0)
+                                ({{ $jurnals->firstItem() }}-{{ $jurnals->lastItem() }})
+                                @endif
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                @if ($jurnals->onFirstPage())
+                                    <span class="px-4 py-2 text-sm text-gray-400 cursor-not-allowed">
+                                        <i class="fas fa-chevron-left mr-1"></i>Sebelumnya
+                                    </span>
+                                @else
+                                    <a href="{{ $jurnals->previousPageUrl() }}" class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <i class="fas fa-chevron-left mr-1"></i>Sebelumnya
+                                    </a>
+                                @endif
+                                
+                                <span class="px-4 py-2 text-sm font-medium text-gray-900">
+                                    {{ $jurnals->currentPage() }} / {{ $jurnals->lastPage() }}
+                                </span>
+                                
+                                @if ($jurnals->hasMorePages())
+                                    <a href="{{ $jurnals->nextPageUrl() }}" class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                        Selanjutnya<i class="fas fa-chevron-right ml-1"></i>
+                                    </a>
+                                @else
+                                    <span class="px-4 py-2 text-sm text-gray-400 cursor-not-allowed">
+                                        Selanjutnya<i class="fas fa-chevron-right ml-1"></i>
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
