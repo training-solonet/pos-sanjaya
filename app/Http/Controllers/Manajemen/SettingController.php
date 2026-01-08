@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Manajemen;
 
 use App\Http\Controllers\Controller;
+use App\Models\BundleProduct;
 use App\Models\Pajak;
 use App\Models\Promo;
-use App\Models\BundleProduct;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class SettingController extends Controller
 {
@@ -20,7 +20,7 @@ class SettingController extends Controller
         $pajaks = Pajak::orderBy('created_at', 'desc')->get();
         $promos = Promo::with('bundleProducts.produk')->orderBy('created_at', 'desc')->get();
         $produks = \App\Models\Produk::where('stok', '>', 0)->orderBy('nama')->get();
-        
+
         return view('manajemen.setting.index', compact('pajaks', 'promos', 'produks'));
     }
 
@@ -38,15 +38,15 @@ class SettingController extends Controller
     public function store(Request $request)
     {
         $type = $request->input('type', 'pajak');
-        
+
         if ($type === 'promo') {
             return $this->storePromo($request);
         }
-        
+
         if ($type === 'bundle' || $request->jenis === 'bundle') {
             return $this->storeBundle($request);
         }
-        
+
         return $this->storePajak($request);
     }
 
@@ -73,7 +73,7 @@ class SettingController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -86,16 +86,16 @@ class SettingController extends Controller
             ]);
 
             session()->flash('active_tab', 'pajak');
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Pajak berhasil ditambahkan',
-                'data' => $pajak
+                'data' => $pajak,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -132,7 +132,7 @@ class SettingController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -153,12 +153,12 @@ class SettingController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Promo berhasil ditambahkan',
-                'data' => $promo
+                'data' => $promo,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -177,35 +177,38 @@ class SettingController extends Controller
     public function edit(Request $request, string $id)
     {
         $type = $request->query('type', 'pajak');
-        
+
         if ($type === 'promo') {
             $promo = Promo::findOrFail($id);
             $data = $promo->toArray();
             // Format dates to Y-m-d for date input
             $data['start_date'] = $promo->start_date ? \Carbon\Carbon::parse($promo->start_date)->format('Y-m-d') : null;
             $data['end_date'] = $promo->end_date ? \Carbon\Carbon::parse($promo->end_date)->format('Y-m-d') : null;
+
             return response()->json($data);
         }
-        
+
         if ($type === 'bundle') {
             $promo = Promo::with('bundleProducts')->findOrFail($id);
             $data = $promo->toArray();
             // Format dates to Y-m-d for date input
             $data['start_date'] = $promo->start_date ? \Carbon\Carbon::parse($promo->start_date)->format('Y-m-d') : null;
             $data['end_date'] = $promo->end_date ? \Carbon\Carbon::parse($promo->end_date)->format('Y-m-d') : null;
-            $data['bundle_products'] = $promo->bundleProducts->map(function($item) {
+            $data['bundle_products'] = $promo->bundleProducts->map(function ($item) {
                 return [
                     'produk_id' => $item->produk_id,
                     'quantity' => $item->quantity,
                 ];
             });
+
             return response()->json($data);
         }
-        
+
         $pajak = Pajak::findOrFail($id);
         $data = $pajak->toArray();
         // Format date to Y-m-d for date input
         $data['start_date'] = $pajak->start_date ? \Carbon\Carbon::parse($pajak->start_date)->format('Y-m-d') : null;
+
         return response()->json($data);
     }
 
@@ -216,23 +219,23 @@ class SettingController extends Controller
     {
         $type = $request->input('type', 'pajak');
         $jenis = $request->input('jenis');
-        
+
         // Handle toggle status
         if ($request->has('toggle_status')) {
             return $this->handleToggleStatus($request, $id, $type);
         }
-        
+
         if ($type === 'promo') {
             return $this->handleUpdatePromo($request, $id);
         }
-        
+
         if ($type === 'bundle' || $jenis === 'bundle') {
             return $this->handleUpdateBundle($request, $id);
         }
-        
+
         return $this->handleUpdatePajak($request, $id);
     }
-    
+
     /**
      * Handle toggle status
      */
@@ -243,29 +246,29 @@ class SettingController extends Controller
                 $promo = Promo::findOrFail($id);
                 $promo->status = $request->status === 'true' || $request->status === true || $request->status === 1;
                 $promo->save();
-                
+
                 return response()->json([
                     'success' => true,
-                    'message' => 'Status ' . ($type === 'bundle' ? 'bundle' : 'promo') . ' berhasil diubah'
+                    'message' => 'Status '.($type === 'bundle' ? 'bundle' : 'promo').' berhasil diubah',
                 ]);
             }
-            
+
             $pajak = Pajak::findOrFail($id);
             $pajak->status = $request->status === 'true' || $request->status === true || $request->status === 1;
             $pajak->save();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Status pajak berhasil diubah'
+                'message' => 'Status pajak berhasil diubah',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
-    
+
     /**
      * Handle update pajak
      */
@@ -289,7 +292,7 @@ class SettingController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -305,12 +308,12 @@ class SettingController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Pajak berhasil diupdate',
-                'data' => $pajak
+                'data' => $pajak,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -321,7 +324,7 @@ class SettingController extends Controller
     private function handleUpdatePromo(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
-            'kode_promo' => 'required|string|max:255|unique:promo,kode_promo,' . $id,
+            'kode_promo' => 'required|string|max:255|unique:promo,kode_promo,'.$id,
             'nama_promo' => 'required|string|max:255',
             'jenis' => 'required|in:diskon_persen,point,cashback',
             'nilai' => 'required|numeric|min:0',
@@ -345,7 +348,7 @@ class SettingController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -367,12 +370,12 @@ class SettingController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Promo berhasil diupdate',
-                'data' => $promo
+                'data' => $promo,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -383,7 +386,7 @@ class SettingController extends Controller
     private function handleUpdateBundle(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
-            'kode_promo' => 'required|string|max:255|unique:promo,kode_promo,' . $id,
+            'kode_promo' => 'required|string|max:255|unique:promo,kode_promo,'.$id,
             'nama_promo' => 'required|string|max:255',
             'nilai' => 'required|numeric|min:0',
             'min_transaksi' => 'nullable|numeric|min:0',
@@ -406,7 +409,7 @@ class SettingController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -426,7 +429,7 @@ class SettingController extends Controller
 
             // Delete old bundle products and create new ones
             BundleProduct::where('promo_id', $promo->id)->delete();
-            
+
             foreach ($request->bundle_products as $product) {
                 BundleProduct::create([
                     'promo_id' => $promo->id,
@@ -440,13 +443,14 @@ class SettingController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Bundle promo berhasil diupdate',
-                'data' => $promo->load('bundleProducts.produk')
+                'data' => $promo->load('bundleProducts.produk'),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -457,7 +461,7 @@ class SettingController extends Controller
     public function destroy(Request $request, string $id)
     {
         $type = $request->query('type', 'pajak');
-        
+
         try {
             if ($type === 'promo' || $type === 'bundle') {
                 $promo = Promo::findOrFail($id);
@@ -465,21 +469,21 @@ class SettingController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => ($type === 'bundle' ? 'Bundle' : 'Promo') . ' berhasil dihapus'
+                    'message' => ($type === 'bundle' ? 'Bundle' : 'Promo').' berhasil dihapus',
                 ]);
             }
-            
+
             $pajak = Pajak::findOrFail($id);
             $pajak->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pajak berhasil dihapus'
+                'message' => 'Pajak berhasil dihapus',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -517,7 +521,7 @@ class SettingController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -551,13 +555,14 @@ class SettingController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Bundle promo berhasil ditambahkan',
-                'data' => $promo->load('bundleProducts.produk')
+                'data' => $promo->load('bundleProducts.produk'),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan: '.$e->getMessage(),
             ], 500);
         }
     }
