@@ -14,6 +14,7 @@ use App\Http\Controllers\Manajemen\LaporanController;
 use App\Http\Controllers\Manajemen\OpnameController;
 use App\Http\Controllers\Manajemen\ProdukController;
 use App\Http\Controllers\Manajemen\ResepController;
+use App\Http\Controllers\Manajemen\SettingController;
 use App\Http\Controllers\Manajemen\UpdateStokProdukController;
 use App\Http\Controllers\RedirectController;
 use App\Http\Middleware\IsKasir;
@@ -64,6 +65,7 @@ Route::middleware([IsManagement::class])->group(function () {
             'laporan' => LaporanController::class,
             'updateproduk' => UpdateStokProdukController::class,
             'opname' => OpnameController::class,
+            'setting' => SettingController::class,
         ]);
     });
 });
