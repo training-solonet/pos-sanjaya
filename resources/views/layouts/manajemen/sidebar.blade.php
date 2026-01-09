@@ -104,6 +104,22 @@
                 </a>
             </div>
         </div>
+
+        <!-- Setting Section -->
+        <div class="pt-4 pb-2">
+            <div class="flex items-center space-x-2 px-3 mb-2">
+                <span class="sidebar-text text-xs font-bold text-gray-500 uppercase tracking-wider transition-opacity duration-300">Pengaturan</span>
+                <span class="sidebar-text bg-purple-100 text-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-full transition-opacity duration-300">Sistem</span>
+            </div>
+            <div class="space-y-1 border-l-2 border-purple-200 ml-3 pl-2">
+                <a href="{{ route('management.setting.index') }}"
+                    class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
+                    {{ request()->routeIs('management.setting.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Pajak dan Promo - Kelola Pajak & Promo">
+                    <i class="sidebar-icon fas fa-cog {{ request()->routeIs('management.setting.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
+                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Pajak dan Promo</span>
+                </a>
+            </div>
+        </div>
     </nav>
 
     <!-- USER PROFILE -->
