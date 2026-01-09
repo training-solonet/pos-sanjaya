@@ -16,7 +16,8 @@
         "laravel/jetstream": "^5.3",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
-        "livewire/livewire": "^3.6.4"
+        "livewire/livewire": "^3.6.4",
+        "maatwebsite/excel": "^1.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

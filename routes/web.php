@@ -34,6 +34,18 @@ Route::post('/logout', [RedirectController::class, 'logout'])->name('logout')->m
 Route::middleware([IsKasir::class])->group(function () {
     // Route group kasir
     Route::group(['prefix' => 'kasir', 'as' => 'kasir.'], function () {
+        // Specific routes must come BEFORE resource routes to avoid conflicts
+        // API endpoint for real-time transaction updates
+        Route::get('laporan/api/transactions', [KasirLaporanController::class, 'getTransactions'])->name('laporan.api.transactions');
+        Route::get('laporan/export-pdf', [KasirLaporanController::class, 'exportPDF'])->name('laporan.export-pdf');
+        Route::get('laporan/export-excel', [KasirLaporanController::class, 'exportExcel'])->name('laporan.export-excel');
+        Route::get('jurnal/api/data', [KasirJurnalController::class, 'getJurnalData'])->name('jurnal.api.data');
+        Route::get('jurnal/export-pdf', [KasirJurnalController::class, 'exportPdf'])->name('jurnal.export-pdf');
+        Route::get('jurnal/export-excel', [KasirJurnalController::class, 'exportExcel'])->name('jurnal.export-excel');
+        Route::get('transaksi/api/next-id', [TransaksiController::class, 'getNextId'])->name('transaksi.api.next-id');
+        Route::get('dashboard/api/chart-data', [KasirDashboardController::class, 'getChartData'])->name('dashboard.api.chart-data');
+
+        // Resource routes
         Route::resources([
             'dashboard' => KasirDashboardController::class,
             'jurnal' => KasirJurnalController::class,
@@ -42,13 +54,6 @@ Route::middleware([IsKasir::class])->group(function () {
             'shift' => ShiftController::class,
             'customer' => CustomerController::class,
         ]);
-
-        // API endpoint for real-time transaction updates
-        Route::get('laporan/api/transactions', [KasirLaporanController::class, 'getTransactions'])->name('laporan.api.transactions');
-        Route::get('jurnal/api/data', [KasirJurnalController::class, 'getJurnalData'])->name('jurnal.api.data');
-        Route::get('jurnal/export-pdf', [KasirJurnalController::class, 'exportPdf'])->name('jurnal.export-pdf');
-        Route::get('transaksi/api/next-id', [TransaksiController::class, 'getNextId'])->name('transaksi.api.next-id');
-        Route::get('dashboard/api/chart-data', [KasirDashboardController::class, 'getChartData'])->name('dashboard.api.chart-data');
     });
 });
 
