@@ -224,6 +224,7 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Bundle</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga Bundle</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stok</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Mulai</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Akhir</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -258,6 +259,14 @@
                                                 @if($bundle->min_transaksi > 0)
                                                     <div class="text-xs text-gray-500">Qty: {{ $bundle->min_transaksi }}</div>
                                                 @endif
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="px-3 py-1 rounded-full text-sm font-semibold
+                                                        {{ $bundle->stok > 10 ? 'bg-green-100 text-green-800' : ($bundle->stok > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                                        <i class="fas fa-box mr-1"></i>{{ $bundle->stok }}
+                                                    </span>
+                                                </div>
                                             </td>
                                             <td class="px-6 py-4 text-sm text-gray-600">
                                                 {{ \Carbon\Carbon::parse($bundle->start_date)->format('d M Y') }}
@@ -422,7 +431,6 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                             <option value="">Pilih Jenis</option>
                             <option value="diskon_persen">Diskon Persentase</option>
-                            <option value="point">Point</option>
                             <option value="cashback">Cashback</option>
                         </select>
                         <span class="text-red-500 text-xs hidden" id="error_jenis"></span>
@@ -610,6 +618,18 @@
                         </label>
                         <input type="date" id="bundle_end_date" name="end_date" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="bundle_stok" class="block text-sm font-medium text-gray-700 mb-2">
+                            Stok Bundle <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" id="bundle_stok" name="stok" required min="0"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            placeholder="Masukkan stok bundle">
+                        <span class="text-red-500 text-xs hidden" id="error_bundle_stok"></span>
                     </div>
                 </div>
 
@@ -1233,6 +1253,7 @@
                     document.getElementById('bundle_nama_promo').value = data.nama_promo;
                     document.getElementById('bundle_harga').value = data.nilai;
                     document.getElementById('bundle_min_transaksi').value = data.min_transaksi;
+                    document.getElementById('bundle_stok').value = data.stok || 0;
                     document.getElementById('bundle_start_date').value = data.start_date || '';
                     document.getElementById('bundle_end_date').value = data.end_date || '';
                     document.getElementById('bundle_status').checked = data.status;

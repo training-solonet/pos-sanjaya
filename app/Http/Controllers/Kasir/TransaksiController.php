@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\DetailTransaksi;
 use App\Models\Jurnal;
+use App\Models\Pajak;
 use App\Models\Produk;
+use App\Models\Promo;
 use App\Models\Transaksi; // PASTIKAN INI ADA
 use App\Models\UpdateStokProduk; // TAMBAHKAN INI UNTUK AUTO JURNAL
 use Illuminate\Http\Request;
@@ -21,11 +23,29 @@ class TransaksiController extends Controller
      */
     public function index()
     {
-        $produks = Produk::where('stok', '>', 0)->paginate(16);
+        $produks = Produk::where('stok', '>', 0)->get();
         $totalProduk = Produk::where('stok', '>', 0)->count();
         $customers = Customer::orderBy('nama', 'asc')->get();
 
-        return view('kasir.transaksi.index', compact('produks', 'totalProduk', 'customers'));
+        // Ambil data bundle (promo dengan bundle products) yang memiliki stok
+        $bundles = Promo::where('status', true)
+            ->where('stok', '>', 0)
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->with(['bundleProducts.produk'])
+            ->whereHas('bundleProducts')
+            ->get();
+
+        // Ambil pajak aktif
+        $pajak = Pajak::where('status', true)->first();
+
+        // Ambil promo diskon aktif (bukan bundle) - tanpa filter tanggal
+        $promos = Promo::where('status', true)
+            ->whereIn('jenis', ['diskon_persen', 'cashback'])
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        return view('kasir.transaksi.index', compact('produks', 'totalProduk', 'customers', 'bundles', 'pajak', 'promos'));
     }
 
     /**
@@ -54,6 +74,8 @@ class TransaksiController extends Controller
                 'diskon' => 'nullable|numeric|min:0',
                 'bayar' => 'nullable|numeric|min:0',
                 'kembalian' => 'nullable|numeric|min:0',
+                'poin_didapat' => 'nullable|integer|min:0|max:100',
+                'poin_digunakan' => 'nullable|integer|min:0',
             ]);
 
             DB::beginTransaction();
@@ -66,7 +88,10 @@ class TransaksiController extends Controller
 
             $ppn = $validated['ppn'] ?? ($subtotal * 0.1);
             $diskon = $validated['diskon'] ?? 0;
-            $total = $subtotal + $ppn - $diskon;
+            $poinDigunakan = $validated['poin_digunakan'] ?? 0;
+            
+            // Total = Subtotal + PPN - Diskon - Poin Digunakan (1 poin = Rp 1)
+            $total = $subtotal + $ppn - $diskon - $poinDigunakan;
 
             // Generate ID Transaksi Unik (11 karakter: T + 10 digit angka)
             // Format: TXXXXXXXXXX (T + timestamp 10 digit)
@@ -146,21 +171,31 @@ class TransaksiController extends Controller
             Log::info("Entry jurnal OTOMATIS dibuat untuk transaksi ID: {$transaksi->id}, Total: {$total}");
             // =========================================================
 
-            // ============ TAMBAHKAN POIN KE CUSTOMER ============
-            // Jika transaksi menggunakan member, tambahkan poin
+            // ============ TAMBAHKAN POIN KE CUSTOMER (GACHA SYSTEM) ============
+            // Jika transaksi menggunakan member, kelola poin
             if ($validated['id_customer']) {
                 $customer = Customer::find($validated['id_customer']);
                 if ($customer && $customer->kode_member) {
-                    // Hitung poin: 1 poin per Rp 10.000
-                    $poinDapat = floor($total / 10000);
-
-                    // Tambahkan poin ke total_poin customer
-                    $customer->increment('total_poin', $poinDapat);
-
-                    Log::info("Poin ditambahkan ke customer ID {$customer->id}: {$poinDapat} poin (Total transaksi: {$total})");
+                    // Kurangi poin yang digunakan terlebih dahulu
+                    $poinDigunakan = $validated['poin_digunakan'] ?? 0;
+                    if ($poinDigunakan > 0) {
+                        if ($customer->total_poin >= $poinDigunakan) {
+                            $customer->decrement('total_poin', $poinDigunakan);
+                            Log::info("Poin digunakan dari customer ID {$customer->id}: {$poinDigunakan} poin");
+                        } else {
+                            throw new \Exception("Poin customer tidak mencukupi. Poin tersedia: {$customer->total_poin}");
+                        }
+                    }
+                    
+                    // Tambahkan poin gacha (random 1-100 per transaksi, tanpa minimum harga)
+                    $poinDapat = $validated['poin_didapat'] ?? 0;
+                    if ($poinDapat > 0) {
+                        $customer->increment('total_poin', $poinDapat);
+                        Log::info("Poin gacha ditambahkan ke customer ID {$customer->id}: {$poinDapat} poin (random 1-100)");
+                    }
                 }
             }
-            // ====================================================
+            // ==================================================================
 
             DB::commit();
 
