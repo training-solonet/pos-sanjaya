@@ -22,6 +22,7 @@ class Promo extends Model
         'start_date',
         'end_date',
         'status',
+        'stok',
     ];
 
     protected $casts = [
