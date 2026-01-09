@@ -550,9 +550,8 @@ class JurnalController extends Controller
     public function show($id)
     {
         try {
-            $jurnal = Jurnal::where('id', $id)
-                ->where('role', 'manajemen')
-                ->firstOrFail();
+            // HAPUS FILTER ROLE - biar bisa lihat transaksi dari kasir
+            $jurnal = Jurnal::findOrFail($id);
 
             return response()->json($jurnal);
         } catch (\Exception $e) {
@@ -573,9 +572,8 @@ class JurnalController extends Controller
         ]);
 
         try {
-            $jurnal = Jurnal::where('id', $id)
-                ->where('role', 'manajemen')
-                ->firstOrFail();
+            // HAPUS FILTER ROLE - biar bisa update transaksi dari kasir
+            $jurnal = Jurnal::findOrFail($id);
 
             $jurnal->update($validated);
 
@@ -595,9 +593,8 @@ class JurnalController extends Controller
     public function destroy($id)
     {
         try {
-            $jurnal = Jurnal::where('id', $id)
-                ->where('role', 'manajemen')
-                ->firstOrFail();
+            // HAPUS FILTER ROLE - biar bisa hapus transaksi dari kasir
+            $jurnal = Jurnal::findOrFail($id);
 
             $jurnal->delete();
 
