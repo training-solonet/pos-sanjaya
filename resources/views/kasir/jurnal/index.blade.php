@@ -61,9 +61,33 @@
                         <form action="{{ route('kasir.jurnal.index') }}" method="GET" id="filterDateForm">
                             <input type="date" name="tanggal" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg" value="{{ $tanggal }}" onchange="handleDateChange()">
                         </form>
-                        <button onclick="exportToPdf()" class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
-                            <i class="fas fa-download mr-2"></i>Export
-                        </button>
+                        
+                        <!-- Export Button with Dropdown -->
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" @click.away="open = false" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2 shadow-sm transition-colors">
+                                <i class="fas fa-download"></i>
+                                <span>Export Data</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                            
+                            <div x-show="open" 
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                <a href="#" @click.prevent="exportToExcel(); open = false" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-file-excel text-green-600 text-lg"></i>
+                                    <span>Export ke Excel</span>
+                                </a>
+                                <a href="#" @click.prevent="exportToPdf(); open = false" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-file-pdf text-red-600 text-lg"></i>
+                                    <span>Export ke PDF</span>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -822,6 +846,14 @@
             
             // Redirect to export route with date parameter
             window.location.href = "{{ route('kasir.jurnal.export-pdf') }}" + "?tanggal=" + tanggal;
+        }
+
+        // Export to Excel function
+        function exportToExcel() {
+            const tanggal = document.getElementById('filterDate').value;
+            
+            // Redirect to export route with date parameter
+            window.location.href = "{{ route('kasir.jurnal.export-excel') }}" + "?tanggal=" + tanggal;
         }
 
         // Close modal when clicking outside

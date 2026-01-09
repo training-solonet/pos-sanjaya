@@ -7,6 +7,7 @@ use App\Models\Jurnal;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Excel;
 
 class JurnalController extends Controller
 {
@@ -223,6 +224,111 @@ class JurnalController extends Controller
             return response()->json([
                 'error' => true,
                 'message' => 'Gagal generate PDF: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Export jurnal to Excel for specific date
+     */
+    public function exportExcel(Request $request)
+    {
+        try {
+            $tanggal = $request->get('tanggal', date('Y-m-d'));
+            
+            // Get journals for specific date
+            $jurnals = Jurnal::whereDate('tgl', $tanggal)
+                ->orderBy('tgl', 'asc')
+                ->get();
+
+            // Calculate summary
+            $totalPemasukan = $jurnals->where('jenis', 'pemasukan')->sum('nominal');
+            $totalPengeluaran = $jurnals->where('jenis', 'pengeluaran')->sum('nominal');
+            $saldoBersih = $totalPemasukan - $totalPengeluaran;
+
+            // Format tanggal
+            $tanggalFormatted = Carbon::parse($tanggal)->format('d-m-Y');
+            
+            $fileName = "Jurnal_Harian_{$tanggalFormatted}";
+            
+            // Create Excel using Laravel Excel v1
+            Excel::create($fileName, function($excel) use ($jurnals, $totalPemasukan, $totalPengeluaran, $saldoBersih, $tanggalFormatted) {
+                
+                $excel->sheet('Jurnal Harian', function($sheet) use ($jurnals, $totalPemasukan, $totalPengeluaran, $saldoBersih, $tanggalFormatted) {
+                    
+                    // Set title
+                    $sheet->mergeCells('A1:F1');
+                    $sheet->row(1, ['JURNAL HARIAN']);
+                    $sheet->row(1, function($row) {
+                        $row->setFontSize(16);
+                        $row->setFontWeight('bold');
+                        $row->setAlignment('center');
+                    });
+                    
+                    // Set date
+                    $sheet->mergeCells('A2:F2');
+                    $sheet->row(2, ['Tanggal: ' . $tanggalFormatted]);
+                    $sheet->row(2, function($row) {
+                        $row->setAlignment('center');
+                    });
+                    
+                    // Add empty row
+                    $sheet->row(3, ['']);
+                    
+                    // Set header
+                    $sheet->row(4, ['No', 'Tanggal', 'Jenis', 'Kategori', 'Keterangan', 'Nominal']);
+                    $sheet->row(4, function($row) {
+                        $row->setFontWeight('bold');
+                        $row->setBackground('#4F46E5');
+                        $row->setFontColor('#FFFFFF');
+                        $row->setAlignment('center');
+                    });
+                    
+                    // Add data
+                    $rowNumber = 5;
+                    $no = 1;
+                    foreach ($jurnals as $jurnal) {
+                        $sheet->row($rowNumber, [
+                            $no++,
+                            Carbon::parse($jurnal->tgl)->format('d/m/Y'),
+                            ucfirst($jurnal->jenis),
+                            $jurnal->kategori,
+                            $jurnal->keterangan,
+                            'Rp ' . number_format($jurnal->nominal, 0, ',', '.')
+                        ]);
+                        $rowNumber++;
+                    }
+                    
+                    // Add summary
+                    $rowNumber += 1;
+                    $sheet->row($rowNumber, ['', '', '', '', 'Total Pemasukan:', 'Rp ' . number_format($totalPemasukan, 0, ',', '.')]);
+                    $sheet->row($rowNumber, function($row) {
+                        $row->setFontWeight('bold');
+                    });
+                    
+                    $rowNumber++;
+                    $sheet->row($rowNumber, ['', '', '', '', 'Total Pengeluaran:', 'Rp ' . number_format($totalPengeluaran, 0, ',', '.')]);
+                    $sheet->row($rowNumber, function($row) {
+                        $row->setFontWeight('bold');
+                    });
+                    
+                    $rowNumber++;
+                    $sheet->row($rowNumber, ['', '', '', '', 'Saldo Bersih:', 'Rp ' . number_format($saldoBersih, 0, ',', '.')]);
+                    $sheet->row($rowNumber, function($row) {
+                        $row->setFontWeight('bold');
+                        $row->setBackground('#E0E7FF');
+                    });
+                    
+                    // Auto size columns
+                    $sheet->setAutoSize(true);
+                });
+                
+            })->download('xlsx');
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Gagal generate Excel: ' . $e->getMessage()
             ], 500);
         }
     }

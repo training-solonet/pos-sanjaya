@@ -198,7 +198,7 @@ class LaporanController extends Controller
         $metode = $request->input('metode');
         $kasir = $request->input('kasir');
 
-        // Query transaksi with relations
+        // Query transaksi with relations - include detail transaksi
         $query = Transaksi::with(['detailTransaksi.produk.satuan', 'user'])
             ->orderBy('tgl', 'desc');
 
@@ -254,8 +254,78 @@ class LaporanController extends Controller
         $pdf = Pdf::loadView('kasir.laporan.pdf', $data);
         $pdf->setPaper('a4', 'landscape');
 
-        $filename = 'Laporan_Penjualan_' . date('Ymd_His') . '.pdf';
+        $filename = 'Laporan_Penjualan_'.date('Ymd_His').'.pdf';
 
         return $pdf->download($filename);
+    }
+
+    /**
+     * Export laporan penjualan ke Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        // Get filter parameters
+        $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
+        $metode = $request->input('metode');
+        $kasir = $request->input('kasir');
+
+        // Query transaksi with relations - include detail transaksi
+        $query = Transaksi::with(['detailTransaksi.produk.satuan', 'user'])
+            ->orderBy('tgl', 'desc');
+
+        // Apply filters
+        if ($tanggal) {
+            $query->whereDate('tgl', $tanggal);
+        }
+
+        if ($metode) {
+            $query->where('metode', $metode);
+        }
+
+        if ($kasir) {
+            $query->where('id_user', $kasir);
+        }
+
+        $transaksi = $query->get();
+
+        // Calculate totals
+        $totalPenjualan = $transaksi->sum('bayar');
+        $totalTransaksi = $transaksi->count();
+        $totalItem = $transaksi->sum(function ($t) {
+            return $t->detailTransaksi->sum('jumlah');
+        });
+
+        // Group by payment method
+        $byPayment = $transaksi->groupBy('metode')->map(function ($items, $method) {
+            return [
+                'method' => ucfirst($method),
+                'count' => $items->count(),
+                'total' => $items->sum('bayar'),
+            ];
+        });
+
+        // Get kasir name if filtered
+        $kasirName = null;
+        if ($kasir) {
+            $kasirUser = User::find($kasir);
+            $kasirName = $kasirUser ? $kasirUser->name : null;
+        }
+
+        $data = [
+            'transaksi' => $transaksi,
+            'tanggal' => $tanggal,
+            'metode' => $metode,
+            'kasirName' => $kasirName,
+            'totalPenjualan' => $totalPenjualan,
+            'totalTransaksi' => $totalTransaksi,
+            'totalItem' => $totalItem,
+            'byPayment' => $byPayment,
+        ];
+
+        $filename = 'Laporan_Penjualan_'.date('Ymd_His').'.xls';
+
+        return response()->view('kasir.laporan.excel', $data)
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
     }
 }

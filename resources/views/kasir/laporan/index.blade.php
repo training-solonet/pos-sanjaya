@@ -145,11 +145,27 @@
                                 <i class="fas fa-redo text-sm"></i>
                                 <span>Reset</span>
                             </button>
-                            <button onclick="exportPDF()" 
-                                    class="px-6 py-2 bg-gradient-to-r from-red-500 to-red-700 text-white rounded-lg hover:opacity-90 flex items-center space-x-2 transition-all">
-                                <i class="fas fa-file-pdf text-sm"></i>
-                                <span>Export PDF</span>
-                            </button>
+                            <!-- Export Dropdown -->
+                            <div class="relative" id="exportDropdown">
+                                <button onclick="toggleExportDropdown()" 
+                                        class="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg hover:opacity-90 flex items-center space-x-2 transition-all">
+                                    <i class="fas fa-download text-sm"></i>
+                                    <span>Export Data</span>
+                                    <i class="fas fa-chevron-down text-xs ml-1"></i>
+                                </button>
+                                <div id="exportDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                    <a href="javascript:void(0)" onclick="exportExcel()" 
+                                       class="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-all rounded-t-lg">
+                                        <i class="fas fa-file-excel text-green-600 text-lg"></i>
+                                        <span class="text-gray-700 font-medium">Export ke Excel</span>
+                                    </a>
+                                    <a href="javascript:void(0)" onclick="exportPDF()" 
+                                       class="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-all rounded-b-lg border-t border-gray-100">
+                                        <i class="fas fa-file-pdf text-red-600 text-lg"></i>
+                                        <span class="text-gray-700 font-medium">Export ke PDF</span>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -364,6 +380,20 @@
             fetchTransactions();
         }
 
+        // Toggle export dropdown
+        function toggleExportDropdown() {
+            const dropdown = document.getElementById('exportDropdownMenu');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('exportDropdown');
+            if (dropdown && !dropdown.contains(event.target)) {
+                document.getElementById('exportDropdownMenu').classList.add('hidden');
+            }
+        });
+
         // Export to PDF
         function exportPDF() {
             const params = new URLSearchParams();
@@ -372,7 +402,28 @@
             if (currentFilters.cashier) params.append('kasir', currentFilters.cashier);
             
             const url = `{{ route('kasir.laporan.export-pdf') }}?${params.toString()}`;
-            window.open(url, '_blank');
+            
+            // Close dropdown
+            document.getElementById('exportDropdownMenu').classList.add('hidden');
+            
+            // Download the file
+            window.location.href = url;
+        }
+
+        // Export to Excel
+        function exportExcel() {
+            const params = new URLSearchParams();
+            if (currentFilters.date) params.append('tanggal', currentFilters.date);
+            if (currentFilters.payment) params.append('metode', currentFilters.payment);
+            if (currentFilters.cashier) params.append('kasir', currentFilters.cashier);
+            
+            const url = `{{ route('kasir.laporan.export-excel') }}?${params.toString()}`;
+            
+            // Close dropdown
+            document.getElementById('exportDropdownMenu').classList.add('hidden');
+            
+            // Download the file
+            window.location.href = url;
         }
 
         // Fetch transactions from API
