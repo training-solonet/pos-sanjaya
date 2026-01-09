@@ -4,14 +4,20 @@ namespace App\Http\Controllers\Manajemen;
 
 use App\Http\Controllers\Controller;
 use App\Models\Jurnal;
-use App\Models\Transaksi;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Response;
 
 class JurnalController extends Controller
 {
     public function index(Request $request)
     {
+        // Cek jika ada parameter export
+        if ($request->has('export')) {
+            return $this->handleExport($request);
+        }
+
         // Default filter
         $period = $request->get('period', 'daily');
         $date = $request->get('date', date('Y-m-d'));
@@ -46,7 +52,7 @@ class JurnalController extends Controller
         // Pagination 10 data per halaman
         $transactions = $query->paginate(10);
 
-        // **PERBAIKAN UTAMA: Hitung summary berdasarkan filter yang sama TANPA pagination**
+        // Hitung summary berdasarkan filter yang sama TANPA pagination
         $summaryQuery = Jurnal::query();
         $this->applyPeriodFilter($summaryQuery, $period, $date);
 
@@ -110,6 +116,404 @@ class JurnalController extends Controller
         return $query;
     }
 
+    /**
+     * Handle export functionality
+     */
+    private function handleExport(Request $request)
+    {
+        $format = $request->get('export', 'excel');
+        $period = $request->get('period', 'daily');
+        $date = $request->get('date', date('Y-m-d'));
+        $jenis = $request->get('jenis');
+        $kategori = $request->get('kategori');
+        $search = $request->get('search');
+
+        // Mulai query untuk data transaksi
+        $query = Jurnal::query();
+
+        // Filter berdasarkan periode
+        $this->applyPeriodFilter($query, $period, $date);
+
+        // Filter jenis
+        if ($jenis) {
+            $query->where('jenis', $jenis);
+        }
+
+        // Filter kategori
+        if ($kategori) {
+            $query->where('kategori', $kategori);
+        }
+
+        // Filter pencarian
+        if ($search) {
+            $query->where('keterangan', 'like', '%'.$search.'%');
+        }
+
+        // Order by tanggal terbaru
+        $query->orderBy('tgl', 'desc')->orderBy('id', 'desc');
+
+        // Ambil semua data untuk export (tanpa pagination)
+        $transactions = $query->get();
+
+        // Hitung summary untuk export
+        $summaryQuery = Jurnal::query();
+        $this->applyPeriodFilter($summaryQuery, $period, $date);
+
+        if ($jenis) {
+            $summaryQuery->where('jenis', $jenis);
+        }
+
+        if ($kategori) {
+            $summaryQuery->where('kategori', $kategori);
+        }
+
+        if ($search) {
+            $summaryQuery->where('keterangan', 'like', '%'.$search.'%');
+        }
+
+        $totalPemasukan = (clone $summaryQuery)->where('jenis', 'pemasukan')->sum('nominal');
+        $totalPengeluaran = (clone $summaryQuery)->where('jenis', 'pengeluaran')->sum('nominal');
+        $countPemasukan = (clone $summaryQuery)->where('jenis', 'pemasukan')->count();
+        $countPengeluaran = (clone $summaryQuery)->where('jenis', 'pengeluaran')->count();
+
+        $summary = [
+            'total_revenue' => $totalPemasukan,
+            'total_expense' => $totalPengeluaran,
+            'revenue_count' => $countPemasukan,
+            'expense_count' => $countPengeluaran,
+            'net_balance' => $totalPemasukan - $totalPengeluaran,
+            'period' => $period,
+            'date' => $date,
+        ];
+
+        // Generate filename
+        $filename = $this->generateFilename($period, $date, $format);
+
+        if ($format === 'pdf') {
+            return $this->exportPDF($transactions, $summary, $period, $date, $filename);
+        } elseif ($format === 'csv') {
+            return $this->exportCSV($transactions, $summary, $period, $date, $filename);
+        } else {
+            return $this->exportExcel($transactions, $summary, $period, $date, $filename);
+        }
+    }
+
+    private function generateFilename($period, $date, $format)
+    {
+        $dateObj = Carbon::parse($date);
+
+        switch ($period) {
+            case 'daily':
+                $dateString = $dateObj->format('Y-m-d');
+                break;
+            case 'weekly':
+                $startOfWeek = $dateObj->startOfWeek()->format('Y-m-d');
+                $endOfWeek = $dateObj->endOfWeek()->format('Y-m-d');
+                $dateString = "{$startOfWeek}_to_{$endOfWeek}";
+                break;
+            case 'monthly':
+                $dateString = $dateObj->format('Y-m');
+                break;
+            default:
+                $dateString = $dateObj->format('Y-m-d');
+        }
+
+        return "jurnal_{$period}_{$dateString}.{$format}";
+    }
+
+    private function exportPDF($transactions, $summary, $period, $date, $filename)
+    {
+        $dateObj = Carbon::parse($date);
+        $periodLabel = '';
+
+        switch ($period) {
+            case 'daily':
+                $periodLabel = 'Harian - '.$dateObj->translatedFormat('d F Y');
+                break;
+            case 'weekly':
+                $startOfWeek = $dateObj->startOfWeek()->translatedFormat('d F Y');
+                $endOfWeek = $dateObj->endOfWeek()->translatedFormat('d F Y');
+                $periodLabel = "Mingguan - {$startOfWeek} sampai {$endOfWeek}";
+                break;
+            case 'monthly':
+                $periodLabel = 'Bulanan - '.$dateObj->translatedFormat('F Y');
+                break;
+        }
+
+        $exportDate = Carbon::now()->translatedFormat('d F Y H:i:s');
+
+        // Buat HTML untuk PDF
+        $html = '<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Laporan Jurnal Transaksi</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    font-size: 12px;
+                }
+                
+                .header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                    border-bottom: 2px solid #333;
+                    padding-bottom: 10px;
+                }
+                
+                .header h1 {
+                    font-size: 16px;
+                    margin: 0;
+                    font-weight: bold;
+                }
+                
+                .header p {
+                    margin: 5px 0;
+                    font-size: 11px;
+                    color: #666;
+                }
+                
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 10px;
+                }
+                
+                th {
+                    background-color: #f5f5f5;
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: left;
+                    font-weight: bold;
+                    font-size: 11px;
+                }
+                
+                td {
+                    border: 1px solid #ddd;
+                    padding: 6px;
+                    font-size: 10px;
+                }
+                
+                .text-right {
+                    text-align: right;
+                }
+                
+                .text-center {
+                    text-align: center;
+                }
+                
+                .pemasukan {
+                    color: #10b981;
+                }
+                
+                .pengeluaran {
+                    color: #ef4444;
+                }
+                
+                .summary {
+                    margin-top: 20px;
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                
+                .summary td {
+                    border: none;
+                    padding: 5px 0;
+                    font-size: 11px;
+                }
+                
+                .summary-label {
+                    font-weight: bold;
+                    padding-right: 20px;
+                }
+                
+                .summary-value {
+                    text-align: right;
+                    font-weight: bold;
+                }
+                
+                .footer {
+                    margin-top: 30px;
+                    text-align: right;
+                    font-size: 10px;
+                    color: #666;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>LAPORAN JURNAL TRANSAKSI</h1>
+                <p>Periode: '.$periodLabel.'</p>
+                <p>Dibuat pada: '.$exportDate.'</p>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%">Tanggal</th>
+                        <th style="width: 15%">Jenis</th>
+                        <th style="width: 15%">Kategori</th>
+                        <th style="width: 35%">Keterangan</th>
+                        <th style="width: 20%" class="text-right">Nominal (Rp)</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        if ($transactions->count() > 0) {
+            foreach ($transactions as $transaction) {
+                $jenis = $transaction->jenis === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran';
+                $class = $transaction->jenis === 'pemasukan' ? 'pemasukan' : 'pengeluaran';
+                $tgl = Carbon::parse($transaction->tgl)->format('d/m/Y');
+                $nominal = number_format($transaction->nominal, 0, ',', '.');
+                $prefix = $transaction->jenis === 'pemasukan' ? '+' : '-';
+
+                $html .= '
+                    <tr>
+                        <td>'.$tgl.'</td>
+                        <td><span class="'.$class.'">'.$jenis.'</span></td>
+                        <td>'.$transaction->kategori.'</td>
+                        <td>'.$transaction->keterangan.'</td>
+                        <td class="text-right">'.$prefix.' '.$nominal.'</td>
+                    </tr>';
+            }
+        } else {
+            $html .= '
+                    <tr>
+                        <td colspan="5" class="text-center">Tidak ada data transaksi</td>
+                    </tr>';
+        }
+
+        $html .= '
+                </tbody>
+            </table>
+            
+            <table class="summary">
+                <tr>
+                    <td class="summary-label">Total Pemasukan:</td>
+                    <td class="summary-value pemasukan">Rp '.number_format($summary['total_revenue'], 0, ',', '.').'</td>
+                </tr>
+                <tr>
+                    <td class="summary-label">Total Pengeluaran:</td>
+                    <td class="summary-value pengeluaran">Rp '.number_format($summary['total_expense'], 0, ',', '.').'</td>
+                </tr>
+                <tr>
+                    <td class="summary-label">Saldo Bersih:</td>
+                    <td class="summary-value" style="color: '.($summary['net_balance'] > 0 ? '#10b981' : '#ef4444').'">
+                        Rp '.number_format($summary['net_balance'], 0, ',', '.').'
+                    </td>
+                </tr>
+            </table>
+            
+            <div class="footer">
+                Dicetak oleh: Sistem Manajemen
+            </div>
+        </body>
+        </html>';
+
+        $pdf = Pdf::loadHTML($html);
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download($filename);
+    }
+
+    private function exportExcel($transactions, $summary, $period, $date, $filename)
+    {
+        $dateObj = Carbon::parse($date);
+        $periodLabel = '';
+
+        switch ($period) {
+            case 'daily':
+                $periodLabel = 'Harian - '.$dateObj->translatedFormat('d F Y');
+                break;
+            case 'weekly':
+                $startOfWeek = $dateObj->startOfWeek()->translatedFormat('d F Y');
+                $endOfWeek = $dateObj->endOfWeek()->translatedFormat('d F Y');
+                $periodLabel = "Mingguan - {$startOfWeek} sampai {$endOfWeek}";
+                break;
+            case 'monthly':
+                $periodLabel = 'Bulanan - '.$dateObj->translatedFormat('F Y');
+                break;
+        }
+
+        $exportDate = Carbon::now()->translatedFormat('d F Y H:i:s');
+
+        // Set headers untuk Excel
+        $headers = [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ];
+
+        // Buat konten Excel (CSV format untuk Excel)
+        $content = "LAPORAN JURNAL TRANSAKSI\n";
+        $content .= 'Periode: '.$periodLabel."\n";
+        $content .= 'Dibuat pada: '.$exportDate."\n\n";
+        $content .= "Tanggal;Jenis;Kategori;Keterangan;Nominal (Rp)\n";
+
+        foreach ($transactions as $transaction) {
+            $jenis = $transaction->jenis === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran';
+            $tgl = Carbon::parse($transaction->tgl)->format('d/m/Y');
+            $nominal = number_format($transaction->nominal, 0, ',', '.');
+
+            $content .= "{$tgl};{$jenis};{$transaction->kategori};{$transaction->keterangan};{$nominal}\n";
+        }
+
+        $content .= "\n";
+        $content .= 'Total Pemasukan;'.number_format($summary['total_revenue'], 0, ',', '.')."\n";
+        $content .= 'Total Pengeluaran;'.number_format($summary['total_expense'], 0, ',', '.')."\n";
+        $content .= 'Saldo Bersih;'.number_format($summary['net_balance'], 0, ',', '.')."\n";
+
+        return Response::make($content, 200, $headers);
+    }
+
+    private function exportCSV($transactions, $summary, $period, $date, $filename)
+    {
+        $dateObj = Carbon::parse($date);
+        $periodLabel = '';
+
+        switch ($period) {
+            case 'daily':
+                $periodLabel = 'Harian - '.$dateObj->translatedFormat('d F Y');
+                break;
+            case 'weekly':
+                $startOfWeek = $dateObj->startOfWeek()->translatedFormat('d F Y');
+                $endOfWeek = $dateObj->endOfWeek()->translatedFormat('d F Y');
+                $periodLabel = "Mingguan - {$startOfWeek} sampai {$endOfWeek}";
+                break;
+            case 'monthly':
+                $periodLabel = 'Bulanan - '.$dateObj->translatedFormat('F Y');
+                break;
+        }
+
+        $exportDate = Carbon::now()->translatedFormat('d F Y H:i:s');
+
+        // Set headers untuk CSV
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ];
+
+        // Buat konten CSV
+        $content = "LAPORAN JURNAL TRANSAKSI\n";
+        $content .= "Periode,{$periodLabel}\n";
+        $content .= "Dibuat pada,{$exportDate}\n\n";
+        $content .= "Tanggal,Jenis,Kategori,Keterangan,Nominal (Rp)\n";
+
+        foreach ($transactions as $transaction) {
+            $jenis = $transaction->jenis === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran';
+            $tgl = Carbon::parse($transaction->tgl)->format('d/m/Y');
+            $nominal = number_format($transaction->nominal, 0, ',', '.');
+
+            $content .= "{$tgl},{$jenis},{$transaction->kategori},\"{$transaction->keterangan}\",{$nominal}\n";
+        }
+
+        $content .= "\n";
+        $content .= 'Total Pemasukan,'.number_format($summary['total_revenue'], 0, ',', '.')."\n";
+        $content .= 'Total Pengeluaran,'.number_format($summary['total_expense'], 0, ',', '.')."\n";
+        $content .= 'Saldo Bersih,'.number_format($summary['net_balance'], 0, ',', '.')."\n";
+
+        return Response::make($content, 200, $headers);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -146,26 +550,6 @@ class JurnalController extends Controller
     public function show($id)
     {
         try {
-            // Cek apakah ID adalah transaksi (format: transaksi_{id})
-            if (str_starts_with($id, 'transaksi_')) {
-                $transaksiId = str_replace('transaksi_', '', $id);
-                $transaksi = Transaksi::findOrFail($transaksiId);
-
-                $jurnalData = [
-                    'id' => 'transaksi_'.$transaksi->id,
-                    'tgl' => $transaksi->tgl,
-                    'jenis' => 'pemasukan',
-                    'keterangan' => 'Penjualan - Transaksi #'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
-                    'nominal' => $transaksi->bayar - $transaksi->kembalian,
-                    'kategori' => 'Penjualan',
-                    'role' => 'admin',
-                    'is_transaction' => true,
-                ];
-
-                return response()->json($jurnalData);
-            }
-
-            // Jika bukan transaksi, ambil dari jurnal manual
             $jurnal = Jurnal::where('id', $id)
                 ->where('role', 'manajemen')
                 ->firstOrFail();
@@ -180,14 +564,6 @@ class JurnalController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Cek apakah ID adalah transaksi (tidak boleh edit transaksi dari kasir)
-        if (str_starts_with($id, 'transaksi_')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaksi dari kasir tidak dapat diedit dari halaman ini',
-            ], 403);
-        }
-
         $validated = $request->validate([
             'tgl' => 'required|date',
             'jenis' => 'required|in:pemasukan,pengeluaran',
@@ -218,14 +594,6 @@ class JurnalController extends Controller
 
     public function destroy($id)
     {
-        // Cek apakah ID adalah transaksi (tidak boleh hapus transaksi dari kasir)
-        if (str_starts_with($id, 'transaksi_')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaksi dari kasir tidak dapat dihapus dari halaman ini',
-            ], 403);
-        }
-
         try {
             $jurnal = Jurnal::where('id', $id)
                 ->where('role', 'manajemen')
@@ -246,219 +614,6 @@ class JurnalController extends Controller
         }
     }
 
-    // Method untuk mendapatkan data jurnal berdasarkan filter - sekarang termasuk transaksi
-    private function getData(Request $request)
-    {
-        $query = Jurnal::where('role', 'manajemen');
-        $transaksiQuery = Transaksi::query();
-
-        // Tentukan tanggal yang akan digunakan
-        $date = $request->has('date') && $request->date ? $request->date : now()->format('Y-m-d');
-        $period = $request->has('period') ? $request->period : 'daily';
-
-        // Filter berdasarkan periode waktu
-        switch ($period) {
-            case 'daily':
-                // Filter harian
-                $query->whereDate('tgl', $date);
-                $transaksiQuery->whereDate('tgl', $date);
-                break;
-
-            case 'weekly':
-                // Filter mingguan (Senin - Minggu)
-                $startOfWeek = date('Y-m-d', strtotime('monday this week', strtotime($date)));
-                $endOfWeek = date('Y-m-d', strtotime('sunday this week', strtotime($date)));
-
-                $query->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
-                $transaksiQuery->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
-                break;
-
-            case 'monthly':
-                // Filter bulanan
-                $startOfMonth = date('Y-m-01', strtotime($date));
-                $endOfMonth = date('Y-m-t', strtotime($date));
-
-                $query->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
-                $transaksiQuery->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
-                break;
-
-            default:
-                // Default harian
-                $query->whereDate('tgl', $date);
-                $transaksiQuery->whereDate('tgl', $date);
-        }
-
-        // Filter by jenis
-        if ($request->has('jenis') && $request->jenis != 'semua') {
-            $query->where('jenis', $request->jenis);
-
-            // Untuk transaksi, hanya ambil jika filter pemasukan
-            if ($request->jenis == 'pemasukan') {
-                $transaksiQuery->whereRaw('1=1');
-            } else {
-                $transaksiQuery->whereRaw('1=0');
-            }
-        }
-
-        // Filter by kategori
-        if ($request->has('kategori') && $request->kategori != 'semua') {
-            $query->where('kategori', $request->kategori);
-
-            // Untuk transaksi, hanya ambil jika filter Penjualan
-            if ($request->kategori == 'Penjualan') {
-                $transaksiQuery->whereRaw('1=1');
-            } else {
-                $transaksiQuery->whereRaw('1=0');
-            }
-        }
-
-        // Search
-        if ($request->has('search') && $request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->where('keterangan', 'like', '%'.$request->search.'%')
-                    ->orWhere('id', 'like', '%'.$request->search.'%');
-            });
-
-            $transaksiQuery->where(function ($q) use ($request) {
-                $q->where('id', 'like', '%'.$request->search.'%');
-            });
-        }
-
-        $jurnalsManual = $query->orderBy('tgl', 'desc')->get();
-        $transaksis = $transaksiQuery->orderBy('tgl', 'desc')->get();
-
-        // Konversi transaksi ke format jurnal
-        $jurnalsTransaksi = $this->convertTransactionsToJurnals($transaksis);
-
-        // Gabungkan dan urutkan
-        $allJurnals = $jurnalsManual->concat($jurnalsTransaksi)
-            ->sortByDesc('tgl')
-            ->values();
-
-        return response()->json($allJurnals);
-    }
-
-    // Method untuk mendapatkan summary - sekarang termasuk transaksi (DIPERBAIKI)
-    private function getSummary(Request $request)
-    {
-        $date = $request->has('date') && $request->date ? $request->date : now()->format('Y-m-d');
-        $period = $request->has('period') ? $request->period : 'daily';
-
-        // Inisialisasi query terpisah untuk manual dan transaksi
-        $manualQuery = Jurnal::where('role', 'manajemen');
-        $transaksiQuery = Transaksi::query();
-
-        // Gunakan logika filter yang SAMA PERSIS dengan getData()
-        switch ($period) {
-            case 'daily':
-                // Filter harian
-                $manualQuery->whereDate('tgl', $date);
-                $transaksiQuery->whereDate('tgl', $date);
-                break;
-
-            case 'weekly':
-                // Filter mingguan (Senin - Minggu)
-                $startOfWeek = date('Y-m-d', strtotime('monday this week', strtotime($date)));
-                $endOfWeek = date('Y-m-d', strtotime('sunday this week', strtotime($date)));
-
-                $manualQuery->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
-                $transaksiQuery->whereBetween('tgl', [$startOfWeek, $endOfWeek]);
-                break;
-
-            case 'monthly':
-                // Filter bulanan
-                $startOfMonth = date('Y-m-01', strtotime($date));
-                $endOfMonth = date('Y-m-t', strtotime($date));
-
-                $manualQuery->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
-                $transaksiQuery->whereBetween('tgl', [$startOfMonth, $endOfMonth]);
-                break;
-
-            default:
-                // Default harian
-                $manualQuery->whereDate('tgl', $date);
-                $transaksiQuery->whereDate('tgl', $date);
-        }
-
-        // Summary dari jurnal manual - gunakan cara yang lebih akurat
-        $manualData = $manualQuery->get();
-
-        $manualTotalPemasukan = $manualData->where('jenis', 'pemasukan')->sum('nominal');
-        $manualTotalPengeluaran = $manualData->where('jenis', 'pengeluaran')->sum('nominal');
-        $manualJumlahPemasukan = $manualData->where('jenis', 'pemasukan')->count();
-        $manualJumlahPengeluaran = $manualData->where('jenis', 'pengeluaran')->count();
-        $manualTotalTransaksi = $manualData->count();
-
-        // Summary dari transaksi
-        $transaksiData = $transaksiQuery->get();
-
-        $transaksiTotalPenjualan = $transaksiData->sum(function ($transaksi) {
-            return $transaksi->bayar - $transaksi->kembalian;
-        });
-        $transaksiJumlah = $transaksiData->count();
-
-        // Gabungkan data dengan BENAR
-        $totalPemasukan = $manualTotalPemasukan + $transaksiTotalPenjualan;
-        $totalPengeluaran = $manualTotalPengeluaran;
-        $jumlahPemasukan = $manualJumlahPemasukan + $transaksiJumlah;
-        $jumlahPengeluaran = $manualJumlahPengeluaran;
-        $totalTransaksi = $manualTotalTransaksi + $transaksiJumlah;
-
-        // Tentukan rentang tanggal untuk display
-        switch ($period) {
-            case 'daily':
-                $startDate = $date;
-                $endDate = $date;
-                break;
-
-            case 'weekly':
-                $startDate = date('Y-m-d', strtotime('monday this week', strtotime($date)));
-                $endDate = date('Y-m-d', strtotime('sunday this week', strtotime($date)));
-                break;
-
-            case 'monthly':
-                $startDate = date('Y-m-01', strtotime($date));
-                $endDate = date('Y-m-t', strtotime($date));
-                break;
-
-            default:
-                $startDate = $date;
-                $endDate = $date;
-        }
-
-        return response()->json([
-            'total_revenue' => $totalPemasukan,
-            'total_expense' => $totalPengeluaran,
-            'net_balance' => $totalPemasukan - $totalPengeluaran,
-            'revenue_count' => $jumlahPemasukan,
-            'expense_count' => $jumlahPengeluaran,
-            'total_transactions' => $totalTransaksi,
-            'period_start' => $startDate,
-            'period_end' => $endDate,
-            'period_type' => $period,
-        ]);
-    }
-
-    // Helper method: Konversi transaksi ke format jurnal
-    private function convertTransactionsToJurnals($transaksis)
-    {
-        return $transaksis->map(function ($transaksi) {
-            return [
-                'id' => 'transaksi_'.$transaksi->id,
-                'tgl' => $transaksi->tgl,
-                'jenis' => 'pemasukan',
-                'keterangan' => 'Penjualan - Transaksi #'.str_pad($transaksi->id, 5, '0', STR_PAD_LEFT),
-                'nominal' => $transaksi->bayar - $transaksi->kembalian,
-                'kategori' => 'Penjualan',
-                'role' => 'admin',
-                'is_transaction' => true,
-                'created_at' => $transaksi->created_at,
-                'updated_at' => $transaksi->updated_at,
-            ];
-        });
-    }
-
-    // Method create dan edit (kosong karena menggunakan modal)
     public function create() {}
 
     public function edit($id) {}
