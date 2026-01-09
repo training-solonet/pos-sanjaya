@@ -74,10 +74,24 @@
                         @endif
                         
                         <!-- Tombol Export -->
-                        <button type="button" onclick="exportData()"
-                            class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800">
-                            <i class="fas fa-download mr-2"></i>Export
-                        </button>
+                        <div class="relative">
+                            <button type="button" onclick="toggleExportDropdown()"
+                                class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg hover:from-green-500 hover:to-green-800 flex items-center">
+                                <i class="fas fa-download mr-2"></i>Export
+                                <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                            </button>
+                            <div id="exportDropdown" class="absolute hidden mt-2 w-48 bg-white rounded-lg shadow-lg z-10 border border-gray-200">
+                                <a href="#" onclick="exportData('excel')" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 flex items-center">
+                                    <i class="fas fa-file-excel text-green-500 mr-2"></i>Export Excel
+                                </a>
+                                <a href="#" onclick="exportData('pdf')" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 flex items-center">
+                                    <i class="fas fa-file-pdf text-red-500 mr-2"></i>Export PDF
+                                </a>
+                                <a href="#" onclick="exportData('csv')" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 flex items-center">
+                                    <i class="fas fa-file-csv text-blue-500 mr-2"></i>Export CSV
+                                </a>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -497,6 +511,16 @@
       document.getElementById('transactionTypeSelect').addEventListener('change', function() {
         populateCategories(this.value);
       });
+      
+      // Close export dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('exportDropdown');
+        const button = document.querySelector('button[onclick="toggleExportDropdown()"]');
+        
+        if (dropdown && button && !dropdown.contains(event.target) && !button.contains(event.target)) {
+          dropdown.classList.add('hidden');
+        }
+      });
     });
 
     // Update date time
@@ -685,6 +709,99 @@
       }
     });
 
+    // Toggle export dropdown
+    function toggleExportDropdown() {
+      const dropdown = document.getElementById('exportDropdown');
+      if (dropdown) {
+        dropdown.classList.toggle('hidden');
+      }
+    }
+
+    // Export function dengan format
+    function exportData(format) {
+      const filterPeriod = document.getElementById('filterPeriod').value;
+      const filterDate = document.getElementById('filterDate').value;
+      const filterJenis = document.getElementById('filterType').value;
+      const filterKategori = document.getElementById('filterCategory').value;
+      const search = document.getElementById('searchInput').value;
+      
+      // Buat URL dengan parameter saat ini
+      let currentUrl = window.location.href;
+      
+      // Buat URL baru tanpa parameter page
+      const url = new URL(currentUrl);
+      url.searchParams.delete('page');
+      
+      // Tambahkan semua filter parameters
+      url.searchParams.set('export', format);
+      url.searchParams.set('period', filterPeriod);
+      url.searchParams.set('date', filterDate);
+      
+      if (filterJenis) {
+        url.searchParams.set('jenis', filterJenis);
+      } else {
+        url.searchParams.delete('jenis');
+      }
+      
+      if (filterKategori) {
+        url.searchParams.set('kategori', filterKategori);
+      } else {
+        url.searchParams.delete('kategori');
+      }
+      
+      if (search) {
+        url.searchParams.set('search', search);
+      } else {
+        url.searchParams.delete('search');
+      }
+      
+      // Tutup dropdown
+      const dropdown = document.getElementById('exportDropdown');
+      if (dropdown) {
+        dropdown.classList.add('hidden');
+      }
+      
+      // Tampilkan loading indicator
+      showExportLoading();
+      
+      // Buka URL export di tab baru
+      window.open(url.toString(), '_blank');
+      
+      // Sembunyikan loading setelah 2 detik
+      setTimeout(() => {
+        hideExportLoading();
+      }, 2000);
+    }
+
+    // Show loading indicator for export
+    function showExportLoading() {
+      let loadingDiv = document.getElementById('exportLoading');
+      
+      if (!loadingDiv) {
+        loadingDiv = document.createElement('div');
+        loadingDiv.id = 'exportLoading';
+        loadingDiv.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+        loadingDiv.innerHTML = `
+          <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <p class="text-gray-700 font-medium">Menyiapkan file export...</p>
+            <p class="text-sm text-gray-500 mt-2">Mohon tunggu sebentar</p>
+          </div>
+        `;
+        document.body.appendChild(loadingDiv);
+      } else {
+        loadingDiv.classList.remove('hidden');
+      }
+    }
+
+    // Hide loading indicator
+    function hideExportLoading() {
+      const loadingDiv = document.getElementById('exportLoading');
+      if (loadingDiv) {
+        loadingDiv.classList.add('hidden');
+      }
+    }
+
     // Helper functions
     function populateCategories(type) {
       const categorySelect = document.getElementById('transactionCategory');
@@ -726,10 +843,10 @@
       }
       
       const notification = document.createElement('div');
-      notification.className = `fixed-notification fixed top-4 right-4 bg-${color}-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+      notification.className = `fixed-notification fixed top-4 right-4 ${color === 'green' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
       notification.innerHTML = `
         <div class="flex items-center">
-          <i class="fas fa-${color === 'green' ? 'check' : 'exclamation'}-circle mr-2"></i>
+          <i class="fas ${color === 'green' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
           ${message}
         </div>
       `;
@@ -744,31 +861,6 @@
           }
         }, 300);
       }, 3000);
-    }
-
-    // Export function
-    function exportData() {
-      const filterPeriod = document.getElementById('filterPeriod').value;
-      const filterDate = document.getElementById('filterDate').value;
-      const filterJenis = document.getElementById('filterType').value;
-      const filterKategori = document.getElementById('filterCategory').value;
-      const search = document.getElementById('searchInput').value;
-      
-      // Buat URL export dengan parameter filter
-      let exportUrl = `/management/jurnal/export?period=${filterPeriod}&date=${filterDate}`;
-      
-      if (filterJenis) {
-        exportUrl += `&jenis=${filterJenis}`;
-      }
-      if (filterKategori) {
-        exportUrl += `&kategori=${filterKategori}`;
-      }
-      if (search) {
-        exportUrl += `&search=${encodeURIComponent(search)}`;
-      }
-      
-      // Redirect ke URL export
-      window.open(exportUrl, '_blank');
     }
 
     // Close modal when clicking outside
