@@ -193,70 +193,89 @@ class LaporanController extends Controller
      */
     public function exportPDF(Request $request)
     {
-        // Get filter parameters
-        $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
-        $metode = $request->input('metode');
-        $kasir = $request->input('kasir');
+        try {
+            // Get filter parameters
+            $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
+            $metode = $request->input('metode');
+            $kasir = $request->input('kasir');
 
-        // Query transaksi with relations - include detail transaksi
-        $query = Transaksi::with(['detailTransaksi.produk.satuan', 'user'])
-            ->orderBy('tgl', 'desc');
+            // Query transaksi with relations - include detail transaksi
+            $query = Transaksi::with([
+                'detailTransaksi.produk.bahanBaku.konversi.satuan',
+                'user'
+            ])
+                ->orderBy('tgl', 'desc');
 
-        // Apply filters
-        if ($tanggal) {
-            $query->whereDate('tgl', $tanggal);
-        }
+            // Apply filters
+            if ($tanggal) {
+                $query->whereDate('tgl', $tanggal);
+            }
 
-        if ($metode) {
-            $query->where('metode', $metode);
-        }
+            if ($metode) {
+                $query->where('metode', $metode);
+            }
 
-        if ($kasir) {
-            $query->where('id_user', $kasir);
-        }
+            if ($kasir) {
+                $query->where('id_user', $kasir);
+            }
 
-        $transaksi = $query->get();
+            $transaksi = $query->get();
 
-        // Calculate totals
-        $totalPenjualan = $transaksi->sum('bayar');
-        $totalTransaksi = $transaksi->count();
-        $totalItem = $transaksi->sum(function ($t) {
-            return $t->detailTransaksi->sum('jumlah');
-        });
+            // Calculate totals
+            $totalPenjualan = $transaksi->sum('bayar');
+            $totalTransaksi = $transaksi->count();
+            $totalItem = $transaksi->sum(function ($t) {
+                return $t->detailTransaksi->sum('jumlah');
+            });
 
-        // Group by payment method
-        $byPayment = $transaksi->groupBy('metode')->map(function ($items, $method) {
-            return [
-                'method' => ucfirst($method),
-                'count' => $items->count(),
-                'total' => $items->sum('bayar'),
+            // Group by payment method
+            $byPayment = $transaksi->groupBy('metode')->map(function ($items, $method) {
+                return [
+                    'method' => ucfirst($method),
+                    'count' => $items->count(),
+                    'total' => $items->sum('bayar'),
+                ];
+            });
+
+            // Get kasir name if filtered
+            $kasirName = null;
+            if ($kasir) {
+                $kasirUser = User::find($kasir);
+                $kasirName = $kasirUser ? $kasirUser->name : null;
+            }
+
+            $data = [
+                'transaksi' => $transaksi,
+                'tanggal' => $tanggal,
+                'metode' => $metode,
+                'kasirName' => $kasirName,
+                'totalPenjualan' => $totalPenjualan,
+                'totalTransaksi' => $totalTransaksi,
+                'totalItem' => $totalItem,
+                'byPayment' => $byPayment,
             ];
-        });
 
-        // Get kasir name if filtered
-        $kasirName = null;
-        if ($kasir) {
-            $kasirUser = User::find($kasir);
-            $kasirName = $kasirUser ? $kasirUser->name : null;
+            // Debug: tampilkan data jika ada parameter debug
+            if ($request->has('debug')) {
+                dd($data);
+            }
+
+            $pdf = Pdf::loadView('kasir.laporan.pdf', $data);
+            $pdf->setPaper('a4', 'landscape');
+
+            $filename = 'Laporan_Detail_Transaksi_'.date('Ymd_His').'.pdf';
+
+            return $pdf->download($filename);
+        } catch (\Exception $e) {
+            \Log::error('Error exporting PDF: '.$e->getMessage());
+            \Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'error' => true,
+                'message' => 'Terjadi kesalahan saat mengexport PDF: '.$e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-
-        $data = [
-            'transaksi' => $transaksi,
-            'tanggal' => $tanggal,
-            'metode' => $metode,
-            'kasirName' => $kasirName,
-            'totalPenjualan' => $totalPenjualan,
-            'totalTransaksi' => $totalTransaksi,
-            'totalItem' => $totalItem,
-            'byPayment' => $byPayment,
-        ];
-
-        $pdf = Pdf::loadView('kasir.laporan.pdf', $data);
-        $pdf->setPaper('a4', 'landscape');
-
-        $filename = 'Laporan_Penjualan_'.date('Ymd_His').'.pdf';
-
-        return $pdf->download($filename);
     }
 
     /**
@@ -264,68 +283,87 @@ class LaporanController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        // Get filter parameters
-        $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
-        $metode = $request->input('metode');
-        $kasir = $request->input('kasir');
+        try {
+            // Get filter parameters
+            $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
+            $metode = $request->input('metode');
+            $kasir = $request->input('kasir');
 
-        // Query transaksi with relations - include detail transaksi
-        $query = Transaksi::with(['detailTransaksi.produk.satuan', 'user'])
-            ->orderBy('tgl', 'desc');
+            // Query transaksi with relations - include detail transaksi
+            $query = Transaksi::with([
+                'detailTransaksi.produk.bahanBaku.konversi.satuan',
+                'user'
+            ])
+                ->orderBy('tgl', 'desc');
 
-        // Apply filters
-        if ($tanggal) {
-            $query->whereDate('tgl', $tanggal);
-        }
+            // Apply filters
+            if ($tanggal) {
+                $query->whereDate('tgl', $tanggal);
+            }
 
-        if ($metode) {
-            $query->where('metode', $metode);
-        }
+            if ($metode) {
+                $query->where('metode', $metode);
+            }
 
-        if ($kasir) {
-            $query->where('id_user', $kasir);
-        }
+            if ($kasir) {
+                $query->where('id_user', $kasir);
+            }
 
-        $transaksi = $query->get();
+            $transaksi = $query->get();
 
-        // Calculate totals
-        $totalPenjualan = $transaksi->sum('bayar');
-        $totalTransaksi = $transaksi->count();
-        $totalItem = $transaksi->sum(function ($t) {
-            return $t->detailTransaksi->sum('jumlah');
-        });
+            // Calculate totals
+            $totalPenjualan = $transaksi->sum('bayar');
+            $totalTransaksi = $transaksi->count();
+            $totalItem = $transaksi->sum(function ($t) {
+                return $t->detailTransaksi->sum('jumlah');
+            });
 
-        // Group by payment method
-        $byPayment = $transaksi->groupBy('metode')->map(function ($items, $method) {
-            return [
-                'method' => ucfirst($method),
-                'count' => $items->count(),
-                'total' => $items->sum('bayar'),
+            // Group by payment method
+            $byPayment = $transaksi->groupBy('metode')->map(function ($items, $method) {
+                return [
+                    'method' => ucfirst($method),
+                    'count' => $items->count(),
+                    'total' => $items->sum('bayar'),
+                ];
+            });
+
+            // Get kasir name if filtered
+            $kasirName = null;
+            if ($kasir) {
+                $kasirUser = User::find($kasir);
+                $kasirName = $kasirUser ? $kasirUser->name : null;
+            }
+
+            $data = [
+                'transaksi' => $transaksi,
+                'tanggal' => $tanggal,
+                'metode' => $metode,
+                'kasirName' => $kasirName,
+                'totalPenjualan' => $totalPenjualan,
+                'totalTransaksi' => $totalTransaksi,
+                'totalItem' => $totalItem,
+                'byPayment' => $byPayment,
             ];
-        });
 
-        // Get kasir name if filtered
-        $kasirName = null;
-        if ($kasir) {
-            $kasirUser = User::find($kasir);
-            $kasirName = $kasirUser ? $kasirUser->name : null;
+            // Debug: tampilkan data jika ada parameter debug
+            if ($request->has('debug')) {
+                return view('kasir.laporan.excel', $data);
+            }
+
+            $filename = 'Laporan_Detail_Transaksi_'.date('Ymd_His').'.xls';
+
+            return response()->view('kasir.laporan.excel', $data)
+                ->header('Content-Type', 'application/vnd.ms-excel')
+                ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
+        } catch (\Exception $e) {
+            \Log::error('Error exporting Excel: '.$e->getMessage());
+            \Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'error' => true,
+                'message' => 'Terjadi kesalahan saat mengexport Excel: '.$e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-
-        $data = [
-            'transaksi' => $transaksi,
-            'tanggal' => $tanggal,
-            'metode' => $metode,
-            'kasirName' => $kasirName,
-            'totalPenjualan' => $totalPenjualan,
-            'totalTransaksi' => $totalTransaksi,
-            'totalItem' => $totalItem,
-            'byPayment' => $byPayment,
-        ];
-
-        $filename = 'Laporan_Penjualan_'.date('Ymd_His').'.xls';
-
-        return response()->view('kasir.laporan.excel', $data)
-            ->header('Content-Type', 'application/vnd.ms-excel')
-            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
     }
 }

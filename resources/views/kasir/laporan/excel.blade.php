@@ -10,7 +10,7 @@
         <thead>
             <tr>
                 <th colspan="7" style="text-align: center; font-size: 16px; font-weight: bold; background-color: #2c3e50; color: white;">
-                    LAPORAN PENJUALAN - POS SANJAYA
+                    LAPORAN DETAIL TRANSAKSI - POS SANJAYA
                 </th>
             </tr>
             <tr>
@@ -58,22 +58,15 @@
                 @foreach($details as $detailIndex => $detail)
                 <tr>
                     @if($detailIndex == 0)
-                    <td>{{ $t->id_transaksi }}</td>
-                    <td>{{ \Carbon\Carbon::parse($t->tgl)->format('H:i') }}</td>
-                    @else
-                    <td></td>
-                    <td></td>
+                    <td rowspan="{{ $details->count() }}">{{ $t->id_transaksi }}</td>
+                    <td rowspan="{{ $details->count() }}">{{ \Carbon\Carbon::parse($t->tgl)->format('d/m/Y H:i') }}</td>
                     @endif
                     <td>{{ optional($detail->produk)->nama ?? 'Produk Tidak Ditemukan' }}</td>
                     <td style="text-align: center;">{{ $detail->jumlah }}</td>
                     @if($detailIndex == 0)
-                    <td style="text-align: right;">Rp {{ number_format($t->bayar, 0, ',', '.') }}</td>
-                    <td>{{ ucfirst($t->metode) }}</td>
-                    <td>{{ optional($t->user)->name ?? 'Unknown' }}</td>
-                    @else
-                    <td></td>
-                    <td></td>
-                    <td></td>
+                    <td rowspan="{{ $details->count() }}" style="text-align: right; font-weight: bold;">Rp {{ number_format($t->bayar, 0, ',', '.') }}</td>
+                    <td rowspan="{{ $details->count() }}">{{ ucfirst($t->metode) }}</td>
+                    <td rowspan="{{ $details->count() }}">{{ optional($t->user)->name ?? 'Unknown' }}</td>
                     @endif
                 </tr>
                 @endforeach
@@ -90,38 +83,38 @@
                 <td colspan="7">&nbsp;</td>
             </tr>
             <tr style="background-color: #f8f9fa; font-weight: bold;">
-                <td colspan="2">RINGKASAN</td>
-                <td colspan="5"></td>
+                <td colspan="3">RINGKASAN</td>
+                <td colspan="4"></td>
             </tr>
             <tr>
-                <td colspan="2">Total Transaksi</td>
-                <td colspan="5">{{ $totalTransaksi }}</td>
+                <td colspan="3">Total Transaksi</td>
+                <td colspan="4">{{ $totalTransaksi }}</td>
             </tr>
             <tr>
-                <td colspan="2">Total Item Terjual</td>
-                <td colspan="5">{{ number_format($totalItem) }}</td>
+                <td colspan="3">Total Item Terjual</td>
+                <td colspan="4">{{ number_format($totalItem) }}</td>
             </tr>
             <tr>
-                <td colspan="2">Total Penjualan</td>
-                <td colspan="5">Rp {{ number_format($totalPenjualan, 0, ',', '.') }}</td>
+                <td colspan="3">Total Penjualan</td>
+                <td colspan="4">Rp {{ number_format($totalPenjualan, 0, ',', '.') }}</td>
             </tr>
             @if($byPayment->count() > 0)
             <tr>
                 <td colspan="7">&nbsp;</td>
             </tr>
             <tr style="background-color: #f8f9fa; font-weight: bold;">
-                <td colspan="2">RINGKASAN PER METODE PEMBAYARAN</td>
-                <td colspan="5"></td>
+                <td colspan="3">RINGKASAN PER METODE PEMBAYARAN</td>
+                <td colspan="4"></td>
             </tr>
             @foreach($byPayment as $payment)
             <tr>
-                <td colspan="2">{{ $payment['method'] }} ({{ $payment['count'] }} transaksi)</td>
-                <td colspan="5">Rp {{ number_format($payment['total'], 0, ',', '.') }}</td>
+                <td colspan="3">{{ $payment['method'] }} ({{ $payment['count'] }} transaksi)</td>
+                <td colspan="4">Rp {{ number_format($payment['total'], 0, ',', '.') }}</td>
             </tr>
             @endforeach
             <tr style="background-color: #2c3e50; color: white; font-weight: bold;">
-                <td colspan="2">TOTAL KESELURUHAN</td>
-                <td colspan="5">Rp {{ number_format($totalPenjualan, 0, ',', '.') }}</td>
+                <td colspan="3">TOTAL KESELURUHAN</td>
+                <td colspan="4">Rp {{ number_format($totalPenjualan, 0, ',', '.') }}</td>
             </tr>
             @endif
         </tfoot>

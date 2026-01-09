@@ -202,7 +202,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>LAPORAN PENJUALAN</h1>
+        <h1>LAPORAN DETAIL TRANSAKSI</h1>
         <h2>POS Sanjaya</h2>
     </div>
     
@@ -249,35 +249,32 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 4%;">No</th>
-                <th style="width: 12%;">Invoice</th>
-                <th style="width: 8%;">Waktu</th>
-                <th style="width: 25%;">Produk</th>
-                <th style="width: 6%;" class="text-center">Qty</th>
-                <th style="width: 12%;" class="text-right">Harga</th>
-                <th style="width: 12%;" class="text-right">Subtotal</th>
-                <th style="width: 9%;" class="text-center">Bayar</th>
-                <th style="width: 12%;">Kasir</th>
+                <th style="width: 5%;">No</th>
+                <th style="width: 15%;">ID</th>
+                <th style="width: 12%;">Waktu</th>
+                <th style="width: 30%;">Produk</th>
+                <th style="width: 8%;" class="text-center">Jumlah</th>
+                <th style="width: 15%;" class="text-right">Total</th>
+                <th style="width: 10%;" class="text-center">Pembayaran</th>
+                <th style="width: 10%;">Kasir</th>
             </tr>
         </thead>
         <tbody>
             @forelse($transaksi as $index => $t)
             @php
                 $details = $t->detailTransaksi;
-                $firstDetail = $details->first();
             @endphp
             @foreach($details as $detailIndex => $detail)
             <tr>
                 @if($detailIndex == 0)
                 <td class="text-center" rowspan="{{ $details->count() }}">{{ $index + 1 }}</td>
                 <td rowspan="{{ $details->count() }}">{{ $t->id_transaksi }}</td>
-                <td rowspan="{{ $details->count() }}">{{ \Carbon\Carbon::parse($t->tgl)->format('H:i') }}</td>
+                <td rowspan="{{ $details->count() }}">{{ \Carbon\Carbon::parse($t->tgl)->format('d/m/Y H:i') }}</td>
                 @endif
                 <td>{{ optional($detail->produk)->nama ?? 'Produk Tidak Ditemukan' }}</td>
                 <td class="text-center">{{ $detail->jumlah }}</td>
-                <td class="text-right">Rp {{ number_format($detail->harga, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($detail->harga * $detail->jumlah, 0, ',', '.') }}</td>
                 @if($detailIndex == 0)
+                <td class="text-right" rowspan="{{ $details->count() }}" style="font-weight: bold;">Rp {{ number_format($t->bayar, 0, ',', '.') }}</td>
                 <td class="text-center" rowspan="{{ $details->count() }}">
                     <span class="badge badge-{{ strtolower($t->metode) }}">{{ ucfirst($t->metode) }}</span>
                 </td>
@@ -285,14 +282,9 @@
                 @endif
             </tr>
             @endforeach
-            <tr style="background-color: #f1f5f9; font-weight: bold;">
-                <td colspan="6" class="text-right" style="padding-right: 10px;">Total Transaksi:</td>
-                <td class="text-right">Rp {{ number_format($t->bayar, 0, ',', '.') }}</td>
-                <td colspan="2"></td>
-            </tr>
             @empty
             <tr>
-                <td colspan="9" class="text-center" style="padding: 20px; color: #7f8c8d;">
+                <td colspan="8" class="text-center" style="padding: 20px; color: #7f8c8d;">
                     Tidak ada data transaksi
                 </td>
             </tr>
