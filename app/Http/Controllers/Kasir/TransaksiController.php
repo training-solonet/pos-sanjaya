@@ -118,39 +118,39 @@ class TransaksiController extends Controller
             // Simpan detail transaksi dan kurangi stok
             foreach ($validated['items'] as $item) {
                 $isBundle = $item['isBundle'] ?? false;
-                
+
                 if ($isBundle) {
                     // Handle bundle product
                     $bundleProducts = $item['bundleProducts'] ?? [];
-                    
+
                     // Cek dan kurangi stok bundle di tabel Promo
                     $bundlePromo = Promo::findOrFail($item['id']);
                     if ($bundlePromo->stok < $item['quantity']) {
                         throw new \Exception("Stok bundle {$bundlePromo->nama_promo} tidak mencukupi. Stok tersedia: {$bundlePromo->stok}");
                     }
-                    
+
                     // Kurangi stok bundle
                     $bundlePromo->decrement('stok', $item['quantity']);
                     Log::info("Stok bundle dikurangi: Bundle ID {$bundlePromo->id}, Qty: {$item['quantity']}, Stok tersisa: {$bundlePromo->stok}");
-                    
+
                     // Kurangi stok untuk setiap produk dalam bundle
                     foreach ($bundleProducts as $bundleItem) {
                         $produk = Produk::findOrFail($bundleItem['id_produk']);
                         $qtyNeeded = $bundleItem['quantity'] * $item['quantity'];
-                        
+
                         if ($produk->stok < $qtyNeeded) {
                             throw new \Exception("Stok {$produk->nama} tidak mencukupi untuk bundle. Stok tersedia: {$produk->stok}, diperlukan: {$qtyNeeded}");
                         }
-                        
+
                         // Simpan stok awal
                         $stokAwal = $produk->stok;
-                        
+
                         // Kurangi stok
                         $produk->decrement('stok', $qtyNeeded);
-                        
+
                         // Simpan stok akhir
                         $stokAkhir = $produk->stok;
-                        
+
                         // Log pengurangan stok
                         UpdateStokProduk::create([
                             'id_produk' => $produk->id,
@@ -161,10 +161,10 @@ class TransaksiController extends Controller
                             'tanggal_update' => now(),
                             'keterangan' => "Pengurangan stok dari bundle transaksi #{$transaksi->id}",
                         ]);
-                        
+
                         Log::info("Log stok BUNDLE dibuat: Produk ID {$produk->id}, Stok Awal: {$stokAwal}, Pengurangan: {$qtyNeeded}, Stok Akhir: {$stokAkhir}");
                     }
-                    
+
                     // Simpan detail transaksi untuk bundle (dengan harga total bundle)
                     // Gunakan produk pertama dalam bundle sebagai representasi
                     $firstBundleProduct = $bundleProducts[0] ?? null;
