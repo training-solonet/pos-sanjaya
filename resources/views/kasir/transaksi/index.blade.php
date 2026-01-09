@@ -134,14 +134,15 @@
                         <i class="fas fa-times mr-1"></i>Hapus
                     </button>
                 </div>
-                <!-- Informasi Poin yang Didapat -->
-                <div id="poinEarnedInfo" class="mt-3 p-3 bg-white rounded-lg border border-purple-200 hidden">
-                    <div class="flex items-center justify-between">
+                <!-- Informasi Poin yang Didapat (Gacha System) -->
+                <div id="poinEarnedInfo" class="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-300 hidden">
+                    <div class="flex items-center justify-between mb-1">
                         <span class="text-sm text-gray-700 font-medium">
-                            <i class="fas fa-gift text-purple-600 mr-1"></i> Poin yang akan didapat:
+                            <i class="fas fa-dice text-purple-600 mr-1"></i> Poin Gacha (1-100):
                         </span>
-                        <span class="text-sm font-bold text-purple-700" id="poinEarned">0 Poin</span>
+                        <span class="text-lg font-bold text-purple-700" id="poinEarned">0 Poin</span>
                     </div>
+                    <p class="text-xs text-purple-600">🎲 Setiap transaksi dapat poin random!</p>
                 </div>
             </div>
         </div>
@@ -306,6 +307,11 @@
                             onclick="filterByCategory('snack')" data-category="snack">
                             <i class="fas fa-cookie-bite mr-2"></i>Snack
                         </button>
+                        <button
+                            class="category-btn px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl whitespace-nowrap hover:border-green-400 hover:text-green-600 transition-colors"
+                            onclick="filterByCategory('bundle')" data-category="bundle">
+                            <i class="fas fa-box-open mr-2"></i>Bundle
+                        </button>
                     </div>
                 </div>
 
@@ -314,7 +320,7 @@
                     <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center space-x-4">
                             <h3 class="text-lg font-semibold text-gray-900">Daftar Produk</h3>
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-center space-x-2" id="viewToggleButtons">
                                 <span class="text-sm text-gray-500">Tampilan:</span>
                                 <button id="gridViewBtn" onclick="toggleView('grid')"
                                     class="p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all"
@@ -328,7 +334,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="text-sm text-gray-500">
+                        <div class="text-sm text-gray-500" id="productCountDisplay">
                             Menampilkan 1-{{ $totalProduk }} dari {{ $totalProduk }} produk
                         </div>
                     </div>
@@ -344,95 +350,157 @@
                             <p class="text-sm text-gray-500">Coba gunakan kata kunci lain atau scan barcode produk</p>
                         </div>
 
-                        @forelse($produks as $produk)
-                            <!-- Product Card: {{ $produk->nama }} -->
-                            <div class="product-card group bg-white border-2 border-green-200 rounded-2xl p-5 hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative"
-                                data-nama="{{ strtolower($produk->nama) }}" data-id="{{ $produk->id }}"
-                                data-price="{{ $produk->harga }}" data-stock="{{ $produk->stok }}"
-                                onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg', {{ $produk->stok }})">
-                                <!-- Double Circle Badge - Positioned at top right -->
+                        <!-- Regular Products Container -->
+                        <div id="regularProductsContainer" class="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                            @forelse($produks as $index => $produk)
+                                <!-- Product Card: {{ $produk->nama }} -->
+                                <div class="product-card group bg-white border-2 border-green-200 rounded-2xl p-5 hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative"
+                                    data-nama="{{ strtolower($produk->nama) }}" data-id="{{ $produk->id }}"
+                                    data-price="{{ $produk->harga }}" data-stock="{{ $produk->stok }}"
+                                    data-type="product"
+                                    style="display: {{ $index < 24 ? 'block' : 'none' }};"
+                                    onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg', {{ $produk->stok }})">
+                                    <!-- Double Circle Badge - Positioned at top right -->
+                                    <div class="stock-badge-wrapper absolute -top-2 -right-2 z-10">
+                                        <!-- Background circle (slightly higher) -->
+                                        <div class="absolute -top-1 -right-1 w-14 h-14 bg-emerald-400 opacity-30 rounded-full"></div>
+                                        <!-- Front circle with stock number -->
+                                        <div class="relative w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-full flex items-center justify-center text-base font-bold product-stock-badge shadow-lg border-4 border-white">
+                                            {{ $produk->stok }}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="product-details">
+                                        <div class="product-info space-y-2">
+                                            <h3 class="font-semibold text-gray-900 text-base product-name leading-tight pr-8">
+                                                {{ $produk->nama }}</h3>
+                                            <p class="text-green-600 font-bold text-xl product-price">Rp
+                                                {{ number_format($produk->harga, 0, ',', '.') }}</p>
+                                            <div class="flex items-center space-x-1 product-status pt-1">
+                                                <span class="text-xs text-gray-500">Produk</span>
+                                                <div
+                                                    class="w-1.5 h-1.5 {{ $produk->stok > 0 ? 'bg-success' : 'bg-red-500' }} rounded-full">
+                                                </div>
+                                                <span
+                                                    class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-medium">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="col-span-full text-center py-12">
+                                    <div
+                                        class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-box-open text-gray-400 text-3xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Tidak Ada Produk</h3>
+                                    <p class="text-sm text-gray-500">Belum ada produk yang tersedia</p>
+                                </div>
+                            @endforelse
+                        </div>
+                        
+                        <!-- Bundle Products Container -->
+                        <div id="bundleProductsContainer" class="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4" style="display: none;">
+                            @forelse($bundles as $bundle)
+                                <div class="product-card bundle-card group bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-2xl p-5 hover:shadow-xl hover:border-purple-500 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative"
+                                    data-nama="{{ strtolower($bundle->nama_promo) }}" 
+                                    data-id="bundle-{{ $bundle->id }}"
+                                data-bundle-id="{{ $bundle->id }}"
+                                data-stock="{{ $bundle->stok }}"
+                                data-type="bundle"
+                                onclick="addBundleToCart({{ $bundle->id }}, '{{ addslashes($bundle->nama_promo) }}', {{ $bundle->bundleProducts }}, {{ $bundle->stok }})">
+                                
+                                <!-- Stock Badge -->
                                 <div class="stock-badge-wrapper absolute -top-2 -right-2 z-10">
                                     <!-- Background circle (slightly higher) -->
-                                    <div class="absolute -top-1 -right-1 w-14 h-14 bg-emerald-400 opacity-30 rounded-full"></div>
+                                    <div class="absolute -top-1 -right-1 w-14 h-14 bg-purple-400 opacity-30 rounded-full"></div>
                                     <!-- Front circle with stock number -->
-                                    <div class="relative w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-full flex items-center justify-center text-base font-bold product-stock-badge shadow-lg border-4 border-white">
-                                        {{ $produk->stok }}
+                                    <div class="relative w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-full flex items-center justify-center text-base font-bold product-stock-badge shadow-lg border-4 border-white">
+                                        {{ $bundle->stok }}
                                     </div>
                                 </div>
                                 
                                 <div class="product-details">
                                     <div class="product-info space-y-2">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <span class="bg-purple-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                                                <i class="fas fa-gift mr-1"></i>BUNDLE
+                                            </span>
+                                        </div>
                                         <h3 class="font-semibold text-gray-900 text-base product-name leading-tight pr-8">
-                                            {{ $produk->nama }}</h3>
-                                        <p class="text-green-600 font-bold text-xl product-price">Rp
-                                            {{ number_format($produk->harga, 0, ',', '.') }}</p>
+                                            {{ $bundle->nama_promo }}
+                                        </h3>
+                                        <div class="text-xs text-gray-600 space-y-1">
+                                            <p class="font-medium">Paket berisi:</p>
+                                            @foreach($bundle->bundleProducts->take(3) as $item)
+                                                <p class="text-xs">• {{ $item->produk->nama }} ({{ $item->quantity }}x)</p>
+                                            @endforeach
+                                            @if($bundle->bundleProducts->count() > 3)
+                                                <p class="text-xs text-purple-600">+ {{ $bundle->bundleProducts->count() - 3 }} produk lainnya</p>
+                                            @endif
+                                        </div>
+                                        
+                                        @php
+                                            $totalHarga = $bundle->bundleProducts->sum(function($item) {
+                                                return $item->produk->harga * $item->quantity;
+                                            });
+                                            $hargaSetelahDiskon = $totalHarga;
+                                            if ($bundle->jenis === 'diskon_persen') {
+                                                $hargaSetelahDiskon = $totalHarga - ($totalHarga * $bundle->nilai / 100);
+                                            } elseif ($bundle->jenis === 'cashback') {
+                                                $hargaSetelahDiskon = $totalHarga - $bundle->nilai;
+                                            }
+                                        @endphp
+                                        
+                                        <div class="pt-2 border-t border-purple-200">
+                                            @if($bundle->jenis === 'diskon_persen' || $bundle->jenis === 'cashback')
+                                                <p class="text-xs text-gray-500 line-through">Rp {{ number_format($totalHarga, 0, ',', '.') }}</p>
+                                                <p class="text-purple-600 font-bold text-xl product-price">
+                                                    Rp {{ number_format($hargaSetelahDiskon, 0, ',', '.') }}
+                                                </p>
+                                                <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+                                                    @if($bundle->jenis === 'diskon_persen')
+                                                        Hemat {{ $bundle->nilai }}%
+                                                    @else
+                                                        Hemat Rp {{ number_format($bundle->nilai, 0, ',', '.') }}
+                                                    @endif
+                                                </span>
+                                            @else
+                                                <p class="text-purple-600 font-bold text-xl product-price">
+                                                    Rp {{ number_format($totalHarga, 0, ',', '.') }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                        
                                         <div class="flex items-center space-x-1 product-status pt-1">
-                                            <span class="text-xs text-gray-500">Produk</span>
-                                            <div
-                                                class="w-1.5 h-1.5 {{ $produk->stok > 0 ? 'bg-success' : 'bg-red-500' }} rounded-full">
-                                            </div>
-                                            <span
-                                                class="text-xs {{ $produk->stok > 0 ? 'text-success' : 'text-red-500' }} font-medium">{{ $produk->stok > 0 ? 'Tersedia' : 'Habis' }}</span>
+                                            <span class="text-xs text-gray-500">Bundle</span>
+                                            <div class="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                                            <span class="text-xs text-purple-600 font-medium">{{ $bundle->bundleProducts->count() }} Items</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        @empty
-                            <div class="col-span-full text-center py-12">
-                                <div
-                                    class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <i class="fas fa-box-open text-gray-400 text-3xl"></i>
+                            @empty
+                                <div class="col-span-full text-center py-12">
+                                    <div class="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-box-open text-purple-400 text-3xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Tidak Ada Bundle</h3>
+                                    <p class="text-sm text-gray-500">Belum ada bundle promo yang tersedia</p>
                                 </div>
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Tidak Ada Produk</h3>
-                                <p class="text-sm text-gray-500">Belum ada produk yang tersedia</p>
-                            </div>
-                        @endforelse
+                            @endforelse
+                        </div>
                     </div>
                     
                     <!-- Pagination -->
-                    @if($produks->hasPages())
-                    <div class="mt-6 flex items-center justify-between">
-                        <div class="text-sm text-gray-600">
-                            Menampilkan {{ $produks->firstItem() }} - {{ $produks->lastItem() }} dari {{ $produks->total() }} produk
+                    <div class="mt-6 items-center justify-between" id="paginationContainer" style="display: flex;">
+                        <div class="text-sm text-gray-600" id="paginationInfo">
+                            Memuat...
                         </div>
-                        <div class="flex items-center space-x-2">
-                            {{-- Previous Button --}}
-                            @if($produks->onFirstPage())
-                                <span class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
-                                    <i class="fas fa-chevron-left text-xs"></i>
-                                </span>
-                            @else
-                                <a href="{{ $produks->previousPageUrl() }}" class="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                                    <i class="fas fa-chevron-left text-xs"></i>
-                                </a>
-                            @endif
-                            
-                            {{-- Page Numbers --}}
-                            @foreach($produks->getUrlRange(1, $produks->lastPage()) as $page => $url)
-                                @if($page == $produks->currentPage())
-                                    <span class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg font-semibold">
-                                        {{ $page }}
-                                    </span>
-                                @else
-                                    <a href="{{ $url }}" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                                        {{ $page }}
-                                    </a>
-                                @endif
-                            @endforeach
-                            
-                            {{-- Next Button --}}
-                            @if($produks->hasMorePages())
-                                <a href="{{ $produks->nextPageUrl() }}" class="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                                    <i class="fas fa-chevron-right text-xs"></i>
-                                </a>
-                            @else
-                                <span class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
-                                    <i class="fas fa-chevron-right text-xs"></i>
-                                </span>
-                            @endif
+                        <div class="flex items-center space-x-2" id="paginationButtons">
+                            <!-- Will be filled by JavaScript -->
                         </div>
                     </div>
-                    @endif
                 </div>
             </div>
         </div>
@@ -486,21 +554,159 @@
                 <div class="border-t border-gray-100 p-4 bg-gray-50 rounded-b-2xl mt-auto">
                     <!-- Order Summary -->
                     <div class="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                        <h4 class="text-xs font-semibold text-gray-900 mb-2">Ringkasan Pesanan</h4>
-                        <div class="space-y-1">
+                        <h4 class="text-xs font-semibold text-gray-900 mb-3">Ringkasan Pesanan</h4>
+                        <div class="space-y-2">
                             <div class="flex justify-between text-xs">
                                 <span class="text-gray-600">Subtotal</span>
                                 <span class="font-medium" id="subtotal">Rp 0</span>
                             </div>
+                            @if($pajak)
                             <div class="flex justify-between text-xs">
-                                <span class="text-gray-600">Pajak (10%)</span>
+                                <span class="text-gray-600">{{ $pajak->nama_pajak }} ({{ $pajak->persen }}%)</span>
                                 <span class="font-medium" id="tax">Rp 0</span>
                             </div>
-                            <div class="flex justify-between text-xs">
-                                <span class="text-gray-600">Diskon</span>
-                                <span class="text-success font-medium" id="discount">Rp 0</span>
+                            @endif
+                            
+                            <hr class="border-gray-200 my-2">
+                            
+                            <!-- Diskon Section (Inline) -->
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold text-gray-700 block">
+                                    <i class="fas fa-tag text-green-600 mr-1"></i>Diskon
+                                </label>
+                                
+                                <!-- Toggle between Promo Code and Manual Discount -->
+                                <div class="flex gap-2">
+                                    <button type="button" id="promoModeBtn" 
+                                        onclick="switchDiscountMode('promo')"
+                                        class="flex-1 px-2 py-1.5 text-xs rounded-lg transition-all bg-gradient-to-r from-green-400 to-green-700 text-white font-medium">
+                                        <i class="fas fa-tag mr-1"></i>Kode Promo
+                                    </button>
+                                    <button type="button" id="manualModeBtn"
+                                        onclick="switchDiscountMode('manual')"
+                                        class="flex-1 px-2 py-1.5 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200">
+                                        <i class="fas fa-edit mr-1"></i>Input Manual
+                                    </button>
+                                </div>
+                                
+                                <!-- Promo Code Select -->
+                                @if($promos && $promos->count() > 0)
+                                <div id="promoCodeSection">
+                                    <div class="relative">
+                                        <select id="promoCode" 
+                                            class="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors text-xs"
+                                            onchange="applyPromo()">
+                                            <option value="">-- Pilih Promo --</option>
+                                            @foreach($promos as $promo)
+                                                <option value="{{ $promo->id }}" 
+                                                    data-type="{{ $promo->jenis }}" 
+                                                    data-value="{{ $promo->nilai }}"
+                                                    data-min="{{ $promo->min_transaksi }}"
+                                                    data-max="{{ $promo->maks_potongan }}">
+                                                    {{ $promo->kode_promo }} - {{ $promo->nama_promo }}
+                                                    @if($promo->jenis == 'diskon_persen')
+                                                        ({{ $promo->nilai }}%)
+                                                    @else
+                                                        (Rp {{ number_format($promo->nilai, 0, ',', '.') }})
+                                                    @endif
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1" id="promoInfo"></p>
+                                </div>
+                                @else
+                                <div id="promoCodeSection">
+                                    <p class="text-xs text-gray-500 italic">Tidak ada promo tersedia</p>
+                                </div>
+                                @endif
+                                
+                                <!-- Manual Discount Input -->
+                                <div id="manualDiscountSection" style="display: none;">
+                                    <div class="space-y-2">
+                                        <!-- Discount Type -->
+                                        <div class="flex gap-2">
+                                            <button type="button" onclick="setManualDiscountType('persen')" 
+                                                id="percentBtn"
+                                                class="flex-1 px-2 py-1.5 text-xs rounded-lg transition-all bg-gradient-to-r from-blue-400 to-blue-600 text-white font-medium">
+                                                <i class="fas fa-percent mr-1"></i>Persen (%)
+                                            </button>
+                                            <button type="button" onclick="setManualDiscountType('nominal')"
+                                                id="nominalBtn"
+                                                class="flex-1 px-2 py-1.5 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200">
+                                                <i class="fas fa-money-bill mr-1"></i>Nominal (Rp)
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Discount Value Input -->
+                                        <div class="relative">
+                                            <input type="number" 
+                                                id="manualDiscountValue" 
+                                                class="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-colors text-xs"
+                                                placeholder="Masukkan nilai diskon"
+                                                min="0"
+                                                oninput="applyManualDiscount()">
+                                            <div class="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                                                <span class="text-gray-400 text-xs" id="discountSuffix">%</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="button" 
+                                            onclick="clearManualDiscount()"
+                                            class="w-full px-2 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-all">
+                                            <i class="fas fa-times mr-1"></i>Hapus Diskon
+                                        </button>
+                                        
+                                        <p class="text-xs text-gray-500" id="manualDiscountInfo"></p>
+                                    </div>
+                                </div>
                             </div>
-                            <hr class="border-gray-200 my-1">
+                            
+                            <hr class="border-gray-200 my-2">
+                            
+                            <!-- Points Usage Section (Inline) -->
+                            <div class="space-y-2" id="pointsSection">
+                                <label class="text-xs font-semibold text-gray-700 block">
+                                    <i class="fas fa-coins text-yellow-500 mr-1"></i>Gunakan Poin
+                                </label>
+                                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-2 border border-yellow-200">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-xs text-gray-600">Poin Tersedia:</span>
+                                        <span class="text-xs font-bold text-yellow-600" id="availablePoints">0 Poin</span>
+                                    </div>
+                                    <div class="relative mb-2">
+                                        <input type="number" 
+                                            id="pointsInput" 
+                                            class="w-full px-2 py-1.5 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-200 focus:border-yellow-400 transition-colors text-xs"
+                                            placeholder="Masukkan jumlah poin (1 poin = Rp 1)"
+                                            min="0"
+                                            value="0"
+                                            oninput="applyPoints()">
+                                    </div>
+                                    <div class="flex gap-2 mb-2">
+                                        <button type="button" 
+                                            onclick="useMaxPoints()"
+                                            class="flex-1 px-2 py-1 text-xs rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition-all">
+                                            <i class="fas fa-coins mr-1"></i>Gunakan Semua
+                                        </button>
+                                        <button type="button" 
+                                            onclick="clearPoints()"
+                                            class="flex-1 px-2 py-1 text-xs rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
+                                            <i class="fas fa-times mr-1"></i>Reset
+                                        </button>
+                                    </div>
+                                    <div class="p-2 bg-white rounded-lg mb-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs text-gray-600">Potongan dari Poin:</span>
+                                            <span class="text-xs font-bold text-green-600" id="pointsDiscount">Rp 0</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-yellow-600" id="pointsInfo"></p>
+                                </div>
+                            </div>
+                            
+                            <hr class="border-gray-200 my-2">
+                            
                             <div class="flex justify-between">
                                 <span class="font-bold text-gray-900 text-sm">Total Bayar</span>
                                 <span class="font-bold text-lg text-green-600" id="total">Rp 0</span>
@@ -529,8 +735,7 @@
                                             class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">Rp</span>
                                         <input type="text" id="cashAmount"
                                             class="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors text-right font-semibold text-lg"
-                                            placeholder="0" oninput="calculateChange()"
-                                            onkeypress="return isNumber(event)">
+                                            placeholder="0">
                                     </div>
                                 </div>
 
@@ -767,6 +972,334 @@
         let currentView = 'grid'; // Default view
         let currentOrderNumber = null;
         let selectedCustomer = null; // Store selected customer data
+        
+        // Pagination variables
+        let currentPage = 1;
+        let itemsPerPage = 24; // Default for grid view
+        
+        // Discount variables
+        let discountMode = 'promo'; // 'promo' or 'manual'
+        let manualDiscountType = 'persen'; // 'persen' or 'nominal'
+        let manualDiscountValue = 0;
+        
+        // Points usage variable
+        let usedPoints = 0;
+
+        // ============ DISCOUNT MANAGEMENT FUNCTIONS ============
+        
+        // Switch between promo code and manual discount
+        function switchDiscountMode(mode) {
+            discountMode = mode;
+            
+            const promoSection = document.getElementById('promoCodeSection');
+            const manualSection = document.getElementById('manualDiscountSection');
+            const promoModeBtn = document.getElementById('promoModeBtn');
+            const manualModeBtn = document.getElementById('manualModeBtn');
+            
+            if (mode === 'promo') {
+                // Show promo, hide manual
+                if (promoSection) promoSection.style.display = 'block';
+                if (manualSection) manualSection.style.display = 'none';
+                
+                // Update button styles
+                if (promoModeBtn) {
+                    promoModeBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-green-400 to-green-700 text-white font-medium';
+                }
+                if (manualModeBtn) {
+                    manualModeBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
+                }
+                
+                // Clear manual discount
+                manualDiscountValue = 0;
+                const manualInput = document.getElementById('manualDiscountValue');
+                if (manualInput) manualInput.value = '';
+                
+            } else {
+                // Show manual, hide promo
+                if (promoSection) promoSection.style.display = 'none';
+                if (manualSection) manualSection.style.display = 'block';
+                
+                // Update button styles
+                if (promoModeBtn) {
+                    promoModeBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
+                }
+                if (manualModeBtn) {
+                    manualModeBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-green-400 to-green-700 text-white font-medium';
+                }
+                
+                // Clear promo selection
+                const promoSelect = document.getElementById('promoCode');
+                if (promoSelect) promoSelect.value = '';
+                const promoInfo = document.getElementById('promoInfo');
+                if (promoInfo) promoInfo.textContent = '';
+            }
+            
+            updateTotals();
+        }
+        
+        // Set manual discount type (persen or nominal)
+        function setManualDiscountType(type) {
+            manualDiscountType = type;
+            
+            const percentBtn = document.getElementById('percentBtn');
+            const nominalBtn = document.getElementById('nominalBtn');
+            const discountSuffix = document.getElementById('discountSuffix');
+            const manualInput = document.getElementById('manualDiscountValue');
+            
+            if (type === 'persen') {
+                if (percentBtn) {
+                    percentBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-blue-400 to-blue-600 text-white font-medium';
+                }
+                if (nominalBtn) {
+                    nominalBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
+                }
+                if (discountSuffix) discountSuffix.textContent = '%';
+                if (manualInput) {
+                    manualInput.placeholder = 'Masukkan persen diskon (0-100)';
+                    manualInput.max = '100';
+                }
+            } else {
+                if (percentBtn) {
+                    percentBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
+                }
+                if (nominalBtn) {
+                    nominalBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-blue-400 to-blue-600 text-white font-medium';
+                }
+                if (discountSuffix) discountSuffix.textContent = 'Rp';
+                if (manualInput) {
+                    manualInput.placeholder = 'Masukkan nominal diskon';
+                    manualInput.removeAttribute('max');
+                }
+            }
+            
+            applyManualDiscount();
+        }
+        
+        // Apply manual discount
+        function applyManualDiscount() {
+            const manualInput = document.getElementById('manualDiscountValue');
+            const manualInfo = document.getElementById('manualDiscountInfo');
+            
+            if (!manualInput) return;
+            
+            manualDiscountValue = parseFloat(manualInput.value) || 0;
+            
+            // Validate
+            if (manualDiscountType === 'persen' && manualDiscountValue > 100) {
+                manualDiscountValue = 100;
+                manualInput.value = 100;
+            }
+            
+            if (manualDiscountValue < 0) {
+                manualDiscountValue = 0;
+                manualInput.value = 0;
+            }
+            
+            // Update info
+            if (manualInfo) {
+                if (manualDiscountValue > 0) {
+                    if (manualDiscountType === 'persen') {
+                        manualInfo.textContent = `Diskon ${manualDiscountValue}% diterapkan`;
+                        manualInfo.className = 'text-xs text-green-600 mt-1';
+                    } else {
+                        manualInfo.textContent = `Diskon Rp ${manualDiscountValue.toLocaleString('id-ID')} diterapkan`;
+                        manualInfo.className = 'text-xs text-green-600 mt-1';
+                    }
+                } else {
+                    manualInfo.textContent = '';
+                }
+            }
+            
+            updateTotals();
+        }
+        
+        // Clear manual discount
+        function clearManualDiscount() {
+            manualDiscountValue = 0;
+            const manualInput = document.getElementById('manualDiscountValue');
+            if (manualInput) manualInput.value = '';
+            
+            const manualInfo = document.getElementById('manualDiscountInfo');
+            if (manualInfo) manualInfo.textContent = '';
+            
+            updateTotals();
+        }
+        
+        // ============ END DISCOUNT MANAGEMENT FUNCTIONS ============
+
+        // ============ POINTS MANAGEMENT FUNCTIONS ============
+        
+        // Apply points to reduce total
+        function applyPoints() {
+            const pointsInput = document.getElementById('pointsInput');
+            const pointsInfo = document.getElementById('pointsInfo');
+            
+            if (!pointsInput) return;
+            
+            let requestedPoints = parseInt(pointsInput.value) || 0;
+            
+            // Get available points from selected customer
+            const availablePoints = selectedCustomer ? selectedCustomer.poin : 0;
+            
+            // Get current total before points
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
+            const tax = subtotal * taxRate;
+            
+            // Calculate discount from promo/manual
+            let discount = 0;
+            if (discountMode === 'promo') {
+                const promoSelect = document.getElementById('promoCode');
+                if (promoSelect && promoSelect.value) {
+                    const selectedOption = promoSelect.options[promoSelect.selectedIndex];
+                    const promoType = selectedOption.getAttribute('data-type');
+                    const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
+                    const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
+                    const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
+                    
+                    if (subtotal >= minTransaction) {
+                        if (promoType === 'diskon_persen') {
+                            discount = subtotal * (promoValue / 100);
+                            if (maxDiscount > 0 && discount > maxDiscount) {
+                                discount = maxDiscount;
+                            }
+                        } else if (promoType === 'cashback') {
+                            discount = promoValue;
+                        }
+                    }
+                }
+            } else if (discountMode === 'manual') {
+                if (manualDiscountValue > 0) {
+                    if (manualDiscountType === 'persen') {
+                        discount = subtotal * (manualDiscountValue / 100);
+                    } else {
+                        discount = manualDiscountValue;
+                    }
+                }
+            }
+            
+            const totalBeforePoints = subtotal - discount + tax;
+            
+            // Validate points
+            if (requestedPoints < 0) {
+                requestedPoints = 0;
+                pointsInput.value = 0;
+            }
+            
+            if (!selectedCustomer) {
+                if (pointsInfo) pointsInfo.textContent = 'Pilih member terlebih dahulu untuk menggunakan poin';
+                pointsInput.value = 0;
+                usedPoints = 0;
+                updateTotals();
+                return;
+            }
+            
+            if (requestedPoints > availablePoints) {
+                if (pointsInfo) pointsInfo.textContent = `Poin tidak mencukupi. Maksimal: ${availablePoints.toLocaleString('id-ID')} poin`;
+                pointsInput.value = availablePoints;
+                requestedPoints = availablePoints;
+            }
+            
+            if (requestedPoints > totalBeforePoints) {
+                if (pointsInfo) pointsInfo.textContent = `Poin melebihi total pembayaran. Maksimal: ${Math.floor(totalBeforePoints).toLocaleString('id-ID')} poin`;
+                pointsInput.value = Math.floor(totalBeforePoints);
+                requestedPoints = Math.floor(totalBeforePoints);
+            }
+            
+            if (requestedPoints > 0 && requestedPoints <= availablePoints && requestedPoints <= totalBeforePoints) {
+                if (pointsInfo) pointsInfo.textContent = `Menggunakan ${requestedPoints.toLocaleString('id-ID')} poin (sisa ${(availablePoints - requestedPoints).toLocaleString('id-ID')} poin)`;
+            } else {
+                if (pointsInfo) pointsInfo.textContent = '';
+            }
+            
+            usedPoints = requestedPoints;
+            updateTotals();
+        }
+        
+        // Use maximum available points
+        function useMaxPoints() {
+            if (!selectedCustomer) {
+                alert('Pilih member terlebih dahulu untuk menggunakan poin');
+                return;
+            }
+            
+            const availablePoints = selectedCustomer.poin;
+            
+            // Get current total before points
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
+            const tax = subtotal * taxRate;
+            
+            // Calculate discount
+            let discount = 0;
+            if (discountMode === 'promo') {
+                const promoSelect = document.getElementById('promoCode');
+                if (promoSelect && promoSelect.value) {
+                    const selectedOption = promoSelect.options[promoSelect.selectedIndex];
+                    const promoType = selectedOption.getAttribute('data-type');
+                    const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
+                    const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
+                    const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
+                    
+                    if (subtotal >= minTransaction) {
+                        if (promoType === 'diskon_persen') {
+                            discount = subtotal * (promoValue / 100);
+                            if (maxDiscount > 0 && discount > maxDiscount) {
+                                discount = maxDiscount;
+                            }
+                        } else if (promoType === 'cashback') {
+                            discount = promoValue;
+                        }
+                    }
+                }
+            } else if (discountMode === 'manual') {
+                if (manualDiscountValue > 0) {
+                    if (manualDiscountType === 'persen') {
+                        discount = subtotal * (manualDiscountValue / 100);
+                    } else {
+                        discount = manualDiscountValue;
+                    }
+                }
+            }
+            
+            const totalBeforePoints = Math.floor(subtotal - discount + tax);
+            
+            // Use minimum of available points or total
+            const maxUsablePoints = Math.min(availablePoints, totalBeforePoints);
+            
+            const pointsInput = document.getElementById('pointsInput');
+            if (pointsInput) {
+                pointsInput.value = maxUsablePoints;
+            }
+            
+            applyPoints();
+        }
+        
+        // Clear points usage
+        function clearPoints() {
+            usedPoints = 0;
+            const pointsInput = document.getElementById('pointsInput');
+            const pointsInfo = document.getElementById('pointsInfo');
+            
+            if (pointsInput) pointsInput.value = 0;
+            if (pointsInfo) pointsInfo.textContent = '';
+            
+            updateTotals();
+        }
+        
+        // Update available points display
+        function updateAvailablePoints() {
+            const availablePointsEl = document.getElementById('availablePoints');
+            if (availablePointsEl) {
+                if (selectedCustomer && selectedCustomer.poin) {
+                    availablePointsEl.textContent = `${selectedCustomer.poin.toLocaleString('id-ID')} Poin`;
+                } else {
+                    availablePointsEl.textContent = '0 Poin';
+                }
+            }
+        }
+        
+        // ============ END POINTS MANAGEMENT FUNCTIONS ============
 
         // ============ CUSTOMER MANAGEMENT FUNCTIONS ============
 
@@ -838,10 +1371,7 @@
             const dropdown = document.getElementById('customerDropdown');
             
             // Set the hidden select value
-            select.value = customerId;
-            
-            // Get selected option
-            const selectedOption = select.options[select.selectedIndex];
+            if (select) select.value = customerId;
             
             if (customerId === '' || customerId === 'walk-in') {
                 // Clear selection or walk-in customer
@@ -854,29 +1384,54 @@
                     email: '-'
                 } : null;
                 
-                searchInput.value = customerId === 'walk-in' ? 'Walk-in Customer' : '';
+                if (searchInput) searchInput.value = customerId === 'walk-in' ? 'Walk-in Customer' : '';
             } else {
-                // Store customer data
-                selectedCustomer = {
-                    id: customerId,
-                    name: selectedOption.dataset.name,
-                    kode_member: selectedOption.dataset.kode || null,
-                    poin: parseInt(selectedOption.dataset.poin) || 0,
-                    phone: selectedOption.dataset.phone,
-                    email: selectedOption.dataset.email
-                };
+                // Find customer data from dropdown option div
+                const customerOption = document.querySelector(`.customer-option[data-customer-id="${customerId}"]`);
                 
-                // Update search input with selected customer
-                const displayText = selectedCustomer.kode_member 
-                    ? `[${selectedCustomer.kode_member}] ${selectedCustomer.name}`
-                    : selectedCustomer.name;
-                searchInput.value = displayText;
+                if (customerOption) {
+                    // Store customer data from data attributes
+                    selectedCustomer = {
+                        id: customerId,
+                        name: customerOption.dataset.name,
+                        kode_member: customerOption.dataset.kode || null,
+                        poin: parseInt(customerOption.dataset.poin) || 0,
+                        phone: customerOption.dataset.phone,
+                        email: customerOption.dataset.email
+                    };
+                    
+                    // Update search input with selected customer
+                    const displayText = selectedCustomer.kode_member 
+                        ? `[${selectedCustomer.kode_member}] ${selectedCustomer.name}`
+                        : selectedCustomer.name;
+                    if (searchInput) searchInput.value = displayText;
+                } else {
+                    // Fallback to hidden select option
+                    const selectedOption = select ? select.options[select.selectedIndex] : null;
+                    if (selectedOption) {
+                        selectedCustomer = {
+                            id: customerId,
+                            name: selectedOption.dataset.name,
+                            kode_member: selectedOption.dataset.kode || null,
+                            poin: parseInt(selectedOption.dataset.poin) || 0,
+                            phone: selectedOption.dataset.phone,
+                            email: selectedOption.dataset.email
+                        };
+                        
+                        const displayText = selectedCustomer.kode_member 
+                            ? `[${selectedCustomer.kode_member}] ${selectedCustomer.name}`
+                            : selectedCustomer.name;
+                        if (searchInput) searchInput.value = displayText;
+                    }
+                }
             }
             
             // Hide dropdown
-            dropdown.classList.add('hidden');
+            if (dropdown) dropdown.classList.add('hidden');
             
             updateCustomerInfoDisplay();
+            updateAvailablePoints(); // Update display poin tersedia
+            clearPoints(); // Reset poin usage saat ganti customer
             updatePoinEarned(); // Update poin yang akan didapat
         }
 
@@ -1048,134 +1603,282 @@
 
         // Toggle between grid and list view
         function toggleView(viewType) {
+            console.log('toggleView called with:', viewType);
             currentView = viewType;
-            const productGrid = document.getElementById('productGrid');
-            const productCards = document.querySelectorAll('.product-card');
+            const regularContainer = document.getElementById('regularProductsContainer');
             const gridBtn = document.getElementById('gridViewBtn');
             const listBtn = document.getElementById('listViewBtn');
 
+            if (!regularContainer) {
+                console.error('regularProductsContainer not found in toggleView');
+                return;
+            }
+
+            const productCards = regularContainer.querySelectorAll('.product-card');
+            console.log('Product cards in toggleView:', productCards.length);
+
             if (viewType === 'grid') {
                 // Switch to grid view
-                productGrid.className =
-                    'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4';
+                regularContainer.className =
+                    'col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4';
 
                 // Update product cards for grid view
                 productCards.forEach(card => {
-                    if (!card.id || card.id !== 'noResultsMessage') {
-                        card.className =
-                            'product-card group bg-white border-2 border-green-200 rounded-2xl p-5 hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative';
-                        card.style.display = '';
+                    card.className =
+                        'product-card group bg-white border-2 border-green-200 rounded-2xl p-5 hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative';
+                    card.style.display = 'block';
 
-                        // Reset display based on current filter
-                        const productName = card.getAttribute('data-nama');
-                        const productCategory = getCategoryByName(productName);
-                        const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                    // Reset display based on current filter
+                    const productName = card.getAttribute('data-nama');
+                    const productCategory = getCategoryByName(productName);
+                    const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
 
-                        if (!matchesCategory) {
-                            card.classList.add('hidden-card');
-                        }
+                    if (!matchesCategory) {
+                        card.style.display = 'none';
+                    }
 
-                        // Adjust stock badge wrapper - positioned at top right
-                        const stockBadgeWrapper = card.querySelector('.stock-badge-wrapper');
-                        if (stockBadgeWrapper) {
-                            stockBadgeWrapper.className = 'stock-badge-wrapper absolute -top-2 -right-2 z-10';
-                        }
+                    // Adjust stock badge wrapper - positioned at top right
+                    const stockBadgeWrapper = card.querySelector('.stock-badge-wrapper');
+                    if (stockBadgeWrapper) {
+                        stockBadgeWrapper.className = 'stock-badge-wrapper absolute -top-2 -right-2 z-10';
+                    }
 
-                        // Adjust product details
-                        const details = card.querySelector('.product-details');
-                        if (details) {
-                            details.className = 'product-details';
-                        }
+                    // Adjust product details
+                    const details = card.querySelector('.product-details');
+                    if (details) {
+                        details.className = 'product-details';
+                    }
 
-                        const info = card.querySelector('.product-info');
-                        if (info) {
-                            info.className = 'product-info space-y-2';
-                        }
+                    const info = card.querySelector('.product-info');
+                    if (info) {
+                        info.className = 'product-info space-y-2';
+                    }
 
-                        const name = card.querySelector('.product-name');
-                        if (name) {
-                            name.className = 'font-semibold text-gray-900 text-base product-name leading-tight pr-8';
-                        }
+                    const name = card.querySelector('.product-name');
+                    if (name) {
+                        name.className = 'font-semibold text-gray-900 text-base product-name leading-tight pr-8';
+                    }
 
-                        const price = card.querySelector('.product-price');
-                        if (price) {
-                            price.className = 'text-green-600 font-bold text-xl product-price';
-                        }
+                    const price = card.querySelector('.product-price');
+                    if (price) {
+                        price.className = 'text-green-600 font-bold text-xl product-price';
+                    }
 
-                        const status = card.querySelector('.product-status');
-                        if (status) {
-                            status.className = 'flex items-center space-x-1 product-status pt-1';
-                        }
+                    const status = card.querySelector('.product-status');
+                    if (status) {
+                        status.className = 'flex items-center space-x-1 product-status pt-1';
                     }
                 });
 
                 // Update button states
-                gridBtn.className = 'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
-                listBtn.className = 'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
+                if (gridBtn) gridBtn.className = 'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
+                if (listBtn) listBtn.className = 'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
             } else {
                 // Switch to list view
-                productGrid.className =
-                    'flex flex-col gap-3';
+                regularContainer.className =
+                    'col-span-full flex flex-col gap-3';
 
                 // Update product cards for list view
                 productCards.forEach(card => {
-                    if (!card.id || card.id !== 'noResultsMessage') {
-                        card.className =
-                            'product-card list-view group bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer relative';
+                    card.className =
+                        'product-card list-view group bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer relative';
 
-                        // Reset display based on current filter  
-                        const productName = card.getAttribute('data-nama');
-                        const productCategory = getCategoryByName(productName);
-                        const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                    // Reset display based on current filter  
+                    const productName = card.getAttribute('data-nama');
+                    const productCategory = getCategoryByName(productName);
+                    const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
 
-                        // Show as flex for list view
-                        card.style.display = 'flex';
-                        if (!matchesCategory) {
-                            card.classList.add('hidden-card');
-                        }
+                    // Show as flex for list view
+                    card.style.display = 'flex';
+                    if (!matchesCategory) {
+                        card.style.display = 'none';
+                    }
 
-                        // Adjust stock badge wrapper for list - keep at top right
-                        const stockBadgeWrapper = card.querySelector('.stock-badge-wrapper');
-                        if (stockBadgeWrapper) {
-                            stockBadgeWrapper.className = 'stock-badge-wrapper absolute -top-2 -right-2 z-10';
-                        }
+                    // Adjust stock badge wrapper for list - keep at top right
+                    const stockBadgeWrapper = card.querySelector('.stock-badge-wrapper');
+                    if (stockBadgeWrapper) {
+                        stockBadgeWrapper.className = 'stock-badge-wrapper absolute -top-2 -right-2 z-10';
+                    }
 
-                        // Adjust product details for list
-                        const details = card.querySelector('.product-details');
-                        if (details) {
-                            details.className = 'product-details flex-1';
-                        }
+                    // Adjust product details for list
+                    const details = card.querySelector('.product-details');
+                    if (details) {
+                        details.className = 'product-details flex-1';
+                    }
 
-                        const info = card.querySelector('.product-info');
-                        if (info) {
-                            info.className = 'product-info flex-1';
-                        }
+                    const info = card.querySelector('.product-info');
+                    if (info) {
+                        info.className = 'product-info flex-1';
+                    }
 
-                        const name = card.querySelector('.product-name');
-                        if (name) {
-                            name.className = 'font-semibold text-gray-900 text-base product-name mb-1 pr-16';
-                        }
+                    const name = card.querySelector('.product-name');
+                    if (name) {
+                        name.className = 'font-semibold text-gray-900 text-base product-name mb-1 pr-16';
+                    }
 
-                        const price = card.querySelector('.product-price');
-                        if (price) {
-                            price.className = 'text-green-600 font-bold text-xl product-price mb-1';
-                        }
+                    const price = card.querySelector('.product-price');
+                    if (price) {
+                        price.className = 'text-green-600 font-bold text-xl product-price mb-1';
+                    }
 
-                        const status = card.querySelector('.product-status');
-                        if (status) {
-                            status.className = 'flex items-center space-x-1 product-status';
-                        }
+                    const status = card.querySelector('.product-status');
+                    if (status) {
+                        status.className = 'flex items-center space-x-1 product-status';
                     }
                 });
 
                 // Update button states
-                gridBtn.className = 'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
-                listBtn.className = 'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
+                if (gridBtn) gridBtn.className = 'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
+                if (listBtn) listBtn.className = 'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
             }
 
             // Save preference to localStorage
             localStorage.setItem('productViewPreference', viewType);
+            
+            // Update pagination after view change
+            updatePagination();
         }
+
+        // ============ PAGINATION FUNCTIONS ============
+        // Update items per page based on view type
+        function updateItemsPerPage() {
+            itemsPerPage = currentView === 'grid' ? 24 : 16;
+        }
+
+        // Get all visible product cards based on current filter
+        function getVisibleProducts() {
+            const regularContainer = document.getElementById('regularProductsContainer');
+            if (!regularContainer) {
+                console.error('regularProductsContainer not found in getVisibleProducts');
+                return [];
+            }
+            
+            const allCards = Array.from(regularContainer.querySelectorAll('.product-card'));
+            console.log('getVisibleProducts - Total cards:', allCards.length, 'Current category:', currentCategory);
+            
+            // Filter by category
+            const filtered = allCards.filter(card => {
+                const productName = card.getAttribute('data-nama');
+                const productCategory = getCategoryByName(productName);
+                const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                return matchesCategory;
+            });
+            
+            console.log('getVisibleProducts - Filtered cards:', filtered.length);
+            return filtered;
+        }
+
+        // Render pagination
+        function updatePagination() {
+            console.log('updatePagination called - View:', currentView, 'Category:', currentCategory, 'Page:', currentPage);
+            
+            updateItemsPerPage();
+            console.log('Items per page:', itemsPerPage);
+            
+            const regularContainer = document.getElementById('regularProductsContainer');
+            if (!regularContainer) {
+                console.error('regularProductsContainer not found');
+                return;
+            }
+            
+            const allCards = Array.from(regularContainer.querySelectorAll('.product-card'));
+            console.log('Total cards found:', allCards.length);
+            
+            // First, hide all cards
+            allCards.forEach(card => {
+                card.style.display = 'none';
+            });
+            
+            // Get visible products based on category filter
+            const visibleProducts = getVisibleProducts();
+            const totalProducts = visibleProducts.length;
+            const totalPages = Math.ceil(totalProducts / itemsPerPage);
+            
+            console.log('Visible products after filter:', totalProducts, 'Total pages:', totalPages);
+            
+            // Reset to page 1 if current page exceeds total pages
+            if (currentPage > totalPages && totalPages > 0) {
+                currentPage = 1;
+            }
+            
+            // Show products for current page
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            
+            console.log('Showing items from index', startIndex, 'to', endIndex);
+            
+            visibleProducts.forEach((card, index) => {
+                if (index >= startIndex && index < endIndex) {
+                    card.style.display = currentView === 'list' ? 'flex' : 'block';
+                }
+            });
+            
+            // Update pagination info
+            const paginationInfo = document.getElementById('paginationInfo');
+            const paginationButtons = document.getElementById('paginationButtons');
+            const paginationContainer = document.getElementById('paginationContainer');
+            
+            console.log('Pagination elements found:', {
+                paginationInfo: !!paginationInfo,
+                paginationButtons: !!paginationButtons,
+                paginationContainer: !!paginationContainer
+            });
+            
+            // Update info text - always show
+            const startItem = totalProducts > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+            const endItem = Math.min(currentPage * itemsPerPage, totalProducts);
+            if (paginationInfo) {
+                paginationInfo.textContent = `Menampilkan ${startItem} - ${endItem} dari ${totalProducts} produk`;
+                console.log('Pagination info updated:', paginationInfo.textContent);
+            }
+            
+            // Generate pagination buttons
+            if (paginationButtons) {
+                let buttonsHTML = '';
+                
+                if (totalPages > 1) {
+                
+                    // Previous button
+                    if (currentPage === 1) {
+                        buttonsHTML += '<span class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-left text-xs"></i></span>';
+                    } else {
+                        buttonsHTML += `<button onclick="goToPage(${currentPage - 1})" class="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>`;
+                    }
+                    
+                    // Page numbers
+                    for (let i = 1; i <= totalPages; i++) {
+                        if (i === currentPage) {
+                            buttonsHTML += `<span class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg font-semibold">${i}</span>`;
+                        } else {
+                            buttonsHTML += `<button onclick="goToPage(${i})" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">${i}</button>`;
+                        }
+                    }
+                    
+                    // Next button
+                    if (currentPage === totalPages) {
+                        buttonsHTML += '<span class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-right text-xs"></i></span>';
+                    } else {
+                        buttonsHTML += `<button onclick="goToPage(${currentPage + 1})" class="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>`;
+                    }
+                }
+                
+                paginationButtons.innerHTML = buttonsHTML;
+                console.log('Pagination buttons generated:', totalPages, 'pages');
+            }
+        }
+
+        // Go to specific page
+        function goToPage(page) {
+            currentPage = page;
+            updatePagination();
+            
+            // Scroll to top of product container
+            const regularContainer = document.getElementById('regularProductsContainer');
+            if (regularContainer) {
+                regularContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        // ============ END PAGINATION FUNCTIONS ============
 
         // Determine category based on product name
         function getCategoryByName(productName) {
@@ -1213,56 +1916,81 @@
             if (!searchInput) return;
 
             const searchTerm = searchInput.value.toLowerCase().trim();
-            const productCards = document.querySelectorAll('.product-card');
             const noResultsMessage = document.getElementById('noResultsMessage');
             const clearBtn = document.getElementById('clearSearchBtn');
-            let visibleCount = 0;
+            const paginationContainer = document.getElementById('paginationContainer');
 
             // Show/hide clear button
             if (clearBtn) {
                 clearBtn.classList.toggle('hidden', searchInput.value.length === 0);
             }
 
-            // Loop through all product cards
-            productCards.forEach(card => {
-                // Skip if this is the no results message
-                if (card.id === 'noResultsMessage') return;
-
-                const productName = card.getAttribute('data-nama') || '';
-
-                // Check if product matches search term
-                let matchesSearch = true;
-                if (searchTerm !== '') {
-                    matchesSearch = productName.indexOf(searchTerm) !== -1;
+            // If searching in regular products, use pagination
+            if (currentCategory !== 'bundle') {
+                currentPage = 1; // Reset to first page on search
+                
+                // If no search term, restore pagination
+                if (searchTerm === '') {
+                    updatePagination();
+                    if (noResultsMessage) noResultsMessage.classList.add('hidden');
+                    return;
                 }
+                
+                // Hide pagination during search
+                if (paginationContainer) paginationContainer.style.display = 'none';
+                
+                const regularContainer = document.getElementById('regularProductsContainer');
+                const productCards = regularContainer ? regularContainer.querySelectorAll('.product-card') : [];
+                let visibleCount = 0;
 
-                // Get product category for category filtering
-                const productCategory = getCategoryByName(productName);
-                const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                productCards.forEach(card => {
+                    const productName = card.getAttribute('data-nama') || '';
+                    const productCategory = getCategoryByName(productName);
+                    const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
+                    const matchesSearch = productName.indexOf(searchTerm) !== -1;
 
-                // Show or hide card based on search and category match
-                if (matchesSearch && matchesCategory) {
-                    card.style.display = 'block';
-                    card.classList.remove('hidden-card');
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
-                    card.classList.add('hidden-card');
+                    if (matchesSearch && matchesCategory) {
+                        card.style.display = currentView === 'list' ? 'flex' : 'block';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                // Show/hide no results message
+                if (noResultsMessage) {
+                    if (visibleCount === 0) {
+                        noResultsMessage.classList.remove('hidden');
+                    } else {
+                        noResultsMessage.classList.add('hidden');
+                    }
                 }
-            });
+            } else {
+                // For bundles, simple search without pagination
+                const bundleContainer = document.getElementById('bundleProductsContainer');
+                const bundleCards = bundleContainer ? bundleContainer.querySelectorAll('.bundle-card') : [];
+                let visibleCount = 0;
 
-            // Show/hide no results message
-            if (noResultsMessage) {
-                if (visibleCount === 0) {
-                    noResultsMessage.classList.remove('hidden');
-                } else {
-                    noResultsMessage.classList.add('hidden');
+                bundleCards.forEach(card => {
+                    const productName = card.getAttribute('data-nama') || '';
+                    const matchesSearch = searchTerm === '' || productName.indexOf(searchTerm) !== -1;
+
+                    if (matchesSearch) {
+                        card.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                // Show/hide no results message
+                if (noResultsMessage) {
+                    if (visibleCount === 0) {
+                        noResultsMessage.classList.remove('hidden');
+                    } else {
+                        noResultsMessage.classList.add('hidden');
+                    }
                 }
-            }
-
-            // Update product count display
-            if (typeof updateProductCountDisplay === 'function') {
-                updateProductCountDisplay(visibleCount);
             }
         }
 
@@ -1279,6 +2007,7 @@
         // Filter products by category
         function filterByCategory(category) {
             currentCategory = category;
+            currentPage = 1; // Reset to first page when changing category
 
             // Update button states
             const buttons = document.querySelectorAll('.category-btn');
@@ -1303,51 +2032,57 @@
                 }
             }
 
-            // Apply category filter to all products
-            const productCards = document.querySelectorAll('.product-card');
+            // Get containers
+            const regularContainer = document.getElementById('regularProductsContainer');
+            const bundleContainer = document.getElementById('bundleProductsContainer');
             const noResultsMessage = document.getElementById('noResultsMessage');
-            let visibleCount = 0;
-
-            productCards.forEach(card => {
-                if (!card.id || card.id !== 'noResultsMessage') {
-                    const productName = card.getAttribute('data-nama');
-                    const productCategory = getCategoryByName(productName);
-                    const matchesCategory = category === 'semua' || productCategory === category;
-
-                    if (matchesCategory) {
-                        // Remove hidden class and set appropriate display
-                        card.classList.remove('hidden-card');
-                        card.style.display = currentView === 'list' ? 'flex' : 'block';
-                        visibleCount++;
-                    } else {
-                        // Add hidden class to hide card
-                        card.classList.add('hidden-card');
-                        card.style.display = 'none';
-                    }
-                }
-            });
-
-            // Show/hide no results message
+            const paginationContainer = document.getElementById('paginationContainer');
+            const viewToggleButtons = document.getElementById('viewToggleButtons');
+            
+            // Hide no results message
             if (noResultsMessage) {
-                if (visibleCount === 0) {
-                    noResultsMessage.classList.remove('hidden');
-                } else {
-                    noResultsMessage.classList.add('hidden');
-                }
+                noResultsMessage.classList.add('hidden');
             }
 
-            // Update product count display
-            updateProductCountDisplay(visibleCount);
+            if (category === 'bundle') {
+                // Show only bundle, hide regular products and pagination
+                if (regularContainer) regularContainer.style.display = 'none';
+                if (bundleContainer) bundleContainer.style.display = 'grid';
+                if (paginationContainer) paginationContainer.style.display = 'none';
+                if (viewToggleButtons) viewToggleButtons.style.display = 'none';
+                
+                // Update count for bundles
+                const bundleCards = bundleContainer ? bundleContainer.querySelectorAll('.bundle-card') : [];
+                updateProductCountDisplay(bundleCards.length);
+            } else {
+                // Show regular products, hide bundles
+                if (regularContainer) {
+                    regularContainer.style.display = currentView === 'list' ? 'flex' : 'grid';
+                    if (currentView === 'list') {
+                        regularContainer.className = 'col-span-full flex flex-col gap-3';
+                    } else {
+                        regularContainer.className = 'col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4';
+                    }
+                }
+                if (bundleContainer) bundleContainer.style.display = 'none';
+                if (viewToggleButtons) viewToggleButtons.style.display = 'flex';
+                
+                // Update pagination and count
+                updatePagination();
+            }
         }
 
         // Update product count display
         function updateProductCountDisplay(count) {
-            const countDisplays = document.querySelectorAll('.text-sm.text-gray-500');
-            countDisplays.forEach(display => {
-                if (display.textContent.includes('Menampilkan')) {
-                    display.textContent = `Menampilkan 1-${count} dari ${count} produk`;
+            const countDisplay = document.getElementById('productCountDisplay');
+            if (countDisplay) {
+                // Hide counter when bundle filter is active
+                if (currentCategory === 'bundle') {
+                    countDisplay.style.display = 'none';
+                } else {
+                    countDisplay.style.display = 'none'; // Hide this as pagination info will show the count
                 }
-            });
+            }
         }
 
         // Header action functions
@@ -1455,6 +2190,68 @@
                     }, 500);
                 }
             });
+        }
+
+        // Add bundle to cart
+        function addBundleToCart(bundleId, bundleName, bundleProducts, bundleStock) {
+            // Check if bundle already exists in cart
+            const existingBundle = cart.find(item => item.id === 'bundle-' + bundleId && item.isBundle);
+            
+            // Check stock availability
+            if (existingBundle) {
+                // Check if adding one more would exceed stock
+                if (existingBundle.quantity >= bundleStock) {
+                    showStockAlert(bundleName, bundleStock);
+                    return;
+                }
+                existingBundle.quantity += 1;
+            } else {
+                // Check if stock is available
+                if (bundleStock <= 0) {
+                    showStockAlert(bundleName, bundleStock);
+                    return;
+                }
+                
+                // Calculate total price
+                let totalPrice = 0;
+                bundleProducts.forEach(item => {
+                    totalPrice += item.produk.harga * item.quantity;
+                });
+                
+                cart.push({
+                    id: 'bundle-' + bundleId,
+                    name: bundleName,
+                    price: totalPrice,
+                    image: 'bundle-' + bundleId + '.jpg',
+                    stock: bundleStock,
+                    quantity: 1,
+                    isBundle: true,
+                    bundleId: bundleId,
+                    bundleProducts: bundleProducts
+                });
+
+                // Generate order number untuk transaksi baru
+                if (cart.length === 1) {
+                    generateOrderNumber().then(nextId => {
+                        currentOrderNumber = nextId;
+                        updateOrderInfo();
+                    });
+                }
+            }
+
+            updateCartDisplay();
+            updateOrderInfo();
+
+            // Visual feedback
+            const bundleCard = document.querySelector(`[data-bundle-id="${bundleId}"]`);
+            if (bundleCard) {
+                bundleCard.classList.add('bg-purple-100', 'border-purple-400');
+                setTimeout(() => {
+                    bundleCard.classList.remove('bg-purple-100', 'border-purple-400');
+                }, 500);
+            }
+            
+            showSuccessNotification('Bundle ditambahkan ke keranjang');
         }
 
         // Show stock alert
@@ -1572,10 +2369,10 @@
             const cartCount = document.getElementById('cartCount');
             const mobileCartCount = document.getElementById('mobileCartCount');
 
-            // Update cart count
+            // Update cart count with null checks
             const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            cartCount.textContent = totalItems;
-            mobileCartCount.textContent = totalItems;
+            if (cartCount) cartCount.textContent = totalItems;
+            if (mobileCartCount) mobileCartCount.textContent = totalItems;
 
             if (cart.length === 0) {
                 const emptyCartHTML = `
@@ -1591,8 +2388,8 @@
                         </div>
                     </div>
                 `;
-                cartItemsContainer.innerHTML = emptyCartHTML;
-                mobileCartItemsContainer.innerHTML = emptyCartHTML;
+                if (cartItemsContainer) cartItemsContainer.innerHTML = emptyCartHTML;
+                if (mobileCartItemsContainer) mobileCartItemsContainer.innerHTML = emptyCartHTML;
             } else {
                 const cartHTML = cart.map((item, index) => `
                     <div class="flex items-center space-x-2 p-2 bg-white rounded-lg mb-2 border border-gray-100 hover:border-gray-200 transition-colors">
@@ -1630,8 +2427,17 @@
                     </div>
                 `).join('');
 
-                cartItemsContainer.innerHTML = cartHTML;
-                mobileCartItemsContainer.innerHTML = cartHTML;
+                if (cartItemsContainer) cartItemsContainer.innerHTML = cartHTML;
+                if (mobileCartItemsContainer) mobileCartItemsContainer.innerHTML = cartHTML;
+            }
+
+            // Regenerate gacha points when cart changes (only if there are items)
+            if (cart.length > 0 && selectedCustomer && selectedCustomer.id !== 'walk-in') {
+                // Generate new gacha points for this transaction
+                window.currentGachaPoin = Math.floor(Math.random() * 100) + 1; // Random 1-100
+            } else {
+                // Clear gacha points if cart is empty or no customer selected
+                window.currentGachaPoin = null;
             }
 
             // Update totals
@@ -1641,20 +2447,79 @@
         // Update totals
         function updateTotals() {
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const discount = 0; // You can implement discount logic here
-            const tax = subtotal * 0.1; // 10% tax
-            const total = subtotal - discount + tax;
+            
+            // Get tax rate from backend
+            const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
+            const tax = subtotal * taxRate;
+            
+            // Calculate discount
+            let discount = 0;
+            
+            if (discountMode === 'promo') {
+                // Calculate discount from promo code
+                const promoSelect = document.getElementById('promoCode');
+                if (promoSelect && promoSelect.value) {
+                    const selectedOption = promoSelect.options[promoSelect.selectedIndex];
+                    const promoType = selectedOption.getAttribute('data-type');
+                    const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
+                    const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
+                    const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
+                    
+                    // Check if subtotal meets minimum transaction
+                    if (subtotal >= minTransaction) {
+                        if (promoType === 'diskon_persen') {
+                            discount = subtotal * (promoValue / 100);
+                            // Apply max discount if set
+                            if (maxDiscount > 0 && discount > maxDiscount) {
+                                discount = maxDiscount;
+                            }
+                        } else if (promoType === 'cashback') {
+                            discount = promoValue;
+                        }
+                    }
+                }
+            } else if (discountMode === 'manual') {
+                // Calculate manual discount
+                if (manualDiscountValue > 0) {
+                    if (manualDiscountType === 'persen') {
+                        discount = subtotal * (manualDiscountValue / 100);
+                    } else {
+                        discount = manualDiscountValue;
+                        // Don't allow discount greater than subtotal
+                        if (discount > subtotal) {
+                            discount = subtotal;
+                        }
+                    }
+                }
+            }
+            
+            // Apply points discount (1 point = Rp 1)
+            const pointsDiscount = usedPoints;
+            
+            const total = subtotal - discount - pointsDiscount + tax;
 
-            document.getElementById('subtotal').textContent = `Rp ${subtotal.toLocaleString('id-ID')}`;
-            document.getElementById('discount').textContent = `Rp ${discount.toLocaleString('id-ID')}`;
-            document.getElementById('tax').textContent = `Rp ${Math.round(tax).toLocaleString('id-ID')}`;
-            document.getElementById('total').textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
-            document.getElementById('totalToPay').textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
-            document.getElementById('nonCashTotal').textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
-            document.getElementById('mobileTotal').textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
+            // Update UI elements with null checks
+            const subtotalEl = document.getElementById('subtotal');
+            const taxEl = document.getElementById('tax');
+            const totalEl = document.getElementById('total');
+            const totalToPayEl = document.getElementById('totalToPay');
+            const nonCashTotalEl = document.getElementById('nonCashTotal');
+            const mobileTotalEl = document.getElementById('mobileTotal');
+            const cashAmountEl = document.getElementById('cashAmount');
+
+            if (subtotalEl) subtotalEl.textContent = `Rp ${subtotal.toLocaleString('id-ID')}`;
+            if (taxEl) taxEl.textContent = `Rp ${Math.round(tax).toLocaleString('id-ID')}`;
+            if (totalEl) totalEl.textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
+            if (totalToPayEl) totalToPayEl.textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
+            if (nonCashTotalEl) nonCashTotalEl.textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
+            if (mobileTotalEl) mobileTotalEl.textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
+            
+            // Update points discount display
+            const pointsDiscountEl = document.getElementById('pointsDiscount');
+            if (pointsDiscountEl) pointsDiscountEl.textContent = `Rp ${pointsDiscount.toLocaleString('id-ID')}`;
 
             // Reset payment input when total changes
-            document.getElementById('cashAmount').value = '';
+            if (cashAmountEl) cashAmountEl.value = '';
             calculateChange();
 
             // Enable/disable pay button
@@ -1664,17 +2529,45 @@
             updatePoinEarned();
         }
         
+        // Apply promo function
+        function applyPromo() {
+            const promoSelect = document.getElementById('promoCode');
+            const promoInfo = document.getElementById('promoInfo');
+            
+            if (promoSelect && promoSelect.value) {
+                const selectedOption = promoSelect.options[promoSelect.selectedIndex];
+                const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
+                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                
+                if (subtotal < minTransaction) {
+                    promoInfo.className = 'text-xs text-red-500 mt-1';
+                    promoInfo.textContent = `Minimum transaksi: Rp ${minTransaction.toLocaleString('id-ID')}`;
+                } else {
+                    promoInfo.className = 'text-xs text-green-600 mt-1';
+                    promoInfo.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Promo berhasil diterapkan!';
+                }
+            } else {
+                promoInfo.textContent = '';
+            }
+            
+            updateTotals();
+        }
+        
         // Update poin yang didapat berdasarkan total belanja
         function updatePoinEarned() {
             const poinEarnedInfo = document.getElementById('poinEarnedInfo');
             const poinEarnedSpan = document.getElementById('poinEarned');
             
             if (selectedCustomer && selectedCustomer.id !== 'walk-in' && cart.length > 0) {
-                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                const poinEarned = Math.floor(subtotal / 10000); // 1 poin per 10.000
+                // Use gacha points that was already generated in updateCartDisplay
+                const poinEarned = window.currentGachaPoin || 0;
                 
-                poinEarnedInfo.classList.remove('hidden');
-                poinEarnedSpan.textContent = `${poinEarned.toLocaleString('id-ID')} Poin`;
+                if (poinEarned > 0) {
+                    poinEarnedInfo.classList.remove('hidden');
+                    poinEarnedSpan.textContent = `${poinEarned.toLocaleString('id-ID')} Poin`;
+                } else {
+                    poinEarnedInfo.classList.add('hidden');
+                }
             } else {
                 poinEarnedInfo.classList.add('hidden');
             }
@@ -1756,7 +2649,8 @@
             const insufficientWarning = document.getElementById('insufficientWarning');
             const shortageAmount = document.getElementById('shortageAmount');
 
-            const cashValue = parseFloat(cashAmountInput.value.replace(/[^0-9]/g, '')) || 0;
+            // Remove all non-digit characters and parse to number
+            const cashValue = parseFloat(cashAmountInput.value.replace(/\D/g, '')) || 0;
             const total = getCurrentTotal();
 
             if (cashValue === 0) {
@@ -1792,8 +2686,46 @@
         // Get current total
         function getCurrentTotal() {
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const tax = subtotal * 0.1;
-            return Math.round(subtotal + tax);
+            const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
+            const tax = subtotal * taxRate;
+            
+            // Calculate discount
+            let discount = 0;
+            if (discountMode === 'promo') {
+                const promoSelect = document.getElementById('promoCode');
+                if (promoSelect && promoSelect.value) {
+                    const selectedOption = promoSelect.options[promoSelect.selectedIndex];
+                    const promoType = selectedOption.getAttribute('data-type');
+                    const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
+                    const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
+                    const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
+                    
+                    if (subtotal >= minTransaction) {
+                        if (promoType === 'diskon_persen') {
+                            discount = subtotal * (promoValue / 100);
+                            if (maxDiscount > 0 && discount > maxDiscount) {
+                                discount = maxDiscount;
+                            }
+                        } else if (promoType === 'cashback') {
+                            discount = promoValue;
+                        }
+                    }
+                }
+            } else if (discountMode === 'manual') {
+                if (manualDiscountValue > 0) {
+                    if (manualDiscountType === 'persen') {
+                        discount = subtotal * (manualDiscountValue / 100);
+                    } else {
+                        discount = manualDiscountValue;
+                    }
+                }
+            }
+            
+            // Apply points discount (1 point = Rp 1)
+            const pointsDiscount = usedPoints || 0;
+            
+            // Total = Subtotal + Tax - Discount - Points
+            return Math.round(subtotal + tax - discount - pointsDiscount);
         }
 
         // Set quick amount
@@ -1834,7 +2766,7 @@
             if (cart.length === 0) {
                 isEnabled = false;
             } else if (selectedPaymentMethod === 'tunai') {
-                const cashValue = parseFloat(document.getElementById('cashAmount').value.replace(/[^0-9]/g, '')) || 0;
+                const cashValue = parseFloat(document.getElementById('cashAmount').value.replace(/\D/g, '')) || 0;
                 const total = getCurrentTotal();
                 isEnabled = cashValue >= total;
             } else {
@@ -2238,11 +3170,14 @@
         });
 
         // Close mobile cart when clicking outside
-        document.getElementById('mobileCartModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                toggleMobileCart();
-            }
-        });
+        const mobileCartModal = document.getElementById('mobileCartModal');
+        if (mobileCartModal) {
+            mobileCartModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    toggleMobileCart();
+                }
+            });
+        }
 
         // Close add customer modal when clicking outside
         document.addEventListener('click', function(e) {
@@ -2626,9 +3561,48 @@
                 return;
             }
 
+            // Calculate subtotal and tax
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const ppn = Math.round(subtotal * 0.1);
-            const finalTotal = subtotal + ppn;
+            const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
+            const ppn = Math.round(subtotal * taxRate);
+            
+            // Calculate discount
+            let discount = 0;
+            if (discountMode === 'promo') {
+                const promoSelect = document.getElementById('promoCode');
+                if (promoSelect && promoSelect.value) {
+                    const selectedOption = promoSelect.options[promoSelect.selectedIndex];
+                    const promoType = selectedOption.getAttribute('data-type');
+                    const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
+                    const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
+                    const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
+                    
+                    if (subtotal >= minTransaction) {
+                        if (promoType === 'diskon_persen') {
+                            discount = subtotal * (promoValue / 100);
+                            if (maxDiscount > 0 && discount > maxDiscount) {
+                                discount = maxDiscount;
+                            }
+                        } else if (promoType === 'cashback') {
+                            discount = promoValue;
+                        }
+                    }
+                }
+            } else if (discountMode === 'manual') {
+                if (manualDiscountValue > 0) {
+                    if (manualDiscountType === 'persen') {
+                        discount = subtotal * (manualDiscountValue / 100);
+                    } else {
+                        discount = manualDiscountValue;
+                    }
+                }
+            }
+            
+            // Get points used
+            const pointsUsed = usedPoints || 0;
+            
+            // Calculate final total: Subtotal + PPN - Discount - Points
+            const finalTotal = Math.round(subtotal + ppn - discount - pointsUsed);
 
             // Get payment method
             const paymentMethod = document.querySelector('.payment-method.active').dataset.method;
@@ -2639,7 +3613,7 @@
 
             if (paymentMethod === 'tunai') {
                 const cashInput = document.getElementById('cashAmount');
-                const cashValue = cashInput.value.replace(/[^0-9]/g, '');
+                const cashValue = cashInput.value.replace(/\D/g, '');
 
                 if (!cashValue || parseInt(cashValue) < finalTotal) {
                     showErrorNotification('Uang tidak mencukupi');
@@ -2660,9 +3634,11 @@
                     price: item.price
                 })),
                 ppn: ppn,
-                diskon: 0,
+                diskon: Math.round(discount),
                 bayar: bayar,
-                kembalian: kembalian
+                kembalian: kembalian,
+                poin_didapat: selectedCustomer && selectedCustomer.id !== 'walk-in' ? (window.currentGachaPoin || 0) : 0,
+                poin_digunakan: usedPoints || 0
             };
 
             try {
@@ -2712,6 +3688,14 @@
                     // Clear cart
                     cart = [];
                     updateCartDisplay();
+                    
+                    // Reset gacha points for next transaction
+                    window.currentGachaPoin = null;
+                    
+                    // Reset points usage
+                    usedPoints = 0;
+                    const pointsInput = document.getElementById('pointsInput');
+                    if (pointsInput) pointsInput.value = 0;
 
                     // Reset cash input
                     document.getElementById('cashAmount').value = '';
@@ -2750,27 +3734,27 @@
         // Format cash input with thousands separator
         function formatCashInput() {
             const cashInput = document.getElementById('cashAmount');
+            if (!cashInput) return;
+            
+            let isFormatting = false;
+            
             cashInput.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/[^0-9]/g, '');
+                if (isFormatting) return;
+                isFormatting = true;
+                
+                // Remove all non-digit characters
+                let value = e.target.value.replace(/\D/g, '');
+                
+                // Format with Indonesian locale (uses dot as thousand separator)
                 if (value) {
-                    const formattedValue = parseInt(value).toLocaleString('id-ID');
-                    e.target.value = formattedValue;
+                    const numericValue = parseInt(value, 10);
+                    e.target.value = numericValue.toLocaleString('id-ID');
+                } else {
+                    e.target.value = '';
                 }
+                
                 calculateChange();
-            });
-
-            // Handle backspace and delete keys
-            cashInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Backspace' || e.key === 'Delete') {
-                    setTimeout(() => {
-                        let value = e.target.value.replace(/[^0-9]/g, '');
-                        if (value) {
-                            const formattedValue = parseInt(value).toLocaleString('id-ID');
-                            e.target.value = formattedValue;
-                        }
-                        calculateChange();
-                    }, 10);
-                }
+                isFormatting = false;
             });
         }
 
@@ -2785,6 +3769,9 @@
 
             // Initialize customer search
             initializeCustomerSearch();
+            
+            // Initialize points display
+            updateAvailablePoints();
 
             // Initialize payment input formatting
             formatCashInput();
@@ -2793,14 +3780,17 @@
             // Initialize sidebar state (always hidden by default)
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.remove('show');
-            overlay.classList.remove('show');
+            if (sidebar) sidebar.classList.remove('show');
+            if (overlay) overlay.classList.remove('show');
 
-            // Load saved view preference
-            const savedView = localStorage.getItem('productViewPreference');
-            if (savedView && (savedView === 'grid' || savedView === 'list')) {
-                toggleView(savedView);
-            }
+            // Load saved view preference or default to grid
+            const savedView = localStorage.getItem('productViewPreference') || 'grid';
+            currentView = savedView; // Set current view first
+            
+            // Then apply the view and pagination
+            toggleView(savedView); // This will also call updatePagination()
+            
+            console.log('Initial load complete - View:', currentView, 'Page:', currentPage, 'Items per page:', itemsPerPage);
 
             // Initialize search functionality
             const searchInput = document.getElementById('searchInput');
