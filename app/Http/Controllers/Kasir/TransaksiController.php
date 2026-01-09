@@ -89,7 +89,7 @@ class TransaksiController extends Controller
             $ppn = $validated['ppn'] ?? ($subtotal * 0.1);
             $diskon = $validated['diskon'] ?? 0;
             $poinDigunakan = $validated['poin_digunakan'] ?? 0;
-            
+
             // Total = Subtotal + PPN - Diskon - Poin Digunakan (1 poin = Rp 1)
             $total = $subtotal + $ppn - $diskon - $poinDigunakan;
 
@@ -186,7 +186,7 @@ class TransaksiController extends Controller
                             throw new \Exception("Poin customer tidak mencukupi. Poin tersedia: {$customer->total_poin}");
                         }
                     }
-                    
+
                     // Tambahkan poin gacha (random 1-100 per transaksi, tanpa minimum harga)
                     $poinDapat = $validated['poin_didapat'] ?? 0;
                     if ($poinDapat > 0) {
