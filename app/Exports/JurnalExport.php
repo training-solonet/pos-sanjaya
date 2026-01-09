@@ -3,7 +3,6 @@
 namespace App\Exports;
 
 use App\Models\Jurnal;
-use Carbon\Carbon;
 
 class JurnalExport
 {
