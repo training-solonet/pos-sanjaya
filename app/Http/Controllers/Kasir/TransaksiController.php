@@ -67,9 +67,11 @@ class TransaksiController extends Controller
                 'metode' => 'required|in:tunai,kartu,transfer,qris',
                 'id_customer' => 'nullable|exists:data_customer,id',
                 'items' => 'required|array|min:1',
-                'items.*.id' => 'required|exists:produk,id',
+                'items.*.id' => 'required',
                 'items.*.quantity' => 'required|integer|min:1',
                 'items.*.price' => 'required|numeric|min:0',
+                'items.*.isBundle' => 'nullable|boolean',
+                'items.*.bundleProducts' => 'nullable|array',
                 'ppn' => 'nullable|numeric|min:0',
                 'diskon' => 'nullable|numeric|min:0',
                 'bayar' => 'nullable|numeric|min:0',
@@ -115,46 +117,104 @@ class TransaksiController extends Controller
 
             // Simpan detail transaksi dan kurangi stok
             foreach ($validated['items'] as $item) {
-                // Cek stok produk
-                $produk = Produk::findOrFail($item['id']);
+                $isBundle = $item['isBundle'] ?? false;
 
-                if ($produk->stok < $item['quantity']) {
-                    throw new \Exception("Stok {$produk->nama} tidak mencukupi. Stok tersedia: {$produk->stok}");
+                if ($isBundle) {
+                    // Handle bundle product
+                    $bundleProducts = $item['bundleProducts'] ?? [];
+
+                    // Cek dan kurangi stok bundle di tabel Promo
+                    $bundlePromo = Promo::findOrFail($item['id']);
+                    if ($bundlePromo->stok < $item['quantity']) {
+                        throw new \Exception("Stok bundle {$bundlePromo->nama_promo} tidak mencukupi. Stok tersedia: {$bundlePromo->stok}");
+                    }
+
+                    // Kurangi stok bundle
+                    $bundlePromo->decrement('stok', $item['quantity']);
+                    Log::info("Stok bundle dikurangi: Bundle ID {$bundlePromo->id}, Qty: {$item['quantity']}, Stok tersisa: {$bundlePromo->stok}");
+
+                    // Kurangi stok untuk setiap produk dalam bundle
+                    foreach ($bundleProducts as $bundleItem) {
+                        $produk = Produk::findOrFail($bundleItem['id_produk']);
+                        $qtyNeeded = $bundleItem['quantity'] * $item['quantity'];
+
+                        if ($produk->stok < $qtyNeeded) {
+                            throw new \Exception("Stok {$produk->nama} tidak mencukupi untuk bundle. Stok tersedia: {$produk->stok}, diperlukan: {$qtyNeeded}");
+                        }
+
+                        // Simpan stok awal
+                        $stokAwal = $produk->stok;
+
+                        // Kurangi stok
+                        $produk->decrement('stok', $qtyNeeded);
+
+                        // Simpan stok akhir
+                        $stokAkhir = $produk->stok;
+
+                        // Log pengurangan stok
+                        UpdateStokProduk::create([
+                            'id_produk' => $produk->id,
+                            'stok_awal' => $stokAwal,
+                            'stok_baru' => -$qtyNeeded,
+                            'total_stok' => $stokAkhir,
+                            'kadaluarsa' => $produk->kadaluarsa,
+                            'tanggal_update' => now(),
+                            'keterangan' => "Pengurangan stok dari bundle transaksi #{$transaksi->id}",
+                        ]);
+
+                        Log::info("Log stok BUNDLE dibuat: Produk ID {$produk->id}, Stok Awal: {$stokAwal}, Pengurangan: {$qtyNeeded}, Stok Akhir: {$stokAkhir}");
+                    }
+
+                    // Simpan detail transaksi untuk bundle (dengan harga total bundle)
+                    // Gunakan produk pertama dalam bundle sebagai representasi
+                    $firstBundleProduct = $bundleProducts[0] ?? null;
+                    if ($firstBundleProduct) {
+                        DetailTransaksi::create([
+                            'id_transaksi' => $transaksi->id,
+                            'id_produk' => $firstBundleProduct['id_produk'],
+                            'jumlah' => $item['quantity'],
+                            'harga' => $item['price'],
+                        ]);
+                    }
+                } else {
+                    // Handle regular product
+                    $produk = Produk::findOrFail($item['id']);
+
+                    if ($produk->stok < $item['quantity']) {
+                        throw new \Exception("Stok {$produk->nama} tidak mencukupi. Stok tersedia: {$produk->stok}");
+                    }
+
+                    // Simpan detail transaksi
+                    DetailTransaksi::create([
+                        'id_transaksi' => $transaksi->id,
+                        'id_produk' => $item['id'],
+                        'jumlah' => $item['quantity'],
+                        'harga' => $item['price'],
+                    ]);
+
+                    // Simpan stok awal sebelum dikurangi
+                    $stokAwal = $produk->stok;
+
+                    // Kurangi stok produk
+                    $produk->decrement('stok', $item['quantity']);
+
+                    // Simpan stok akhir setelah dikurangi
+                    $stokAkhir = $produk->stok;
+
+                    // BUAT LOG PENGURANGAN STOK UNTUK DETAIL PRODUK
+                    UpdateStokProduk::create([
+                        'id_produk' => $item['id'],
+                        'stok_awal' => $stokAwal,
+                        'stok_baru' => -$item['quantity'], // Negatif karena pengurangan
+                        'total_stok' => $stokAkhir,
+                        'kadaluarsa' => $produk->kadaluarsa,
+                        'tanggal_update' => now(),
+                        'keterangan' => 'Pengurangan stok dari transaksi #'.$transaksi->id,
+                    ]);
+
+                    // Log untuk debugging
+                    Log::info("Log stok TRANSAKSI dibuat: Produk ID {$item['id']}, Stok Awal: {$stokAwal}, Pengurangan: {$item['quantity']}, Stok Akhir: {$stokAkhir}");
                 }
-
-                // Simpan detail transaksi
-                DetailTransaksi::create([
-                    'id_transaksi' => $transaksi->id,
-                    'id_produk' => $item['id'],
-                    'jumlah' => $item['quantity'],
-                    'harga' => $item['price'],
-                ]);
-
-                // Simpan stok awal sebelum dikurangi
-                $stokAwal = $produk->stok;
-
-                // Kurangi stok produk
-                $produk->decrement('stok', $item['quantity']);
-
-                // Simpan stok akhir setelah dikurangi
-                $stokAkhir = $produk->stok;
-
-                // ============ PERBAIKAN UTAMA ============
-                // BUAT LOG PENGURANGAN STOK UNTUK DETAIL PRODUK
-                // Pastikan log benar-benar dibuat
-                UpdateStokProduk::create([
-                    'id_produk' => $item['id'],
-                    'stok_awal' => $stokAwal,
-                    'stok_baru' => -$item['quantity'], // Negatif karena pengurangan
-                    'total_stok' => $stokAkhir,
-                    'kadaluarsa' => $produk->kadaluarsa,
-                    'tanggal_update' => now(),
-                    'keterangan' => 'Pengurangan stok dari transaksi #'.$transaksi->id,
-                ]);
-                // =========================================
-
-                // Log untuk debugging
-                Log::info("Log stok TRANSAKSI dibuat: Produk ID {$item['id']}, Stok Awal: {$stokAwal}, Pengurangan: {$item['quantity']}, Stok Akhir: {$stokAkhir}");
             }
 
             // ============ TAMBAHKAN ENTRY JURNAL OTOMATIS ============
