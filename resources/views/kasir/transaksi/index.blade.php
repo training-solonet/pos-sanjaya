@@ -3628,11 +3628,37 @@
             const transactionData = {
                 metode: paymentMethod,
                 id_customer: selectedCustomer && selectedCustomer.id !== 'walk-in' ? selectedCustomer.id : null,
-                items: cart.map(item => ({
-                    id: item.id,
-                    quantity: item.quantity,
-                    price: item.price
-                })),
+                items: cart.map(item => {
+                    if (item.isBundle) {
+                        // For bundle, transform bundleProducts to match backend expectation
+                        // bundleProducts can have either produk_id or id_produk
+                        const transformedBundleProducts = item.bundleProducts.map(bp => {
+                            // Try to get product ID from various possible locations
+                            const productId = bp.produk_id || bp.id_produk || (bp.produk ? bp.produk.id : null);
+                            return {
+                                id_produk: productId,
+                                quantity: bp.quantity
+                            };
+                        });
+                        
+                        return {
+                            id: item.bundleId,
+                            quantity: item.quantity,
+                            price: item.price,
+                            isBundle: true,
+                            bundleProducts: transformedBundleProducts
+                        };
+                    } else {
+                        // Regular product
+                        return {
+                            id: item.id,
+                            quantity: item.quantity,
+                            price: item.price,
+                            isBundle: false,
+                            bundleProducts: null
+                        };
+                    }
+                }),
                 ppn: ppn,
                 diskon: Math.round(discount),
                 bayar: bayar,
