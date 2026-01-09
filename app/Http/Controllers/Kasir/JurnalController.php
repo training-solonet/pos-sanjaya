@@ -254,7 +254,7 @@ class JurnalController extends Controller
 
             // Create CSV/Excel content
             $fileName = "Jurnal_Harian_{$tanggalFile}.csv";
-            
+
             $headers = [
                 'Content-Type' => 'text/csv; charset=UTF-8',
                 'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
@@ -265,7 +265,7 @@ class JurnalController extends Controller
 
             $callback = function () use ($jurnals, $totalPemasukan, $totalPengeluaran, $saldoBersih, $tanggalFormatted) {
                 $file = fopen('php://output', 'w');
-                
+
                 // Add BOM for UTF-8
                 fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 

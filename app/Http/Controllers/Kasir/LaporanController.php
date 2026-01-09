@@ -202,7 +202,7 @@ class LaporanController extends Controller
             // Query transaksi with relations - include detail transaksi
             $query = Transaksi::with([
                 'detailTransaksi.produk.bahanBaku.konversi.satuan',
-                'user'
+                'user',
             ])
                 ->orderBy('tgl', 'desc');
 
@@ -273,7 +273,7 @@ class LaporanController extends Controller
             return response()->json([
                 'error' => true,
                 'message' => 'Terjadi kesalahan saat mengexport PDF: '.$e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ], 500);
         }
     }
@@ -292,7 +292,7 @@ class LaporanController extends Controller
             // Query transaksi with relations - include detail transaksi
             $query = Transaksi::with([
                 'detailTransaksi.produk.bahanBaku.konversi.satuan',
-                'user'
+                'user',
             ])
                 ->orderBy('tgl', 'desc');
 
@@ -362,7 +362,7 @@ class LaporanController extends Controller
             return response()->json([
                 'error' => true,
                 'message' => 'Terjadi kesalahan saat mengexport Excel: '.$e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ], 500);
         }
     }
