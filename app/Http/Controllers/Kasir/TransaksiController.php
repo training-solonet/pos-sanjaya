@@ -326,9 +326,10 @@ class TransaksiController extends Controller
      */
     public function getNextId()
     {
-        // Get the last transaction ID and increment by 1
-        $lastTransaction = Transaksi::latest('id')->first();
-        $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
+        // Generate ID Transaksi dengan format yang sama seperti saat store
+        // Format: TXXXXXXXXXX (T + timestamp 10 digit)
+        $timestamp = now()->timestamp; // Unix timestamp
+        $nextId = 'T'.substr($timestamp, -10); // Ambil 10 digit terakhir dari timestamp
 
         return response()->json([
             'success' => true,
