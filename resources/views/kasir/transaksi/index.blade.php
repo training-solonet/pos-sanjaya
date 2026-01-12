@@ -134,15 +134,15 @@
                         <i class="fas fa-times mr-1"></i>Hapus
                     </button>
                 </div>
-                <!-- Informasi Poin yang Didapat (Gacha System) -->
+                <!-- Informasi Poin yang Didapat -->
                 <div id="poinEarnedInfo" class="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-300 hidden">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-sm text-gray-700 font-medium">
-                            <i class="fas fa-dice text-purple-600 mr-1"></i> Poin Gacha (1-100):
+                            <i class="fas fa-star text-purple-600 mr-1"></i> Poin yang Didapat:
                         </span>
                         <span class="text-lg font-bold text-purple-700" id="poinEarned">0 Poin</span>
                     </div>
-                    <p class="text-xs text-purple-600">🎲 Setiap transaksi dapat poin random!</p>
+                    <p class="text-xs text-purple-600">💰 5 poin/Rp10k + 10 poin/bundle</p>
                 </div>
             </div>
         </div>
@@ -402,13 +402,24 @@
                         <!-- Bundle Products Container -->
                         <div id="bundleProductsContainer" class="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4" style="display: none;">
                             @forelse($bundles as $bundle)
+                                @php
+                                    // Hitung total harga normal dari bundleProducts (untuk perbandingan)
+                                    $totalHargaNormal = $bundle->bundleProducts->sum(function($item) {
+                                        return $item->produk->harga * $item->quantity;
+                                    });
+                                    
+                                    // Untuk bundle, gunakan kolom 'nilai' sebagai harga bundle
+                                    // Kolom 'nilai' di promo adalah harga bundle yang sudah ditentukan
+                                    $hargaBundle = $bundle->nilai ?? $totalHargaNormal;
+                                @endphp
+                                
                                 <div class="product-card bundle-card group bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-2xl p-5 hover:shadow-xl hover:border-purple-500 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative"
                                     data-nama="{{ strtolower($bundle->nama_promo) }}" 
                                     data-id="bundle-{{ $bundle->id }}"
                                 data-bundle-id="{{ $bundle->id }}"
                                 data-stock="{{ $bundle->stok }}"
                                 data-type="bundle"
-                                onclick="addBundleToCart({{ $bundle->id }}, '{{ addslashes($bundle->nama_promo) }}', {{ $bundle->bundleProducts }}, {{ $bundle->stok }})">
+                                onclick="addBundleToCart({{ $bundle->id }}, '{{ addslashes($bundle->nama_promo) }}', {{ $bundle->bundleProducts }}, {{ $bundle->stok }}, {{ $hargaBundle }})">>>
                                 
                                 <!-- Stock Badge -->
                                 <div class="stock-badge-wrapper absolute -top-2 -right-2 z-10">
@@ -440,34 +451,18 @@
                                             @endif
                                         </div>
                                         
-                                        @php
-                                            $totalHarga = $bundle->bundleProducts->sum(function($item) {
-                                                return $item->produk->harga * $item->quantity;
-                                            });
-                                            $hargaSetelahDiskon = $totalHarga;
-                                            if ($bundle->jenis === 'diskon_persen') {
-                                                $hargaSetelahDiskon = $totalHarga - ($totalHarga * $bundle->nilai / 100);
-                                            } elseif ($bundle->jenis === 'cashback') {
-                                                $hargaSetelahDiskon = $totalHarga - $bundle->nilai;
-                                            }
-                                        @endphp
-                                        
                                         <div class="pt-2 border-t border-purple-200">
-                                            @if($bundle->jenis === 'diskon_persen' || $bundle->jenis === 'cashback')
-                                                <p class="text-xs text-gray-500 line-through">Rp {{ number_format($totalHarga, 0, ',', '.') }}</p>
+                                            @if($hargaBundle < $totalHargaNormal)
+                                                <p class="text-xs text-gray-500 line-through">Rp {{ number_format($totalHargaNormal, 0, ',', '.') }}</p>
                                                 <p class="text-purple-600 font-bold text-xl product-price">
-                                                    Rp {{ number_format($hargaSetelahDiskon, 0, ',', '.') }}
+                                                    Rp {{ number_format($hargaBundle, 0, ',', '.') }}
                                                 </p>
                                                 <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
-                                                    @if($bundle->jenis === 'diskon_persen')
-                                                        Hemat {{ $bundle->nilai }}%
-                                                    @else
-                                                        Hemat Rp {{ number_format($bundle->nilai, 0, ',', '.') }}
-                                                    @endif
+                                                    Hemat Rp {{ number_format($totalHargaNormal - $hargaBundle, 0, ',', '.') }}
                                                 </span>
                                             @else
                                                 <p class="text-purple-600 font-bold text-xl product-price">
-                                                    Rp {{ number_format($totalHarga, 0, ',', '.') }}
+                                                    Rp {{ number_format($hargaBundle, 0, ',', '.') }}
                                                 </p>
                                             @endif
                                         </div>
@@ -2193,7 +2188,7 @@
         }
 
         // Add bundle to cart
-        function addBundleToCart(bundleId, bundleName, bundleProducts, bundleStock) {
+        function addBundleToCart(bundleId, bundleName, bundleProducts, bundleStock, hargaBundle) {
             // Check if bundle already exists in cart
             const existingBundle = cart.find(item => item.id === 'bundle-' + bundleId && item.isBundle);
             
@@ -2212,16 +2207,15 @@
                     return;
                 }
                 
-                // Calculate total price
-                let totalPrice = 0;
-                bundleProducts.forEach(item => {
-                    totalPrice += item.produk.harga * item.quantity;
-                });
+                // Gunakan harga bundle yang sudah ditentukan dari manajemen
+                const bundlePrice = hargaBundle || bundleProducts.reduce((total, item) => {
+                    return total + (item.produk.harga * item.quantity);
+                }, 0);
                 
                 cart.push({
                     id: 'bundle-' + bundleId,
                     name: bundleName,
-                    price: totalPrice,
+                    price: bundlePrice,
                     image: 'bundle-' + bundleId + '.jpg',
                     stock: bundleStock,
                     quantity: 1,
@@ -2362,6 +2356,26 @@
             }, 4000);
         }
 
+        // Calculate points based on transaction
+        function calculatePoints() {
+            let totalPoints = 0;
+            
+            // Hitung subtotal
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            // 1. Poin dari kelipatan 10k (5 poin per 10k)
+            const kelipatanDizrib = Math.floor(subtotal / 10000);
+            const poinDariTransaksi = kelipatanDizrib * 5;
+            totalPoints += poinDariTransaksi;
+            
+            // 2. Poin dari bundle (10 poin per bundle)
+            const jumlahBundle = cart.filter(item => item.isBundle).length;
+            const poinDariBundle = jumlahBundle * 10;
+            totalPoints += poinDariBundle;
+            
+            return totalPoints;
+        }
+
         // Update cart display
         function updateCartDisplay() {
             const cartItemsContainer = document.getElementById('cartItems');
@@ -2431,12 +2445,12 @@
                 if (mobileCartItemsContainer) mobileCartItemsContainer.innerHTML = cartHTML;
             }
 
-            // Regenerate gacha points when cart changes (only if there are items)
+            // Regenerate points when cart changes (only if there are items)
             if (cart.length > 0 && selectedCustomer && selectedCustomer.id !== 'walk-in') {
-                // Generate new gacha points for this transaction
-                window.currentGachaPoin = Math.floor(Math.random() * 100) + 1; // Random 1-100
+                // Hitung poin berdasarkan aturan baru
+                window.currentGachaPoin = calculatePoints();
             } else {
-                // Clear gacha points if cart is empty or no customer selected
+                // Clear points if cart is empty or no customer selected
                 window.currentGachaPoin = null;
             }
 
@@ -3422,103 +3436,182 @@
 
         // Generate receipt text for ESC/POS printer
         function generateReceipt(transactionId = null) {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('id-ID');
-            const timeStr = now.toLocaleTimeString('id-ID');
+            try {
+                // Limit cart items to prevent too long receipt
+                const maxItems = 10; // Reduced from 15 to prevent printer dying
+                const itemsToShow = cart.slice(0, maxItems);
+                const hasMoreItems = cart.length > maxItems;
+                
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const tax = subtotal * 0.1;
-            const total = subtotal + tax;
+            const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
+            const tax = Math.round(subtotal * taxRate);
+            
+            let discount = 0;
+            if (discountMode === 'promo') {
+                const promoSelect = document.getElementById('promoCode');
+                if (promoSelect && promoSelect.value) {
+                    const selectedOption = promoSelect.options[promoSelect.selectedIndex];
+                    const promoType = selectedOption.getAttribute('data-type');
+                    const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
+                    const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
+                    const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
+                    
+                    if (subtotal >= minTransaction) {
+                        if (promoType === 'diskon_persen') {
+                            discount = Math.round(subtotal * (promoValue / 100));
+                            if (maxDiscount > 0 && discount > maxDiscount) discount = maxDiscount;
+                        } else if (promoType === 'cashback') {
+                            discount = promoValue;
+                        }
+                    }
+                }
+            } else if (discountMode === 'manual') {
+                discount = Math.round(manualDiscountValue);
+            }
+            
+            const poinUsed = usedPoints || 0;
+            const total = subtotal + tax - discount - poinUsed;
 
-            // Helper function to format price without dot separator
-            const formatPrice = (price) => {
-                return Math.round(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            // Format helpers for 48mm printer (32 chars width)
+            const fmt = (p) => Math.round(p).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            const pad = (left, right, width = 32) => {
+                const spaces = width - left.length - right.length;
+                return left + (spaces > 0 ? ' '.repeat(spaces) : ' ') + right;
             };
-
-            // Helper function to pad string to right align
-            const padRight = (str, length) => {
-                const spaces = length - str.length;
-                return spaces > 0 ? ' '.repeat(spaces) + str : str;
+            const center = (text, width = 32) => {
+                const spaces = Math.max(0, Math.floor((width - text.length) / 2));
+                return ' '.repeat(spaces) + text;
             };
+            const line32 = '================================';
 
-            let receipt = '';
+            let r = '';
 
-            // ESC/POS Commands
-            const ESC = '\x1B';
-            const INIT = ESC + '@'; // Initialize printer
-            const CENTER = ESC + 'a1'; // Center alignment
-            const LEFT = ESC + 'a0'; // Left alignment
-            const BOLD_ON = ESC + 'E1'; // Bold on
-            const BOLD_OFF = ESC + 'E0'; // Bold off
-            const CUT = ESC + 'm'; // Cut paper
-            const FEED = '\n';
-
-            receipt += INIT;
-            receipt += CENTER + BOLD_ON;
-            receipt += 'ROTI & KUE SANJAYA\n';
-            receipt += BOLD_OFF;
-            receipt += '================================\n';
-            receipt += LEFT;
-            receipt += `Tanggal: ${dateStr}\n`;
-            receipt += `Waktu  : ${timeStr}\n`;
-            receipt += `Kasir  : Admin\n`;
-
-            // Add customer name if selected
-            if (selectedCustomer && selectedCustomer.name) {
-                receipt += `Customer: ${selectedCustomer.name}\n`;
+            // Plain text receipt - NO ESC/POS commands to prevent printer shutdown
+            // Header (centered manually with spaces)
+            r += center('ROTI & KUE SANJAYA') + '\n';
+            r += center('0812-3456-7890') + '\n';
+            r += line32 + '\n';
+            
+            // Transaction info
+            r += dateStr + '  ' + timeStr + '\n';
+            r += 'No: ' + (transactionId ? `TRX${String(transactionId).padStart(5,'0')}` : 'TRX00001') + '\n';
+            
+            // Kasir name
+            const kasirName = '{{ Auth::user()->name ?? "Admin" }}';
+            r += 'Kasir: ' + (kasirName.length > 25 ? kasirName.substring(0, 22) + '...' : kasirName) + '\n';
+            
+            // Member info if exists
+            if (selectedCustomer && selectedCustomer.id !== 'walk-in') {
+                const memberName = selectedCustomer.name.length > 24 ? selectedCustomer.name.substring(0, 21) + '...' : selectedCustomer.name;
+                r += 'Member: ' + memberName + '\n';
             }
 
-            // Use actual transaction ID from database
-            const orderNumber = transactionId ? `#${String(transactionId).padStart(3, '0')}` : '#001';
-            receipt += `Order  : ${orderNumber}\n`;
-            receipt += '================================\n';
+            r += line32 + '\n';
 
-            // Items - Format: Name on first line, qty x price aligned with total on second line
-            cart.forEach(item => {
-                const itemName = item.name.length > 32 ? item.name.substring(0, 29) + '...' : item.name;
-                receipt += `${itemName}\n`;
-                
-                const qtyPrice = `${item.quantity} x Rp${formatPrice(item.price)}`;
-                const itemTotal = `Rp${formatPrice(item.price * item.quantity)}`;
-                const totalWidth = 32;
-                const spacing = totalWidth - qtyPrice.length - itemTotal.length;
-                
-                receipt += qtyPrice;
-                if (spacing > 0) {
-                    receipt += ' '.repeat(spacing);
+            // Items
+            itemsToShow.forEach((item, index) => {
+                try {
+                    // Log item for debugging
+                    console.log(`Processing item ${index + 1}:`, {
+                        name: item.name,
+                        price: item.price,
+                        quantity: item.quantity,
+                        isBundle: item.isBundle
+                    });
+                    
+                    // Validate item has required fields
+                    if (!item || typeof item !== 'object') {
+                        throw new Error('Invalid item object');
+                    }
+                    
+                    // Item name - handle null/undefined safely
+                    let rawName = 'Item';
+                    if (item.name !== null && item.name !== undefined) {
+                        rawName = String(item.name);
+                    }
+                    
+                    // Remove non-ASCII characters that might crash printer
+                    const safeName = rawName.replace(/[^\x20-\x7E]/g, '').trim();
+                    const itemName = safeName.length > 32 ? safeName.substring(0, 29) + '...' : safeName;
+                    
+                    if (itemName.length === 0) {
+                        r += 'Item\n';
+                    } else {
+                        r += itemName + '\n';
+                    }
+                    
+                    // Quantity x Price = Total - handle all number types safely
+                    let qty = 1;
+                    let price = 0;
+                    
+                    if (item.quantity !== null && item.quantity !== undefined) {
+                        qty = Math.max(1, parseInt(item.quantity) || 1);
+                    }
+                    
+                    if (item.price !== null && item.price !== undefined) {
+                        price = Math.max(0, parseInt(item.price) || 0);
+                    }
+                    
+                    const itemTotalCalc = qty * price;
+                    
+                    const qtyPrice = `  ${qty} x ${fmt(price)}`;
+                    const itemTotal = fmt(itemTotalCalc);
+                    r += pad(qtyPrice, itemTotal) + '\n';
+                    
+                } catch (itemError) {
+                    console.error(`Error formatting item ${index + 1}:`, itemError);
+                    console.error('Item data:', item);
+                    r += 'Item (error)\n';
+                    r += '  0 x 0                  0\n';
                 }
-                receipt += itemTotal + '\n';
             });
+            
+            // Show if there are more items
+            if (hasMoreItems) {
+                r += `... dan ${cart.length - maxItems} item lainnya\n`;
+            }
 
-            receipt += '================================\n';
+            r += line32 + '\n';
             
-            // Subtotal
-            const subtotalLabel = 'Subtotal:';
-            const subtotalValue = `Rp${formatPrice(subtotal)}`;
-            receipt += subtotalLabel + padRight(subtotalValue, 32 - subtotalLabel.length) + '\n';
+            // Summary section
+            r += pad('Subtotal:', fmt(subtotal)) + '\n';
+            if (tax > 0) r += pad('Pajak:', fmt(tax)) + '\n';
+            if (discount > 0) r += pad('Diskon:', '-' + fmt(discount)) + '\n';
+            if (poinUsed > 0) r += pad('Poin:', '-' + fmt(poinUsed)) + '\n';
             
-            // Tax
-            const taxLabel = 'Pajak (10%):';
-            const taxValue = `Rp${formatPrice(Math.round(tax))}`;
-            receipt += taxLabel + padRight(taxValue, 32 - taxLabel.length) + '\n';
-            
-            receipt += '--------------------------------\n';
+            r += line32 + '\n';
             
             // Total
-            receipt += BOLD_ON;
-            const totalLabel = 'TOTAL:';
-            const totalValue = `Rp${formatPrice(Math.round(total))}`;
-            receipt += totalLabel + padRight(totalValue, 32 - totalLabel.length) + '\n';
-            receipt += BOLD_OFF;
+            r += line32 + '\n';
+            r += pad('TOTAL:', fmt(total)) + '\n';
+            r += line32 + '\n';
             
-            receipt += '================================\n';
-            receipt += CENTER;
-            receipt += 'Terima Kasih!\n';
-            receipt += 'Selamat Berbelanja\n\n';
-            receipt += LEFT;
-            receipt += CUT;
+            // Points earned for members
+            if (selectedCustomer && selectedCustomer.id !== 'walk-in' && window.currentGachaPoin) {
+                r += center('Poin +' + window.currentGachaPoin) + '\n';
+            }
 
-            return receipt;
+            // Footer
+            r += '\n' + center('Terima Kasih!') + '\n';
+            r += center('www.rotisanjaya.com') + '\n';
+            
+            // Feed paper
+            r += '\n\n\n\n';
+
+            return r;
+            
+            } catch (error) {
+                console.error('Error generating receipt:', error);
+                // Return minimal safe receipt on error
+                return 'ROTI & KUE SANJAYA\n' +
+                       'Error generating receipt\n' +
+                       'Total: ' + (cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)).toLocaleString('id-ID') + '\n' +
+                       '\n\n\n';
+            }
         }
 
         // Print receipt
@@ -3527,29 +3620,93 @@
                 // Try to reconnect to saved printer
                 const reconnected = await reconnectSavedPrinter();
                 if (!reconnected) {
-                    // Printer tidak terhubung, skip printing dan lanjutkan pembayaran
+                    console.warn('Printer not connected, skipping print');
                     return false;
                 }
             }
 
             try {
+                console.log('Starting print for transaction:', transactionId);
                 const receipt = generateReceipt(transactionId);
                 const encoder = new TextEncoder();
                 const data = encoder.encode(receipt);
+                
+                console.log('Receipt data size:', data.length, 'bytes');
 
-                // Split data into chunks if too large
-                const chunkSize = 20; // Bluetooth LE characteristic limit
+                // Very small chunk size for maximum stability
+                const chunkSize = 20;
+                let sentBytes = 0;
+                let retryCount = 0;
+                const maxRetries = 3;
+                let chunkCounter = 0;
+                
                 for (let i = 0; i < data.length; i += chunkSize) {
-                    const chunk = data.slice(i, i + chunkSize);
-                    await bluetoothCharacteristic.writeValue(chunk);
-                    // Small delay between chunks
-                    await new Promise(resolve => setTimeout(resolve, 50));
+                    const chunk = data.slice(i, Math.min(i + chunkSize, data.length));
+                    let chunkSent = false;
+                    
+                    // Retry mechanism for each chunk
+                    while (!chunkSent && retryCount < maxRetries) {
+                        try {
+                            // Check if still connected before sending
+                            if (!bluetoothCharacteristic || !printerConnected) {
+                                console.warn('Connection lost, attempting reconnect...');
+                                const reconnected = await reconnectSavedPrinter();
+                                if (!reconnected) {
+                                    throw new Error('Failed to reconnect to printer');
+                                }
+                            }
+                            
+                            await bluetoothCharacteristic.writeValue(chunk);
+                            sentBytes += chunk.length;
+                            chunkSent = true;
+                            retryCount = 0; // Reset retry count on success
+                            chunkCounter++;
+                            
+                            // Progress logging
+                            if (sentBytes % (chunkSize * 50) === 0 || i + chunkSize >= data.length) {
+                                console.log(`Printing progress: ${sentBytes}/${data.length} bytes (${Math.round(sentBytes/data.length*100)}%)`);
+                            }
+                            
+                            // EXTREMELY slow transmission to prevent printer buffer overflow
+                            await new Promise(resolve => setTimeout(resolve, 150));
+                            
+                            // Extra "breathing" delay every 5 chunks (every 100 bytes)
+                            // This gives printer time to process and prevents overheating/dying
+                            if (chunkCounter % 5 === 0) {
+                                console.log('Printer breathing...');
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                            }
+                            
+                        } catch (chunkError) {
+                            retryCount++;
+                            console.error(`Chunk error (attempt ${retryCount}/${maxRetries}):`, chunkError.message);
+                            
+                            if (retryCount >= maxRetries) {
+                                throw new Error(`Failed to send chunk after ${maxRetries} attempts: ${chunkError.message}`);
+                            }
+                            
+                            // Wait before retry
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                    }
                 }
 
+                // Wait for printer to finish processing all data
+                console.log('Waiting for printer to finish...');
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                console.log('Print completed successfully');
                 return true;
             } catch (error) {
-                console.error('Print error:', error);
-                // Tidak perlu alert, hanya log error - pembayaran tetap berhasil
+                console.error('Print error:', error.message);
+                console.error('Error details:', error);
+                
+                // Reset connection on error
+                printerConnected = false;
+                
+                // Show user-friendly error
+                showErrorNotification('Gagal mencetak struk. Printer mungkin terputus.');
+                
                 return false;
             }
         }
@@ -3697,15 +3854,17 @@
                     const transactionId = result.data?.transaksi_id || null;
                     
                     // Try to print receipt with actual transaction ID
-                    let printSuccess = false;
-                    if (isBluetoothSupported()) {
+                    try {
                         payButton.innerHTML = `
                             <div class="flex items-center justify-center space-x-2">
                                 <i class="fas fa-print"></i>
                                 <span>Mencetak...</span>
                             </div>
                         `;
-                        printSuccess = await printReceipt(transactionId);
+                        await printReceipt(transactionId);
+                    } catch (printError) {
+                        console.error('Print failed:', printError);
+                        // Continue with success even if print fails
                     }
 
                     // Success message

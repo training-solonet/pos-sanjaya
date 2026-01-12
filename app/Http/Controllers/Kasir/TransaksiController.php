@@ -76,7 +76,7 @@ class TransaksiController extends Controller
                 'diskon' => 'nullable|numeric|min:0',
                 'bayar' => 'nullable|numeric|min:0',
                 'kembalian' => 'nullable|numeric|min:0',
-                'poin_didapat' => 'nullable|integer|min:0|max:100',
+                'poin_didapat' => 'nullable|integer|min:0',
                 'poin_digunakan' => 'nullable|integer|min:0',
             ]);
 
@@ -231,8 +231,9 @@ class TransaksiController extends Controller
             Log::info("Entry jurnal OTOMATIS dibuat untuk transaksi ID: {$transaksi->id}, Total: {$total}");
             // =========================================================
 
-            // ============ TAMBAHKAN POIN KE CUSTOMER (GACHA SYSTEM) ============
+            // ============ TAMBAHKAN POIN KE CUSTOMER ============
             // Jika transaksi menggunakan member, kelola poin
+            // Poin dihitung: 5 poin per Rp10.000 + 10 poin per bundle
             if ($validated['id_customer']) {
                 $customer = Customer::find($validated['id_customer']);
                 if ($customer && $customer->kode_member) {
@@ -247,11 +248,11 @@ class TransaksiController extends Controller
                         }
                     }
 
-                    // Tambahkan poin gacha (random 1-100 per transaksi, tanpa minimum harga)
+                    // Tambahkan poin yang didapat dari transaksi
                     $poinDapat = $validated['poin_didapat'] ?? 0;
                     if ($poinDapat > 0) {
                         $customer->increment('total_poin', $poinDapat);
-                        Log::info("Poin gacha ditambahkan ke customer ID {$customer->id}: {$poinDapat} poin (random 1-100)");
+                        Log::info("Poin ditambahkan ke customer ID {$customer->id}: {$poinDapat} poin (5 poin/Rp10k + 10 poin/bundle)");
                     }
                 }
             }
