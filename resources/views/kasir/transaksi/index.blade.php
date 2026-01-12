@@ -1572,7 +1572,7 @@
         // Generate order number from database
         async function generateOrderNumber() {
             try {
-                const response = await fetch('{{ route('kasir.transaksi.api.next-id') }}');
+                const response = await fetch('{{ route('kasir.transaksi.create') }}?action=next-id');
                 const result = await response.json();
                 if (result.success) {
                     return result.next_id;

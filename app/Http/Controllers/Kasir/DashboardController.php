@@ -201,10 +201,17 @@ class DashboardController extends Controller
 
     /**
      * Display the specified resource.
+     * Also handles chart data requests when id='chart-data'
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        //
+        // Handle chart data request
+        if ($id === 'chart-data' || $request->expectsJson()) {
+            return $this->getChartData($request);
+        }
+
+        // Default show behavior if needed
+        return response()->json(['message' => 'Show not implemented']);
     }
 
     /**

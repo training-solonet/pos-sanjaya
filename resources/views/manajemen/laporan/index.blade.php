@@ -191,6 +191,12 @@
                         </div>
                         <div class="h-80 relative flex items-center justify-center">
                             <canvas id="productsChart" style="max-height: 300px;"></canvas>
+                            <div id="noProductData" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400" style="display: none;">
+                                <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                <p class="text-sm font-medium">Tidak ada data produk</p>
+                            </div>
                         </div>
                         <div class="mt-4 pt-4 border-t border-gray-200">
                             <div class="grid grid-cols-2 gap-4">
@@ -592,18 +598,24 @@
                 const defaultColors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
                 colors = labels.map((_, i) => defaultColors[i % defaultColors.length]);
             }
-        } else {
-            const generated = generateProductData(type);
-            labels = generated.labels;
-            data = generated.data;
-            colors = generated.colors;
         }
         
-        // Pastikan data tidak kosong
-        if (labels.length === 0 || data.length === 0) {
+        // Pastikan data tidak kosong - jangan gunakan data fallback/demo
+        if (!serverProducts || !serverProducts.labels || serverProducts.labels.length === 0 || labels.length === 0 || data.length === 0) {
             console.warn('No data available for products chart');
+            // Hide canvas and show no data message
+            document.getElementById('productsChart').style.display = 'none';
+            document.getElementById('noProductData').style.display = 'flex';
+            if (productsChart) {
+                productsChart.destroy();
+                productsChart = null;
+            }
             return;
         }
+        
+        // Show canvas and hide no data message
+        document.getElementById('productsChart').style.display = 'block';
+        document.getElementById('noProductData').style.display = 'none';
 
         if (productsChart) {
             productsChart.destroy();

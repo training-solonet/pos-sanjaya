@@ -7,14 +7,24 @@ use App\Models\Jurnal;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class JurnalController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * Also handles API requests (action=api) and exports (action=export-pdf|export-excel)
      */
     public function index(Request $request)
     {
+        // Handle export actions via query parameter
+        if ($request->input('action') === 'export-pdf') {
+            return $this->exportPdf($request);
+        }
+        if ($request->input('action') === 'export-excel') {
+            return $this->exportExcel($request);
+        }
+
         $tanggal = $request->get('tanggal', date('Y-m-d'));
 
         // Get journals for specific date (sudah include transaksi penjualan yang otomatis tercatat)
@@ -39,6 +49,25 @@ class JurnalController extends Controller
         $jumlahPengeluaran = Jurnal::whereDate('tgl', $tanggal)
             ->where('jenis', 'pengeluaran')
             ->count();
+
+        // Return JSON for API requests
+        if ($request->expectsJson() || $request->input('action') === 'api') {
+            $jurnalsData = Jurnal::whereDate('tgl', $tanggal)
+                ->orderBy('tgl', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'jurnals' => $jurnalsData,
+                    'totalPemasukan' => $totalPemasukan,
+                    'totalPengeluaran' => $totalPengeluaran,
+                    'jumlahPemasukan' => $jumlahPemasukan,
+                    'jumlahPengeluaran' => $jumlahPengeluaran,
+                    'saldoBersih' => $totalPemasukan - $totalPengeluaran,
+                ],
+            ]);
+        }
 
         return view('kasir.jurnal.index', compact(
             'jurnals',
@@ -136,48 +165,6 @@ class JurnalController extends Controller
     }
 
     /**
-     * Get jurnal data for real-time updates (API)
-     */
-    public function getJurnalData(Request $request)
-    {
-        $tanggal = $request->get('tanggal', date('Y-m-d'));
-
-        // Get journals for specific date
-        $jurnals = Jurnal::whereDate('tgl', $tanggal)
-            ->orderBy('tgl', 'desc')
-            ->get();
-
-        // Calculate summary
-        $totalPemasukan = Jurnal::whereDate('tgl', $tanggal)
-            ->where('jenis', 'pemasukan')
-            ->sum('nominal');
-
-        $totalPengeluaran = Jurnal::whereDate('tgl', $tanggal)
-            ->where('jenis', 'pengeluaran')
-            ->sum('nominal');
-
-        $jumlahPemasukan = Jurnal::whereDate('tgl', $tanggal)
-            ->where('jenis', 'pemasukan')
-            ->count();
-
-        $jumlahPengeluaran = Jurnal::whereDate('tgl', $tanggal)
-            ->where('jenis', 'pengeluaran')
-            ->count();
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'jurnals' => $jurnals,
-                'totalPemasukan' => $totalPemasukan,
-                'totalPengeluaran' => $totalPengeluaran,
-                'jumlahPemasukan' => $jumlahPemasukan,
-                'jumlahPengeluaran' => $jumlahPengeluaran,
-                'saldoBersih' => $totalPemasukan - $totalPengeluaran,
-            ],
-        ]);
-    }
-
-    /**
      * Export jurnal to PDF for specific date
      */
     public function exportPdf(Request $request)
@@ -190,7 +177,7 @@ class JurnalController extends Controller
                 ->orderBy('tgl', 'asc')
                 ->get();
 
-            \Log::info('Export PDF - Tanggal: '.$tanggal.', Jumlah data: '.$jurnals->count());
+            Log::info('Export PDF - Tanggal: '.$tanggal.', Jumlah data: '.$jurnals->count());
 
             // Calculate summary
             $totalPemasukan = $jurnals->where('jenis', 'pemasukan')->sum('nominal');
@@ -222,7 +209,7 @@ class JurnalController extends Controller
 
             return $pdf->download("Jurnal_Harian_{$tanggal}.pdf");
         } catch (\Exception $e) {
-            \Log::error('Export PDF Error: '.$e->getMessage());
+            Log::error('Export PDF Error: '.$e->getMessage());
 
             return back()->with('error', 'Gagal generate PDF: '.$e->getMessage());
         }
@@ -241,7 +228,7 @@ class JurnalController extends Controller
                 ->orderBy('tgl', 'asc')
                 ->get();
 
-            \Log::info('Export Excel - Tanggal: '.$tanggal.', Jumlah data: '.$jurnals->count());
+            Log::info('Export Excel - Tanggal: '.$tanggal.', Jumlah data: '.$jurnals->count());
 
             // Calculate summary
             $totalPemasukan = $jurnals->where('jenis', 'pemasukan')->sum('nominal');
@@ -306,7 +293,7 @@ class JurnalController extends Controller
             return response()->stream($callback, 200, $headers);
 
         } catch (\Exception $e) {
-            \Log::error('Export Excel Error: '.$e->getMessage());
+            Log::error('Export Excel Error: '.$e->getMessage());
 
             return back()->with('error', 'Gagal generate Excel: '.$e->getMessage());
         }

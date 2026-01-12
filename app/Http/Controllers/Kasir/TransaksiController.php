@@ -320,20 +320,4 @@ class TransaksiController extends Controller
     {
         //
     }
-
-    /**
-     * Get next transaction ID
-     */
-    public function getNextId()
-    {
-        // Generate ID Transaksi dengan format yang sama seperti saat store
-        // Format: TXXXXXXXXXX (T + timestamp 10 digit)
-        $timestamp = now()->timestamp; // Unix timestamp
-        $nextId = 'T'.substr($timestamp, -10); // Ambil 10 digit terakhir dari timestamp
-
-        return response()->json([
-            'success' => true,
-            'next_id' => $nextId,
-        ]);
-    }
 }
