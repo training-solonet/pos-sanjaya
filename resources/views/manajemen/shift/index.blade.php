@@ -263,179 +263,251 @@
 
 @section('js')
 <script>
-    // View shift detail - PERBAIKAN INI
-    function viewShiftDetail(shiftId) {
-        fetch(`/management/shiftman/${shiftId}`, {
-            headers: {
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const shift = data.data.shift;
-                const stats = data.data.statistik;
-                const transaksis = data.data.transaksis || [];
-                
-                const start = new Date(shift.mulai);
-                const end = shift.selesai ? new Date(shift.selesai) : null;
-                const duration = shift.durasi || 0;
-                const hours = Math.floor(duration / 60);
-                const minutes = duration % 60;
-                
-                let transaksiRows = '';
-                if (transaksis.length > 0) {
-                    transaksiRows = `
-                        <div class="bg-gray-50 rounded-xl p-4 mt-4">
-                            <div class="flex justify-between items-center mb-3">
-                                <h5 class="font-semibold text-gray-900">10 Transaksi Terbaru</h5>
-                                <span class="text-sm text-gray-600">Total: Rp ${formatRupiah(stats.total_penjualan)}</span>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead>
-                                        <tr>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">#</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Invoice</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Waktu</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Metode</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Customer</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${transaksis.map((transaksi, index) => {
-                                            const metodeClass = getMetodeClass(transaksi.metode);
-                                            const metodeLabel = getMetodeLabel(transaksi.metode);
-                                            const invoice = transaksi.id_transaksi || transaksi.invoice || '-';
-                                            const customer = transaksi.customer || 'Non-Member';
-                                            
-                                            return `
-                                                <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100">
-                                                    <td class="px-3 py-2 text-sm text-gray-700">${index + 1}</td>
-                                                    <td class="px-3 py-2 text-sm text-gray-700 font-mono">${invoice}</td>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">
-                                                        ${new Date(transaksi.tgl).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                                    </td>
-                                                    <td class="px-3 py-2 text-sm">
-                                                        <span class="px-2 py-1 ${metodeClass} rounded text-xs font-medium">
-                                                            ${metodeLabel}
-                                                        </span>
-                                                    </td>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">${customer}</td>
-                                                    <td class="px-3 py-2 text-sm text-green-600 font-semibold">
-                                                        Rp ${formatRupiah(transaksi.total)}
-                                                    </td>
-                                                </tr>
-                                            `;
-                                        }).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
+    // View shift detail
+   // View shift detail - DENGAN RUMUS YANG BENAR
+function viewShiftDetail(shiftId) {
+    // Tampilkan loading
+    document.getElementById('viewShiftContent').innerHTML = `
+        <div class="flex justify-center items-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <span class="ml-3 text-gray-600">Memuat data shift...</span>
+        </div>
+    `;
+    
+    // Tampilkan modal
+    document.getElementById('viewShiftModal').classList.remove('hidden');
+    document.getElementById('viewShiftModal').classList.add('flex');
+    
+    fetch(`/management/shiftman/${shiftId}`, {
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const shift = data.data.shift;
+            const stats = data.data.statistik;
+            const transaksis = data.data.transaksis || [];
+            
+            const start = new Date(shift.mulai);
+            const end = shift.selesai ? new Date(shift.selesai) : null;
+            const duration = shift.durasi || 0;
+            const hours = Math.floor(duration / 60);
+            const minutes = duration % 60;
+            
+            // PERBAIKAN RUMUS: Uang Seharusnya = Modal Awal + Total Penjualan (semua metode)
+            const uangSeharusnya = shift.uang_seharusnya || (parseInt(shift.modal) + parseInt(stats.total_penjualan || 0));
+            
+            let transaksiRows = '';
+            if (transaksis.length > 0) {
+                transaksiRows = `
+                    <div class="bg-gray-50 rounded-xl p-4 mt-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h5 class="font-semibold text-gray-900">10 Transaksi Terbaru</h5>
+                            <span class="text-sm text-gray-600">Total: Rp ${formatRupiah(stats.total_penjualan)}</span>
                         </div>
-                    `;
-                }
-                
-                const content = `
-                    <div class="space-y-6">
-                        <!-- Shift Info -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="bg-blue-50 rounded-xl p-5">
-                                <h5 class="font-semibold text-gray-900 mb-4">Informasi Shift</h5>
-                                <div class="space-y-3 text-sm">
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">ID Shift:</span>
-                                        <span class="font-semibold text-gray-900">#${shift.id.toString().padStart(6, '0')}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Kasir:</span>
-                                        <span class="font-semibold text-gray-900">${shift.user}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Mulai:</span>
-                                        <span class="font-semibold text-gray-900">${start.toLocaleString('id-ID')}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Selesai:</span>
-                                        <span class="font-semibold text-gray-900">${end ? end.toLocaleString('id-ID') : 'Masih aktif'}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Durasi:</span>
-                                        <span class="font-semibold text-gray-900">${hours} jam ${minutes} menit</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-green-50 rounded-xl p-5">
-                                <h5 class="font-semibold text-gray-900 mb-4">Ringkasan Keuangan</h5>
-                                <div class="space-y-3 text-sm">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-600">Modal Awal:</span>
-                                        <span class="font-semibold text-gray-900">Rp ${formatRupiah(shift.modal)}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-600">Total Penjualan:</span>
-                                        <span class="font-semibold text-green-600 text-lg">Rp ${formatRupiah(stats.total_penjualan)}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-600">Penjualan Tunai:</span>
-                                        <span class="font-semibold text-green-600">Rp ${formatRupiah(stats.penjualan_tunai)}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-600">Total Transaksi:</span>
-                                        <span class="font-semibold text-blue-600">${stats.total_transaksi}</span>
-                                    </div>
-                                    ${shift.selesai ? `
-                                    <div class="border-t border-green-200 pt-3 flex justify-between items-center">
-                                        <span class="text-gray-700 font-medium">Uang Seharusnya:</span>
-                                        <span class="font-semibold text-gray-900">Rp ${formatRupiah(shift.modal + stats.penjualan_tunai)}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-700 font-medium">Uang Aktual:</span>
-                                        <span class="font-semibold text-gray-900">Rp ${formatRupiah(shift.uang_aktual)}</span>
-                                    </div>
-                                    ` : ''}
-                                </div>
-                            </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">#</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Invoice</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Waktu</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Metode</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Customer</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${transaksis.map((transaksi, index) => {
+                                        const metodeClass = getMetodeClass(transaksi.metode);
+                                        const metodeLabel = getMetodeLabel(transaksi.metode);
+                                        const invoice = transaksi.id_transaksi || transaksi.invoice || '-';
+                                        const customer = transaksi.customer || 'Non-Member';
+                                        
+                                        return `
+                                            <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100">
+                                                <td class="px-3 py-2 text-sm text-gray-700">${index + 1}</td>
+                                                <td class="px-3 py-2 text-sm text-gray-700 font-mono">${invoice}</td>
+                                                <td class="px-3 py-2 text-sm text-gray-700">
+                                                    ${new Date(transaksi.tgl).toLocaleString('id-ID', {
+                                                        day: '2-digit',
+                                                        month: '2-digit',
+                                                        year: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    })}
+                                                </td>
+                                                <td class="px-3 py-2 text-sm">
+                                                    <span class="px-2 py-1 ${metodeClass} rounded text-xs font-medium">
+                                                        ${metodeLabel}
+                                                    </span>
+                                                </td>
+                                                <td class="px-3 py-2 text-sm text-gray-700">${customer}</td>
+                                                <td class="px-3 py-2 text-sm text-green-600 font-semibold">
+                                                    Rp ${formatRupiah(transaksi.total)}
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
                         </div>
-                        
-                        <!-- Difference Summary -->
-                        ${shift.selesai ? `
-                        <div class="${getSelisihClass(shift.selisih)} rounded-xl p-5">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h5 class="font-semibold text-gray-900 mb-1">Rekapitulasi Kas</h5>
-                                    <p class="text-sm text-gray-600">Perbandingan uang seharusnya vs aktual</p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-lg font-bold ${getSelisihTextClass(shift.selisih)}">
-                                        ${shift.selisih === 0 ? 'PAS' : (shift.selisih > 0 ? '+' : '') + 'Rp ' + formatRupiah(Math.abs(shift.selisih))}
-                                    </div>
-                                    <div class="text-xs ${getSelisihTextClass(shift.selisih)}">
-                                        ${shift.selisih === 0 ? 'Uang sesuai' : shift.selisih > 0 ? 'Uang lebih' : 'Uang kurang'}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        ` : ''}
-                        
-                        <!-- Transactions -->
-                        ${transaksiRows}
                     </div>
                 `;
-                
-                document.getElementById('viewShiftContent').innerHTML = content;
-                document.getElementById('viewShiftModal').classList.remove('hidden');
-                document.getElementById('viewShiftModal').classList.add('flex');
             } else {
-                alert('Gagal memuat detail shift!');
+                transaksiRows = `
+                    <div class="bg-gray-50 rounded-xl p-4 mt-4">
+                        <div class="text-center py-6">
+                            <i class="fas fa-receipt text-gray-400 text-3xl mb-2"></i>
+                            <p class="text-gray-500">Tidak ada transaksi pada shift ini</p>
+                        </div>
+                    </div>
+                `;
             }
-        })
-        .catch(error => {
-            console.error('Error loading shift detail:', error);
-            alert('Gagal memuat detail shift!');
-        });
-    }
+            
+            const content = `
+                <div class="space-y-6">
+                    <!-- Shift Info -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-blue-50 rounded-xl p-5">
+                            <h5 class="font-semibold text-gray-900 mb-4">Informasi Shift</h5>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">ID Shift:</span>
+                                    <span class="font-semibold text-gray-900">#${shift.id.toString().padStart(6, '0')}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Kasir:</span>
+                                    <span class="font-semibold text-gray-900">${shift.user}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Mulai:</span>
+                                    <span class="font-semibold text-gray-900">${formatDateTime(start)}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Selesai:</span>
+                                    <span class="font-semibold text-gray-900">${end ? formatDateTime(end) : 'Masih aktif'}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Durasi:</span>
+                                    <span class="font-semibold text-gray-900">${hours} jam ${minutes} menit</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-50 rounded-xl p-5">
+                            <h5 class="font-semibold text-gray-900 mb-4">Ringkasan Keuangan</h5>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Modal Awal:</span>
+                                    <span class="font-semibold text-gray-900">Rp ${formatRupiah(shift.modal)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Total Penjualan:</span>
+                                    <span class="font-semibold text-green-600 text-lg">Rp ${formatRupiah(stats.total_penjualan)}</span>
+                                </div>
+                                <div class="border-t border-green-200 pt-3"></div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Penjualan Tunai:</span>
+                                    <span class="font-semibold text-green-600">Rp ${formatRupiah(stats.penjualan_tunai || 0)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Penjualan QRIS:</span>
+                                    <span class="font-semibold text-green-600">Rp ${formatRupiah(stats.penjualan_qris || 0)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Penjualan Kartu:</span>
+                                    <span class="font-semibold text-green-600">Rp ${formatRupiah(stats.penjualan_kartu || 0)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Penjualan Transfer:</span>
+                                    <span class="font-semibold text-green-600">Rp ${formatRupiah(stats.penjualan_transfer || 0)}</span>
+                                </div>
+                                <div class="border-t border-green-200 pt-3"></div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Total Transaksi:</span>
+                                    <span class="font-semibold text-blue-600">${stats.total_transaksi}</span>
+                                </div>
+                                ${shift.selesai ? `
+                                <div class="border-t border-green-200 pt-3 flex justify-between items-center">
+                                    <span class="text-gray-700 font-medium">Uang Seharusnya:</span>
+                                    <span class="font-semibold text-gray-900">Rp ${formatRupiah(uangSeharusnya)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700 font-medium">Uang Setelah Dihitung:</span>
+                                    <span class="font-semibold text-gray-900">Rp ${formatRupiah(shift.uang_aktual || 0)}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Difference Summary -->
+                    ${shift.selesai ? `
+                    <div class="${getSelisihClass(shift.selisih)} rounded-xl p-5 border ${getSelisihBorderClass(shift.selisih)}">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h5 class="font-semibold text-gray-900 mb-1">Rekapitulasi Kas</h5>
+                                <p class="text-sm text-gray-600">Perbandingan uang seharusnya vs uang setelah dihitung</p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <strong>Rumus: Uang Seharusnya = Modal Awal + Total Penjualan</strong>
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold ${getSelisihTextClass(shift.selisih)}">
+                                    ${shift.selisih === 0 ? 'PAS' : (shift.selisih > 0 ? '+' : '-') + 'Rp ' + formatRupiah(Math.abs(shift.selisih))}
+                                </div>
+                                <div class="text-sm ${getSelisihTextClass(shift.selisih)} mt-1">
+                                    ${shift.selisih === 0 ? '✓ Uang sesuai' : shift.selisih > 0 ? '↑ Uang lebih' : '↓ Uang kurang'}
+                                </div>
+                            </div>
+                        </div>
+                        ${shift.selisih !== 0 ? `
+                        <div class="mt-4 text-sm text-gray-600">
+                            <p><strong>Keterangan:</strong> ${shift.selisih > 0 ? 
+                                'Uang di kas lebih besar dari yang seharusnya. Mungkin ada kesalahan input atau transaksi tidak tercatat.' : 
+                                'Uang di kas lebih kecil dari yang seharusnya. Mungkin ada kesalahan hitung atau uang hilang.'}
+                            </p>
+                        </div>
+                        ` : ''}
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Transactions -->
+                    ${transaksiRows}
+                </div>
+            `;
+            
+            document.getElementById('viewShiftContent').innerHTML = content;
+        } else {
+            document.getElementById('viewShiftContent').innerHTML = `
+                <div class="text-center py-12">
+                    <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                    </div>
+                    <h4 class="text-lg font-semibold text-gray-700 mb-2">Gagal memuat data shift</h4>
+                    <p class="text-gray-500 text-sm">${data.message || 'Terjadi kesalahan saat memuat data'}</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading shift detail:', error);
+        document.getElementById('viewShiftContent').innerHTML = `
+            <div class="text-center py-12">
+                <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                </div>
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Error</h4>
+                <p class="text-gray-500 text-sm">Gagal memuat detail shift. Silakan coba lagi.</p>
+            </div>
+        `;
+    });
+}
+
 
     function closeViewShiftModal() {
         document.getElementById('viewShiftModal').classList.add('hidden');
@@ -453,13 +525,23 @@
         return parseInt(value || 0).toLocaleString('id-ID');
     }
 
+    function formatDateTime(date) {
+        return date.toLocaleString('id-ID', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
     function getMetodeClass(metode) {
         switch(metode) {
-            case 'tunai': return 'bg-green-100 text-green-700';
-            case 'kartu': return 'bg-blue-100 text-blue-700';
-            case 'transfer': return 'bg-purple-100 text-purple-700';
-            case 'qris': return 'bg-orange-100 text-orange-700';
-            default: return 'bg-gray-100 text-gray-700';
+            case 'tunai': return 'bg-green-100 text-green-700 border border-green-200';
+            case 'kartu': return 'bg-blue-100 text-blue-700 border border-blue-200';
+            case 'transfer': return 'bg-purple-100 text-purple-700 border border-purple-200';
+            case 'qris': return 'bg-orange-100 text-orange-700 border border-orange-200';
+            default: return 'bg-gray-100 text-gray-700 border border-gray-200';
         }
     }
 
@@ -469,13 +551,18 @@
             case 'kartu': return 'Kartu';
             case 'transfer': return 'Transfer';
             case 'qris': return 'QRIS';
-            default: return metode;
+            default: return metode || 'Unknown';
         }
     }
 
     function getSelisihClass(selisih) {
         if (selisih === 0) return 'bg-blue-50';
         return selisih > 0 ? 'bg-green-50' : 'bg-red-50';
+    }
+
+    function getSelisihBorderClass(selisih) {
+        if (selisih === 0) return 'border-blue-200';
+        return selisih > 0 ? 'border-green-200' : 'border-red-200';
     }
 
     function getSelisihTextClass(selisih) {
@@ -486,6 +573,13 @@
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Shift Management Dashboard loaded');
+        
+        // Cek jika ada parameter shift_id di URL untuk auto-open detail
+        const urlParams = new URLSearchParams(window.location.search);
+        const shiftId = urlParams.get('shift_id');
+        if (shiftId && !isNaN(shiftId)) {
+            setTimeout(() => viewShiftDetail(shiftId), 500);
+        }
     });
 </script>
 @endsection

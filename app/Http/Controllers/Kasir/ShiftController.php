@@ -5,68 +5,61 @@ namespace App\Http\Controllers\Kasir;
 use App\Http\Controllers\Controller;
 use App\Models\Shift;
 use App\Models\Transaksi;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class ShiftController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
+    public function index()
     {
         $activeShift = Shift::where('id_user', Auth::id())
             ->whereNull('selesai')
             ->first();
 
-        // Jika ada shift aktif, hitung statistik real-time
+        // Hitung statistik untuk shift aktif
         if ($activeShift) {
-            $statistik = $this->calculateTransactionStatistics($activeShift->mulai, now());
-
-            // Tambahkan statistik sebagai property ke objek activeShift
-            $activeShift->total_penjualan_calculated = $statistik['total_penjualan'];
-            $activeShift->penjualan_tunai_calculated = $statistik['penjualan_tunai'];
-            $activeShift->total_transaksi_calculated = $statistik['total_transaksi'];
-
-            // Juga simpan data statistik ke dalam atribut shift untuk view
-            $activeShift->total_penjualan = $statistik['total_penjualan'];
-            $activeShift->penjualan_tunai = $statistik['penjualan_tunai'];
-            $activeShift->total_transaksi = $statistik['total_transaksi'];
+            $stats = $this->calculateActiveShiftStats($activeShift);
+            $activeShift->total_penjualan_calculated = $stats['total_penjualan'];
+            $activeShift->penjualan_tunai_calculated = $stats['penjualan_tunai'];
+            $activeShift->penjualan_qris_calculated = $stats['penjualan_qris'];
+            $activeShift->penjualan_kartu_calculated = $stats['penjualan_kartu'];
+            $activeShift->penjualan_transfer_calculated = $stats['penjualan_transfer'];
+            $activeShift->total_transaksi_calculated = $stats['total_transaksi'];
         }
 
-        $period = $request->get('period', 'today');
-        $shiftsQuery = Shift::where('id_user', Auth::id())
+        $shifts = Shift::where('id_user', Auth::id())
             ->whereNotNull('selesai')
-            ->orderBy('selesai', 'desc');
-
-        // Filter berdasarkan periode
-        switch ($period) {
-            case 'today':
-                $shiftsQuery->whereDate('selesai', Carbon::today());
-                break;
-            case 'week':
-                $shiftsQuery->whereBetween('selesai', [
-                    Carbon::now()->startOfWeek(),
-                    Carbon::now()->endOfWeek(),
-                ]);
-                break;
-            case 'month':
-                $shiftsQuery->whereMonth('selesai', Carbon::now()->month)
-                    ->whereYear('selesai', Carbon::now()->year);
-                break;
-                // 'all' tidak perlu filter tambahan
-        }
-
-        $shifts = $shiftsQuery->limit(50)->get();
+            ->orderBy('selesai', 'desc')
+            ->paginate(10);
 
         return view('kasir.shift.index', compact('activeShift', 'shifts'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    private function calculateActiveShiftStats($shift)
+    {
+        $transactions = Transaksi::where('id_user', $shift->id_user)
+            ->whereBetween('tgl', [$shift->mulai, now()])
+            ->get();
+
+        $total_penjualan = $transactions->sum('bayar');
+        $total_transaksi = $transactions->count();
+
+        // Hitung berdasarkan metode pembayaran
+        $penjualan_tunai = $transactions->where('metode', 'tunai')->sum('bayar');
+        $penjualan_qris = $transactions->where('metode', 'qris')->sum('bayar');
+        $penjualan_kartu = $transactions->where('metode', 'kartu')->sum('bayar');
+        $penjualan_transfer = $transactions->where('metode', 'transfer')->sum('bayar');
+
+        return [
+            'total_penjualan' => $total_penjualan,
+            'penjualan_tunai' => $penjualan_tunai,
+            'penjualan_qris' => $penjualan_qris,
+            'penjualan_kartu' => $penjualan_kartu,
+            'penjualan_transfer' => $penjualan_transfer,
+            'total_transaksi' => $total_transaksi,
+        ];
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -81,77 +74,56 @@ class ShiftController extends Controller
         if ($activeShift) {
             return response()->json([
                 'success' => false,
-                'message' => 'Masih ada shift aktif yang belum ditutup!',
+                'message' => 'Masih ada shift aktif',
             ], 400);
         }
 
-        DB::beginTransaction();
-        try {
-            $shift = Shift::create([
-                'id_user' => Auth::id(),
-                'mulai' => now(),
-                'modal' => $request->modal,
-                'total_penjualan' => 0,
-                'penjualan_tunai' => 0,
-                'total_transaksi' => 0,
-                'selisih' => 0,
-                'durasi' => 0,
-            ]);
+        $shift = Shift::create([
+            'id_user' => Auth::id(),
+            'mulai' => now(),
+            'modal' => $request->modal,
+            'uang_aktual' => $request->modal,
+            'selisih' => 0,
+        ]);
 
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Shift berhasil dimulai!',
-                'data' => $shift,
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memulai shift: '.$e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Shift berhasil dimulai',
+            'data' => $shift,
+        ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Shift $shift)
+    public function show($id)
     {
-        // Pastikan shift milik user yang login
-        if ($shift->id_user != Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Akses ditolak',
-            ], 403);
-        }
+        $shift = Shift::findOrFail($id);
 
         // Hitung statistik real-time
-        $statistik = $this->calculateTransactionStatistics($shift->mulai, $shift->selesai ?: now());
+        $transactions = Transaksi::where('id_user', $shift->id_user)
+            ->whereBetween('tgl', [$shift->mulai, $shift->selesai ?? now()])
+            ->get();
 
-        // Ambil 10 transaksi terbaru dari tabel transaksi
+        $stats = [
+            'total_penjualan' => $transactions->sum('bayar'),
+            'penjualan_tunai' => $transactions->where('metode', 'tunai')->sum('bayar'),
+            'penjualan_qris' => $transactions->where('metode', 'qris')->sum('bayar'),
+            'penjualan_kartu' => $transactions->where('metode', 'kartu')->sum('bayar'),
+            'penjualan_transfer' => $transactions->where('metode', 'transfer')->sum('bayar'),
+            'total_transaksi' => $transactions->count(),
+        ];
+
+        // Ambil 10 transaksi terbaru
         $transaksis = Transaksi::where('id_user', $shift->id_user)
-            ->whereBetween('tgl', [$shift->mulai, $shift->selesai ?: now()])
+            ->whereBetween('tgl', [$shift->mulai, $shift->selesai ?? now()])
             ->with('customer')
             ->orderBy('tgl', 'desc')
             ->take(10)
             ->get()
             ->map(function ($transaksi) {
-                // Format invoice dari id_transaksi (T1767757306)
-                $invoice = $transaksi->id_transaksi;
-
-                // Total transaksi adalah nilai di kolom 'bayar'
-                $total = $transaksi->bayar;
-
                 return [
                     'id_transaksi' => $transaksi->id_transaksi,
-                    'invoice' => $invoice,
                     'tgl' => $transaksi->tgl,
                     'metode' => $transaksi->metode,
-                    'total' => $total,
+                    'total' => $transaksi->bayar,
                     'customer' => $transaksi->customer ? $transaksi->customer->nama : 'Non-Member',
                 ];
             });
@@ -159,167 +131,43 @@ class ShiftController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'shift' => [
-                    'id' => $shift->id,
-                    'mulai' => $shift->mulai,
-                    'selesai' => $shift->selesai,
-                    'modal' => $shift->modal,
-                    'total_penjualan' => $statistik['total_penjualan'],
-                    'penjualan_tunai' => $statistik['penjualan_tunai'],
-                    'total_transaksi' => $statistik['total_transaksi'],
-                    'uang_aktual' => $shift->uang_aktual ?? 0,
-                    'selisih' => $shift->selisih,
-                    'durasi' => $shift->durasi,
-                ],
-                'statistik' => $statistik,
+                'shift' => $shift,
+                'statistik' => $stats,
                 'transaksis' => $transaksis,
             ],
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Shift $shift)
+    public function update(Request $request, $id)
     {
-        // Pastikan shift milik user yang login dan masih aktif
-        if ($shift->id_user != Auth::id() || $shift->selesai !== null) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Shift sudah ditutup atau bukan milik Anda',
-            ], 403);
-        }
-
         $request->validate([
             'uang_aktual' => 'required|numeric|min:0',
         ]);
 
-        DB::beginTransaction();
-        try {
-            // Hitung durasi
-            $mulai = Carbon::parse($shift->mulai);
-            $selesai = now();
-            $durasi = $mulai->diffInMinutes($selesai);
+        $shift = Shift::findOrFail($id);
 
-            // Hitung statistik penjualan terakhir
-            $statistik = $this->calculateTransactionStatistics($shift->mulai, $selesai);
+        // PERBAIKAN RUMUS: Hitung total penjualan (semua metode)
+        $total_penjualan = Transaksi::where('id_user', $shift->id_user)
+            ->whereBetween('tgl', [$shift->mulai, now()])
+            ->sum('bayar');
 
-            // Hitung total transaksi
-            $totalTransaksi = Transaksi::where('id_user', Auth::id())
-                ->whereBetween('tgl', [$shift->mulai, $selesai])
-                ->count();
+        // PERBAIKAN RUMUS: Uang Seharusnya = Modal Awal + Total Penjualan (semua metode)
+        $uang_seharusnya = $shift->modal + $total_penjualan;
+        $selisih = $request->uang_aktual - $uang_seharusnya;
 
-            // Hitung selisih
-            $uangSeharusnya = $shift->modal + $statistik['penjualan_tunai'];
-            $selisih = $request->uang_aktual - $uangSeharusnya;
-
-            // Update shift
-            $shift->update([
-                'selesai' => $selesai,
-                'durasi' => $durasi,
-                'total_penjualan' => $statistik['total_penjualan'],
-                'penjualan_tunai' => $statistik['penjualan_tunai'],
-                'total_transaksi' => $totalTransaksi,
-                'uang_aktual' => $request->uang_aktual,
-                'selisih' => $selisih,
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Shift berhasil ditutup!',
-                'data' => $shift,
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menutup shift: '.$e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Calculate transaction statistics for a shift using TRANSAKSI data
-     */
-    private function calculateTransactionStatistics($startTime, $endTime)
-    {
-        // Ambil semua transaksi dalam rentang waktu
-        $transaksis = Transaksi::where('id_user', Auth::id())
-            ->whereBetween('tgl', [$startTime, $endTime])
-            ->get();
-
-        $totalPenjualan = 0;
-        $penjualanTunai = 0;
-        $totalTransaksi = $transaksis->count();
-
-        foreach ($transaksis as $transaksi) {
-            // Total transaksi adalah nilai di kolom 'bayar'
-            $totalPenjualan += $transaksi->bayar;
-
-            // Jika metode pembayaran tunai, tambahkan ke penjualan tunai
-            if ($transaksi->metode === 'tunai') {
-                $penjualanTunai += $transaksi->bayar;
-            }
-        }
-
-        return [
-            'total_penjualan' => $totalPenjualan,
-            'penjualan_tunai' => $penjualanTunai,
-            'total_transaksi' => $totalTransaksi,
-        ];
-    }
-
-    /**
-     * Get active shift statistics
-     */
-    public function getActiveStats(Shift $shift)
-    {
-        if ($shift->id_user != Auth::id() || $shift->selesai !== null) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Akses ditolak',
-            ], 403);
-        }
-
-        $statistik = $this->calculateTransactionStatistics($shift->mulai, now());
+        $shift->update([
+            'selesai' => now(),
+            'uang_aktual' => $request->uang_aktual,
+            'selisih' => $selisih,
+        ]);
 
         return response()->json([
             'success' => true,
+            'message' => 'Shift berhasil ditutup',
             'data' => [
-                'shift' => [
-                    'id' => $shift->id,
-                    'modal' => $shift->modal,
-                ],
-                'statistik' => $statistik,
+                'selisih' => $selisih,
+                'uang_seharusnya' => $uang_seharusnya,
             ],
         ]);
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Shift $shift)
-    {
-        return response()->json([
-            'success' => false,
-            'message' => 'Fitur ini tidak tersedia',
-        ], 400);
-    }
-
-    /**
-     * Show the form for creating/editing (tidak digunakan)
-     */
-    public function create()
-    {
-        abort(404);
-    }
-
-    public function edit(Shift $shift)
-    {
-        abort(404);
     }
 }
