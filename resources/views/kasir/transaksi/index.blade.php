@@ -3437,8 +3437,8 @@
         // Generate receipt text for ESC/POS printer
         function generateReceipt(transactionId = null) {
             try {
-                // Limit cart items to prevent too long receipt
-                const maxItems = 10; // Reduced from 15 to prevent printer dying
+                // Drastically limit items to prevent printer crash
+                const maxItems = 5; // Reduced from 8 - very short receipt
                 const itemsToShow = cart.slice(0, maxItems);
                 const hasMoreItems = cart.length > maxItems;
                 
@@ -3448,9 +3448,13 @@
 
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
+            const taxPercent = {{ $pajak ? $pajak->persen : 0 }};
             const tax = Math.round(subtotal * taxRate);
             
             let discount = 0;
+            let discountPercent = 0;
+            let discountLabel = 'Diskon';
+            
             if (discountMode === 'promo') {
                 const promoSelect = document.getElementById('promoCode');
                 if (promoSelect && promoSelect.value) {
@@ -3464,20 +3468,35 @@
                         if (promoType === 'diskon_persen') {
                             discount = Math.round(subtotal * (promoValue / 100));
                             if (maxDiscount > 0 && discount > maxDiscount) discount = maxDiscount;
+                            discountPercent = promoValue;
+                            discountLabel = `Disc ${discountPercent}%`; // Shortened
                         } else if (promoType === 'cashback') {
                             discount = promoValue;
+                            discountLabel = 'Cashback';
                         }
                     }
                 }
             } else if (discountMode === 'manual') {
-                discount = Math.round(manualDiscountValue);
+                if (manualDiscountType === 'persen') {
+                    // Manual discount in percentage
+                    discountPercent = manualDiscountValue;
+                    discount = Math.round(subtotal * (manualDiscountValue / 100));
+                    discountLabel = `Disc ${discountPercent}%`; // Shortened from "Diskon"
+                } else {
+                    // Manual discount in nominal
+                    discount = Math.round(manualDiscountValue);
+                    discountLabel = 'Diskon';
+                }
             }
             
             const poinUsed = usedPoints || 0;
             const total = subtotal + tax - discount - poinUsed;
 
             // Format helpers for 48mm printer (32 chars width)
-            const fmt = (p) => Math.round(p).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            const fmt = (p) => {
+                const num = Math.round(p);
+                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            };
             const pad = (left, right, width = 32) => {
                 const spaces = width - left.length - right.length;
                 return left + (spaces > 0 ? ' '.repeat(spaces) : ' ') + right;
@@ -3536,7 +3555,7 @@
                     
                     // Remove non-ASCII characters that might crash printer
                     const safeName = rawName.replace(/[^\x20-\x7E]/g, '').trim();
-                    const itemName = safeName.length > 32 ? safeName.substring(0, 29) + '...' : safeName;
+                    const itemName = safeName.length > 28 ? safeName.substring(0, 25) + '...' : safeName;
                     
                     if (itemName.length === 0) {
                         r += 'Item\n';
@@ -3579,9 +3598,22 @@
             
             // Summary section
             r += pad('Subtotal:', fmt(subtotal)) + '\n';
-            if (tax > 0) r += pad('Pajak:', fmt(tax)) + '\n';
-            if (discount > 0) r += pad('Diskon:', '-' + fmt(discount)) + '\n';
-            if (poinUsed > 0) r += pad('Poin:', '-' + fmt(poinUsed)) + '\n';
+            
+            // Tax with percentage
+            if (tax > 0) {
+                const taxLabel = taxPercent > 0 ? `Pjk ${taxPercent}%` : 'Pajak';
+                r += pad(taxLabel + ':', fmt(tax)) + '\n';
+            }
+            
+            // Discount with percentage or label
+            if (discount > 0) {
+                r += pad(discountLabel + ':', '-' + fmt(discount)) + '\n';
+            }
+            
+            // Points used
+            if (poinUsed > 0) {
+                r += pad('Poin:', '-' + fmt(poinUsed)) + '\n';
+            }
             
             r += line32 + '\n';
             
@@ -3628,12 +3660,30 @@
             try {
                 console.log('Starting print for transaction:', transactionId);
                 const receipt = generateReceipt(transactionId);
+                
+                // Validate receipt content
+                if (!receipt || receipt.length === 0) {
+                    throw new Error('Receipt content is empty');
+                }
+                
+                console.log('Receipt generated successfully');
+                
                 const encoder = new TextEncoder();
                 const data = encoder.encode(receipt);
                 
                 console.log('Receipt data size:', data.length, 'bytes');
+                
+                // Strict limit to prevent printer crash - 800 bytes max
+                if (data.length > 800) {
+                    console.error('Receipt too large:', data.length, 'bytes');
+                    throw new Error('Receipt data too large. Please use less items.');
+                }
 
-                // Very small chunk size for maximum stability
+                // Wait before starting transmission - give printer time to prepare
+                console.log('Preparing printer...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Faster chunk size to prevent timeout
                 const chunkSize = 20;
                 let sentBytes = 0;
                 let retryCount = 0;
@@ -3647,34 +3697,29 @@
                     // Retry mechanism for each chunk
                     while (!chunkSent && retryCount < maxRetries) {
                         try {
-                            // Check if still connected before sending
-                            if (!bluetoothCharacteristic || !printerConnected) {
-                                console.warn('Connection lost, attempting reconnect...');
-                                const reconnected = await reconnectSavedPrinter();
-                                if (!reconnected) {
-                                    throw new Error('Failed to reconnect to printer');
-                                }
+                            // Simple connection check
+                            if (!bluetoothCharacteristic) {
+                                throw new Error('Printer disconnected');
                             }
                             
                             await bluetoothCharacteristic.writeValue(chunk);
                             sentBytes += chunk.length;
                             chunkSent = true;
-                            retryCount = 0; // Reset retry count on success
+                            retryCount = 0;
                             chunkCounter++;
                             
                             // Progress logging
-                            if (sentBytes % (chunkSize * 50) === 0 || i + chunkSize >= data.length) {
-                                console.log(`Printing progress: ${sentBytes}/${data.length} bytes (${Math.round(sentBytes/data.length*100)}%)`);
+                            if (sentBytes % (chunkSize * 20) === 0 || i + chunkSize >= data.length) {
+                                console.log(`Printing: ${sentBytes}/${data.length} (${Math.round(sentBytes/data.length*100)}%)`);
                             }
                             
-                            // EXTREMELY slow transmission to prevent printer buffer overflow
+                            // VERY slow delay to prevent printer death - 150ms
                             await new Promise(resolve => setTimeout(resolve, 150));
                             
-                            // Extra "breathing" delay every 5 chunks (every 100 bytes)
-                            // This gives printer time to process and prevents overheating/dying
+                            // Frequent breathing every 5 chunks
                             if (chunkCounter % 5 === 0) {
-                                console.log('Printer breathing...');
-                                await new Promise(resolve => setTimeout(resolve, 500));
+                                console.log('Breathing...');
+                                await new Promise(resolve => setTimeout(resolve, 400));
                             }
                             
                         } catch (chunkError) {
@@ -3685,15 +3730,16 @@
                                 throw new Error(`Failed to send chunk after ${maxRetries} attempts: ${chunkError.message}`);
                             }
                             
-                            // Wait before retry
-                            await new Promise(resolve => setTimeout(resolve, 500));
+                            // Longer wait before retry - give printer time to recover
+                            console.log(`Waiting 1s before retry ${retryCount}...`);
+                            await new Promise(resolve => setTimeout(resolve, 1000));
                         }
                     }
                 }
 
-                // Wait for printer to finish processing all data
+                // Wait for printer to finish processing
                 console.log('Waiting for printer to finish...');
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 console.log('Print completed successfully');
                 return true;
