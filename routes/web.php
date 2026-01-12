@@ -13,9 +13,10 @@ use App\Http\Controllers\Manajemen\KonversiController;
 use App\Http\Controllers\Manajemen\LaporanController;
 use App\Http\Controllers\Manajemen\OpnameController;
 use App\Http\Controllers\Manajemen\ProdukController;
+use App\Http\Controllers\Manajemen\ProdukGagalController as ManajemenProdukGagalController;
 use App\Http\Controllers\Manajemen\ResepController;
 use App\Http\Controllers\Manajemen\SettingController;
-use App\Http\Controllers\Manajemen\ShiftManController;
+use App\http\Controllers\Manajemen\ShiftManController;
 use App\Http\Controllers\Manajemen\UpdateStokProdukController;
 use App\Http\Controllers\RedirectController;
 use App\Http\Middleware\IsKasir;
@@ -72,6 +73,7 @@ Route::middleware([IsManagement::class])->group(function () {
             'opname' => OpnameController::class,
             'setting' => SettingController::class,
             'shiftman' => ShiftManController::class,
+            'produkgagal' => ManajemenProdukGagalController::class,
         ]);
     });
 });
