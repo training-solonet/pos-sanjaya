@@ -421,6 +421,33 @@ class SettingController extends Controller
             DB::beginTransaction();
 
             $promo = Promo::findOrFail($id);
+            $oldStok = $promo->stok;
+            $newStok = $request->stok;
+
+            // Load old bundle products before deleting
+            $oldBundleProducts = BundleProduct::where('promo_id', $promo->id)->get();
+
+            // Kembalikan stok produk dari bundle yang lama
+            foreach ($oldBundleProducts as $oldProduct) {
+                $produk = \App\Models\Produk::findOrFail($oldProduct->produk_id);
+                $produk->stok += $oldProduct->quantity * $oldStok;
+                $produk->save();
+            }
+
+            // Validasi stok produk untuk bundle yang baru
+            foreach ($request->bundle_products as $product) {
+                $produk = \App\Models\Produk::findOrFail($product['produk_id']);
+                $requiredStock = $product['quantity'] * $newStok;
+                
+                if ($produk->stok < $requiredStock) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Stok {$produk->nama} tidak mencukupi. Dibutuhkan: {$requiredStock}, Tersedia: {$produk->stok}",
+                    ], 422);
+                }
+            }
+
             $promo->update([
                 'kode_promo' => strtoupper($request->kode_promo),
                 'nama_promo' => $request->nama_promo,
@@ -441,6 +468,11 @@ class SettingController extends Controller
                     'produk_id' => $product['produk_id'],
                     'quantity' => $product['quantity'],
                 ]);
+
+                // Kurangi stok produk sesuai dengan stok bundle * quantity
+                $produk = \App\Models\Produk::findOrFail($product['produk_id']);
+                $produk->stok -= $product['quantity'] * $newStok;
+                $produk->save();
             }
 
             DB::commit();
@@ -469,8 +501,26 @@ class SettingController extends Controller
 
         try {
             if ($type === 'promo' || $type === 'bundle') {
+                DB::beginTransaction();
+
                 $promo = Promo::findOrFail($id);
+
+                // Jika ini adalah bundle, kembalikan stok produk
+                if ($type === 'bundle' || $promo->jenis === 'bundle') {
+                    $bundleProducts = BundleProduct::where('promo_id', $promo->id)->get();
+                    
+                    foreach ($bundleProducts as $bundleProduct) {
+                        $produk = \App\Models\Produk::find($bundleProduct->produk_id);
+                        if ($produk) {
+                            $produk->stok += $bundleProduct->quantity * $promo->stok;
+                            $produk->save();
+                        }
+                    }
+                }
+
                 $promo->delete();
+
+                DB::commit();
 
                 return response()->json([
                     'success' => true,
@@ -486,6 +536,10 @@ class SettingController extends Controller
                 'message' => 'Pajak berhasil dihapus',
             ]);
         } catch (\Exception $e) {
+            if (isset($promo)) {
+                DB::rollBack();
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan: '.$e->getMessage(),
@@ -537,6 +591,19 @@ class SettingController extends Controller
         try {
             DB::beginTransaction();
 
+            // Validasi stok produk terlebih dahulu
+            foreach ($request->bundle_products as $product) {
+                $produk = \App\Models\Produk::findOrFail($product['produk_id']);
+                $requiredStock = $product['quantity'] * $request->stok;
+                
+                if ($produk->stok < $requiredStock) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Stok {$produk->nama} tidak mencukupi. Dibutuhkan: {$requiredStock}, Tersedia: {$produk->stok}",
+                    ], 422);
+                }
+            }
+
             $promo = Promo::create([
                 'kode_promo' => strtoupper($request->kode_promo),
                 'nama_promo' => $request->nama_promo,
@@ -551,13 +618,18 @@ class SettingController extends Controller
                 'status' => $request->has('status') ? true : false,
             ]);
 
-            // Save bundle products
+            // Save bundle products and reduce product stock
             foreach ($request->bundle_products as $product) {
                 BundleProduct::create([
                     'promo_id' => $promo->id,
                     'produk_id' => $product['produk_id'],
                     'quantity' => $product['quantity'],
                 ]);
+
+                // Kurangi stok produk sesuai dengan stok bundle * quantity
+                $produk = \App\Models\Produk::findOrFail($product['produk_id']);
+                $produk->stok -= $product['quantity'] * $request->stok;
+                $produk->save();
             }
 
             DB::commit();

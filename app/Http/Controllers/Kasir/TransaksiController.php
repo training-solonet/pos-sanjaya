@@ -27,13 +27,13 @@ class TransaksiController extends Controller
         $totalProduk = Produk::where('stok', '>', 0)->count();
         $customers = Customer::orderBy('nama', 'asc')->get();
 
-        // Ambil data bundle (promo dengan bundle products) yang memiliki stok
+        // Ambil data bundle (promo dengan bundle products) yang aktif dan memiliki stok
         $bundles = Promo::where('status', true)
+            ->where('jenis', 'bundle')
             ->where('stok', '>', 0)
-            ->whereDate('start_date', '<=', now())
-            ->whereDate('end_date', '>=', now())
             ->with(['bundleProducts.produk'])
             ->whereHas('bundleProducts')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         // Ambil pajak aktif
@@ -123,6 +123,12 @@ class TransaksiController extends Controller
                     // Handle bundle product
                     $bundleProducts = $item['bundleProducts'] ?? [];
 
+                    // Validasi bundleProducts
+                    if (empty($bundleProducts)) {
+                        Log::error("Bundle products empty for item: ", $item);
+                        throw new \Exception("Data bundle tidak valid. Bundle harus memiliki minimal 1 produk.");
+                    }
+
                     // Cek dan kurangi stok bundle di tabel Promo
                     $bundlePromo = Promo::findOrFail($item['id']);
                     if ($bundlePromo->stok < $item['quantity']) {
@@ -135,6 +141,12 @@ class TransaksiController extends Controller
 
                     // Kurangi stok untuk setiap produk dalam bundle
                     foreach ($bundleProducts as $bundleItem) {
+                        // Validasi struktur bundle item
+                        if (!isset($bundleItem['id_produk']) || !isset($bundleItem['quantity'])) {
+                            Log::error("Invalid bundle item structure: ", $bundleItem);
+                            throw new \Exception("Struktur data bundle tidak valid.");
+                        }
+
                         $produk = Produk::findOrFail($bundleItem['id_produk']);
                         $qtyNeeded = $bundleItem['quantity'] * $item['quantity'];
 
@@ -291,6 +303,15 @@ class TransaksiController extends Controller
     }
 
     /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        // Redirect to index since we don't have a separate create page
+        return redirect()->route('kasir.transaksi.index');
+    }
+
+    /**
      * Display the specified resource.
      */
     public function show(string $id)
@@ -303,7 +324,8 @@ class TransaksiController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        // Redirect to index since we don't edit transactions
+        return redirect()->route('kasir.transaksi.index');
     }
 
     /**
