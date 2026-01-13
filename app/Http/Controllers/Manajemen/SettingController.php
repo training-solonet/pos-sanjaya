@@ -438,9 +438,10 @@ class SettingController extends Controller
             foreach ($request->bundle_products as $product) {
                 $produk = \App\Models\Produk::findOrFail($product['produk_id']);
                 $requiredStock = $product['quantity'] * $newStok;
-                
+
                 if ($produk->stok < $requiredStock) {
                     DB::rollBack();
+
                     return response()->json([
                         'success' => false,
                         'message' => "Stok {$produk->nama} tidak mencukupi. Dibutuhkan: {$requiredStock}, Tersedia: {$produk->stok}",
@@ -508,7 +509,7 @@ class SettingController extends Controller
                 // Jika ini adalah bundle, kembalikan stok produk
                 if ($type === 'bundle' || $promo->jenis === 'bundle') {
                     $bundleProducts = BundleProduct::where('promo_id', $promo->id)->get();
-                    
+
                     foreach ($bundleProducts as $bundleProduct) {
                         $produk = \App\Models\Produk::find($bundleProduct->produk_id);
                         if ($produk) {
@@ -595,7 +596,7 @@ class SettingController extends Controller
             foreach ($request->bundle_products as $product) {
                 $produk = \App\Models\Produk::findOrFail($product['produk_id']);
                 $requiredStock = $product['quantity'] * $request->stok;
-                
+
                 if ($produk->stok < $requiredStock) {
                     return response()->json([
                         'success' => false,

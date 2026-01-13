@@ -125,8 +125,8 @@ class TransaksiController extends Controller
 
                     // Validasi bundleProducts
                     if (empty($bundleProducts)) {
-                        Log::error("Bundle products empty for item: ", $item);
-                        throw new \Exception("Data bundle tidak valid. Bundle harus memiliki minimal 1 produk.");
+                        Log::error('Bundle products empty for item: ', $item);
+                        throw new \Exception('Data bundle tidak valid. Bundle harus memiliki minimal 1 produk.');
                     }
 
                     // Cek dan kurangi stok bundle di tabel Promo
@@ -142,9 +142,9 @@ class TransaksiController extends Controller
                     // Kurangi stok untuk setiap produk dalam bundle
                     foreach ($bundleProducts as $bundleItem) {
                         // Validasi struktur bundle item
-                        if (!isset($bundleItem['id_produk']) || !isset($bundleItem['quantity'])) {
-                            Log::error("Invalid bundle item structure: ", $bundleItem);
-                            throw new \Exception("Struktur data bundle tidak valid.");
+                        if (! isset($bundleItem['id_produk']) || ! isset($bundleItem['quantity'])) {
+                            Log::error('Invalid bundle item structure: ', $bundleItem);
+                            throw new \Exception('Struktur data bundle tidak valid.');
                         }
 
                         $produk = Produk::findOrFail($bundleItem['id_produk']);
