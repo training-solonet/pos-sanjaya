@@ -47,52 +47,49 @@
                 <div>
                     <label class="text-sm font-medium text-gray-700 mb-2 block">Pilih Customer</label>
                     <div class="relative">
-                        <input type="text" id="customerSearchInput" 
-                            placeholder="Ketik untuk mencari kode member atau nama..."
-                            autocomplete="off"
+                        <input type="text" id="customerSearchInput"
+                            placeholder="Ketik untuk mencari kode member atau nama..." autocomplete="off"
                             class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-colors bg-white">
                         <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                             <i class="fas fa-search text-gray-400 text-sm"></i>
                         </div>
-                        
+
                         <!-- Dropdown Results -->
-                        <div id="customerDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                            <div class="p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100" onclick="selectCustomerById('')">
+                        <div id="customerDropdown"
+                            class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                            <div class="p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
+                                onclick="selectCustomerById('')">
                                 <span class="text-gray-600 text-sm">-- Pilih Customer (Opsional) --</span>
                             </div>
-                            <div class="p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" onclick="selectCustomerById('walk-in')">
+                            <div class="p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100"
+                                onclick="selectCustomerById('walk-in')">
                                 <span class="text-gray-700 text-sm font-medium">Walk-in Customer</span>
                             </div>
                             @foreach ($customers as $customer)
-                                <div class="customer-option p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0" 
-                                    data-customer-id="{{ $customer->id }}"
-                                    data-name="{{ $customer->nama }}"
-                                    data-kode="{{ $customer->kode_member }}"
-                                    data-poin="{{ $customer->total_poin ?? 0 }}"
-                                    data-phone="{{ $customer->telepon }}" 
-                                    data-email="{{ $customer->email }}"
+                                <div class="customer-option p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0"
+                                    data-customer-id="{{ $customer->id }}" data-name="{{ $customer->nama }}"
+                                    data-kode="{{ $customer->kode_member }}" data-poin="{{ $customer->total_poin ?? 0 }}"
+                                    data-phone="{{ $customer->telepon }}" data-email="{{ $customer->email }}"
                                     data-search-text="{{ strtolower(($customer->kode_member ?? '') . ' ' . $customer->nama) }}"
                                     onclick="selectCustomerById('{{ $customer->id }}')">
-                                    @if($customer->kode_member)
-                                        <span class="text-orange-600 font-semibold text-sm">[{{ $customer->kode_member }}]</span>
+                                    @if ($customer->kode_member)
+                                        <span
+                                            class="text-orange-600 font-semibold text-sm">[{{ $customer->kode_member }}]</span>
                                     @endif
                                     <span class="text-gray-700 text-sm ml-1">{{ $customer->nama }}</span>
                                 </div>
                             @endforeach
                         </div>
-                        
+
                         <!-- Hidden select for compatibility -->
                         <select id="customerSelect" class="hidden">
                             <option value="">-- Pilih Customer (Opsional) --</option>
                             <option value="walk-in">Walk-in Customer</option>
                             @foreach ($customers as $customer)
-                                <option value="{{ $customer->id }}" 
-                                    data-name="{{ $customer->nama }}"
-                                    data-kode="{{ $customer->kode_member }}"
-                                    data-poin="{{ $customer->total_poin ?? 0 }}"
-                                    data-phone="{{ $customer->telepon }}" 
-                                    data-email="{{ $customer->email }}">
-                                    {{ $customer->kode_member ? '['.$customer->kode_member.'] ' : '' }}{{ $customer->nama }}
+                                <option value="{{ $customer->id }}" data-name="{{ $customer->nama }}"
+                                    data-kode="{{ $customer->kode_member }}" data-poin="{{ $customer->total_poin ?? 0 }}"
+                                    data-phone="{{ $customer->telepon }}" data-email="{{ $customer->email }}">
+                                    {{ $customer->kode_member ? '[' . $customer->kode_member . '] ' : '' }}{{ $customer->nama }}
                                 </option>
                             @endforeach
                         </select>
@@ -111,38 +108,46 @@
             </div>
 
             <!-- Selected Customer Info -->
-            <div id="selectedCustomerInfo" class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl hidden">
+            <div id="selectedCustomerInfo"
+                class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl hidden">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3 flex-1">
-                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                        <div
+                            class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
                             <i class="fas fa-user text-white text-lg"></i>
                         </div>
                         <div class="flex-1">
                             <p class="font-bold text-gray-900 text-lg" id="selectedCustomerName">-</p>
                             <div class="flex items-center gap-3 mt-1">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800" id="selectedCustomerKode">
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800"
+                                    id="selectedCustomerKode">
                                     <i class="fas fa-id-card mr-1"></i> -
                                 </span>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800" id="selectedCustomerPoin">
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800"
+                                    id="selectedCustomerPoin">
                                     <i class="fas fa-coins mr-1"></i> - Poin
                                 </span>
                             </div>
                             <p class="text-xs text-gray-600 mt-1" id="selectedCustomerContact">-</p>
                         </div>
                     </div>
-                    <button onclick="clearCustomerSelection()" class="text-red-600 hover:text-red-800 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
+                    <button onclick="clearCustomerSelection()"
+                        class="text-red-600 hover:text-red-800 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
                         <i class="fas fa-times mr-1"></i>Hapus
                     </button>
                 </div>
-                <!-- Informasi Poin yang Didapat (Gacha System) -->
-                <div id="poinEarnedInfo" class="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-300 hidden">
+                <!-- Informasi Poin yang Didapat -->
+                <div id="poinEarnedInfo"
+                    class="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-300 hidden">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-sm text-gray-700 font-medium">
-                            <i class="fas fa-dice text-purple-600 mr-1"></i> Poin Gacha (1-100):
+                            <i class="fas fa-star text-purple-600 mr-1"></i> Poin yang Didapat:
                         </span>
                         <span class="text-lg font-bold text-purple-700" id="poinEarned">0 Poin</span>
                     </div>
-                    <p class="text-xs text-purple-600">🎲 Setiap transaksi dapat poin random!</p>
+                    <p class="text-xs text-purple-600">💰 5 poin/Rp10k + 10 poin/bundle</p>
                 </div>
             </div>
         </div>
@@ -351,28 +356,32 @@
                         </div>
 
                         <!-- Regular Products Container -->
-                        <div id="regularProductsContainer" class="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                        <div id="regularProductsContainer"
+                            class="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                             @forelse($produks as $index => $produk)
                                 <!-- Product Card: {{ $produk->nama }} -->
                                 <div class="product-card group bg-white border-2 border-green-200 rounded-2xl p-5 hover:shadow-xl hover:border-green-400 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative"
                                     data-nama="{{ strtolower($produk->nama) }}" data-id="{{ $produk->id }}"
                                     data-price="{{ $produk->harga }}" data-stock="{{ $produk->stok }}"
-                                    data-type="product"
-                                    style="display: {{ $index < 24 ? 'block' : 'none' }};"
+                                    data-type="product" style="display: {{ $index < 24 ? 'block' : 'none' }};"
                                     onclick="addToCart({{ $produk->id }}, '{{ addslashes($produk->nama) }}', {{ $produk->harga }}, 'produk-{{ $produk->id }}.jpg', {{ $produk->stok }})">
                                     <!-- Double Circle Badge - Positioned at top right -->
                                     <div class="stock-badge-wrapper absolute -top-2 -right-2 z-10">
                                         <!-- Background circle (slightly higher) -->
-                                        <div class="absolute -top-1 -right-1 w-14 h-14 bg-emerald-400 opacity-30 rounded-full"></div>
+                                        <div
+                                            class="absolute -top-1 -right-1 w-14 h-14 bg-emerald-400 opacity-30 rounded-full">
+                                        </div>
                                         <!-- Front circle with stock number -->
-                                        <div class="relative w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-full flex items-center justify-center text-base font-bold product-stock-badge shadow-lg border-4 border-white">
+                                        <div
+                                            class="relative w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-full flex items-center justify-center text-base font-bold product-stock-badge shadow-lg border-4 border-white">
                                             {{ $produk->stok }}
                                         </div>
                                     </div>
-                                    
+
                                     <div class="product-details">
                                         <div class="product-info space-y-2">
-                                            <h3 class="font-semibold text-gray-900 text-base product-name leading-tight pr-8">
+                                            <h3
+                                                class="font-semibold text-gray-900 text-base product-name leading-tight pr-8">
                                                 {{ $produk->nama }}</h3>
                                             <p class="text-green-600 font-bold text-xl product-price">Rp
                                                 {{ number_format($produk->harga, 0, ',', '.') }}</p>
@@ -398,91 +407,100 @@
                                 </div>
                             @endforelse
                         </div>
-                        
+
                         <!-- Bundle Products Container -->
-                        <div id="bundleProductsContainer" class="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4" style="display: none;">
+                        <div id="bundleProductsContainer"
+                            class="col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
+                            style="display: none;">
                             @forelse($bundles as $bundle)
+                                @php
+                                    // Hitung total harga normal dari bundleProducts (untuk perbandingan)
+                                    $totalHargaNormal = $bundle->bundleProducts->sum(function ($item) {
+                                        return $item->produk->harga * $item->quantity;
+                                    });
+
+                                    // Untuk bundle, gunakan kolom 'nilai' sebagai harga bundle
+                                    // Kolom 'nilai' di promo adalah harga bundle yang sudah ditentukan
+                                    $hargaBundle = $bundle->nilai ?? $totalHargaNormal;
+                                @endphp
+
                                 <div class="product-card bundle-card group bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-2xl p-5 hover:shadow-xl hover:border-purple-500 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative"
-                                    data-nama="{{ strtolower($bundle->nama_promo) }}" 
-                                    data-id="bundle-{{ $bundle->id }}"
-                                data-bundle-id="{{ $bundle->id }}"
-                                data-stock="{{ $bundle->stok }}"
-                                data-type="bundle"
-                                onclick="addBundleToCart({{ $bundle->id }}, '{{ addslashes($bundle->nama_promo) }}', {{ $bundle->bundleProducts }}, {{ $bundle->stok }})">
-                                
-                                <!-- Stock Badge -->
-                                <div class="stock-badge-wrapper absolute -top-2 -right-2 z-10">
-                                    <!-- Background circle (slightly higher) -->
-                                    <div class="absolute -top-1 -right-1 w-14 h-14 bg-purple-400 opacity-30 rounded-full"></div>
-                                    <!-- Front circle with stock number -->
-                                    <div class="relative w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-full flex items-center justify-center text-base font-bold product-stock-badge shadow-lg border-4 border-white">
-                                        {{ $bundle->stok }}
+                                    data-nama="{{ strtolower($bundle->nama_promo) }}"
+                                    data-id="bundle-{{ $bundle->id }}" data-bundle-id="{{ $bundle->id }}"
+                                    data-bundle-name="{{ $bundle->nama_promo }}"
+                                    data-bundle-products='@json($bundle->bundleProducts)'
+                                    data-bundle-stock="{{ $bundle->stok }}" data-bundle-price="{{ $hargaBundle }}"
+                                    data-stock="{{ $bundle->stok }}" data-type="bundle">
+
+                                    <!-- Stock Badge -->
+                                    <div class="stock-badge-wrapper absolute -top-2 -right-2 z-10">
+                                        <!-- Background circle (slightly higher) -->
+                                        <div
+                                            class="absolute -top-1 -right-1 w-14 h-14 bg-purple-400 opacity-30 rounded-full">
+                                        </div>
+                                        <!-- Front circle with stock number -->
+                                        <div
+                                            class="relative w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-full flex items-center justify-center text-base font-bold product-stock-badge shadow-lg border-4 border-white">
+                                            {{ $bundle->stok }}
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <div class="product-details">
-                                    <div class="product-info space-y-2">
-                                        <div class="flex items-center space-x-2 mb-2">
-                                            <span class="bg-purple-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                                                <i class="fas fa-gift mr-1"></i>BUNDLE
-                                            </span>
-                                        </div>
-                                        <h3 class="font-semibold text-gray-900 text-base product-name leading-tight pr-8">
-                                            {{ $bundle->nama_promo }}
-                                        </h3>
-                                        <div class="text-xs text-gray-600 space-y-1">
-                                            <p class="font-medium">Paket berisi:</p>
-                                            @foreach($bundle->bundleProducts->take(3) as $item)
-                                                <p class="text-xs">• {{ $item->produk->nama }} ({{ $item->quantity }}x)</p>
-                                            @endforeach
-                                            @if($bundle->bundleProducts->count() > 3)
-                                                <p class="text-xs text-purple-600">+ {{ $bundle->bundleProducts->count() - 3 }} produk lainnya</p>
-                                            @endif
-                                        </div>
-                                        
-                                        @php
-                                            $totalHarga = $bundle->bundleProducts->sum(function($item) {
-                                                return $item->produk->harga * $item->quantity;
-                                            });
-                                            $hargaSetelahDiskon = $totalHarga;
-                                            if ($bundle->jenis === 'diskon_persen') {
-                                                $hargaSetelahDiskon = $totalHarga - ($totalHarga * $bundle->nilai / 100);
-                                            } elseif ($bundle->jenis === 'cashback') {
-                                                $hargaSetelahDiskon = $totalHarga - $bundle->nilai;
-                                            }
-                                        @endphp
-                                        
-                                        <div class="pt-2 border-t border-purple-200">
-                                            @if($bundle->jenis === 'diskon_persen' || $bundle->jenis === 'cashback')
-                                                <p class="text-xs text-gray-500 line-through">Rp {{ number_format($totalHarga, 0, ',', '.') }}</p>
-                                                <p class="text-purple-600 font-bold text-xl product-price">
-                                                    Rp {{ number_format($hargaSetelahDiskon, 0, ',', '.') }}
-                                                </p>
-                                                <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
-                                                    @if($bundle->jenis === 'diskon_persen')
-                                                        Hemat {{ $bundle->nilai }}%
-                                                    @else
-                                                        Hemat Rp {{ number_format($bundle->nilai, 0, ',', '.') }}
-                                                    @endif
+
+                                    <div class="product-details">
+                                        <div class="product-info space-y-2">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <span
+                                                    class="bg-purple-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                                                    <i class="fas fa-gift mr-1"></i>BUNDLE
                                                 </span>
-                                            @else
-                                                <p class="text-purple-600 font-bold text-xl product-price">
-                                                    Rp {{ number_format($totalHarga, 0, ',', '.') }}
-                                                </p>
-                                            @endif
-                                        </div>
-                                        
-                                        <div class="flex items-center space-x-1 product-status pt-1">
-                                            <span class="text-xs text-gray-500">Bundle</span>
-                                            <div class="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                                            <span class="text-xs text-purple-600 font-medium">{{ $bundle->bundleProducts->count() }} Items</span>
+                                            </div>
+                                            <h3
+                                                class="font-semibold text-gray-900 text-base product-name leading-tight pr-8">
+                                                {{ $bundle->nama_promo }}
+                                            </h3>
+                                            <div class="text-xs text-gray-600 space-y-1">
+                                                <p class="font-medium">Paket berisi:</p>
+                                                @foreach ($bundle->bundleProducts->take(3) as $item)
+                                                    <p class="text-xs">• {{ $item->produk->nama }}
+                                                        ({{ $item->quantity }}x)</p>
+                                                @endforeach
+                                                @if ($bundle->bundleProducts->count() > 3)
+                                                    <p class="text-xs text-purple-600">+
+                                                        {{ $bundle->bundleProducts->count() - 3 }} produk lainnya</p>
+                                                @endif
+                                            </div>
+
+                                            <div class="pt-2 border-t border-purple-200">
+                                                @if ($hargaBundle < $totalHargaNormal)
+                                                    <p class="text-xs text-gray-500 line-through">Rp
+                                                        {{ number_format($totalHargaNormal, 0, ',', '.') }}</p>
+                                                    <p class="text-purple-600 font-bold text-xl product-price">
+                                                        Rp {{ number_format($hargaBundle, 0, ',', '.') }}
+                                                    </p>
+                                                    <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+                                                        Hemat Rp
+                                                        {{ number_format($totalHargaNormal - $hargaBundle, 0, ',', '.') }}
+                                                    </span>
+                                                @else
+                                                    <p class="text-purple-600 font-bold text-xl product-price">
+                                                        Rp {{ number_format($hargaBundle, 0, ',', '.') }}
+                                                    </p>
+                                                @endif
+                                            </div>
+
+                                            <div class="flex items-center space-x-1 product-status pt-1">
+                                                <span class="text-xs text-gray-500">Bundle</span>
+                                                <div class="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                                                <span
+                                                    class="text-xs text-purple-600 font-medium">{{ $bundle->bundleProducts->count() }}
+                                                    Items</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
                             @empty
                                 <div class="col-span-full text-center py-12">
-                                    <div class="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <div
+                                        class="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <i class="fas fa-box-open text-purple-400 text-3xl"></i>
                                     </div>
                                     <h3 class="text-lg font-semibold text-gray-900 mb-2">Tidak Ada Bundle</h3>
@@ -491,7 +509,7 @@
                             @endforelse
                         </div>
                     </div>
-                    
+
                     <!-- Pagination -->
                     <div class="mt-6 items-center justify-between" id="paginationContainer" style="display: flex;">
                         <div class="text-sm text-gray-600" id="paginationInfo">
@@ -560,73 +578,70 @@
                                 <span class="text-gray-600">Subtotal</span>
                                 <span class="font-medium" id="subtotal">Rp 0</span>
                             </div>
-                            @if($pajak)
-                            <div class="flex justify-between text-xs">
-                                <span class="text-gray-600">{{ $pajak->nama_pajak }} ({{ $pajak->persen }}%)</span>
-                                <span class="font-medium" id="tax">Rp 0</span>
-                            </div>
+                            @if ($pajak)
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-gray-600">{{ $pajak->nama_pajak }} ({{ $pajak->persen }}%)</span>
+                                    <span class="font-medium" id="tax">Rp 0</span>
+                                </div>
                             @endif
-                            
+
                             <hr class="border-gray-200 my-2">
-                            
+
                             <!-- Diskon Section (Inline) -->
                             <div class="space-y-2">
                                 <label class="text-xs font-semibold text-gray-700 block">
                                     <i class="fas fa-tag text-green-600 mr-1"></i>Diskon
                                 </label>
-                                
+
                                 <!-- Toggle between Promo Code and Manual Discount -->
                                 <div class="flex gap-2">
-                                    <button type="button" id="promoModeBtn" 
-                                        onclick="switchDiscountMode('promo')"
+                                    <button type="button" id="promoModeBtn" onclick="switchDiscountMode('promo')"
                                         class="flex-1 px-2 py-1.5 text-xs rounded-lg transition-all bg-gradient-to-r from-green-400 to-green-700 text-white font-medium">
                                         <i class="fas fa-tag mr-1"></i>Kode Promo
                                     </button>
-                                    <button type="button" id="manualModeBtn"
-                                        onclick="switchDiscountMode('manual')"
+                                    <button type="button" id="manualModeBtn" onclick="switchDiscountMode('manual')"
                                         class="flex-1 px-2 py-1.5 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200">
                                         <i class="fas fa-edit mr-1"></i>Input Manual
                                     </button>
                                 </div>
-                                
+
                                 <!-- Promo Code Select -->
-                                @if($promos && $promos->count() > 0)
-                                <div id="promoCodeSection">
-                                    <div class="relative">
-                                        <select id="promoCode" 
-                                            class="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors text-xs"
-                                            onchange="applyPromo()">
-                                            <option value="">-- Pilih Promo --</option>
-                                            @foreach($promos as $promo)
-                                                <option value="{{ $promo->id }}" 
-                                                    data-type="{{ $promo->jenis }}" 
-                                                    data-value="{{ $promo->nilai }}"
-                                                    data-min="{{ $promo->min_transaksi }}"
-                                                    data-max="{{ $promo->maks_potongan }}">
-                                                    {{ $promo->kode_promo }} - {{ $promo->nama_promo }}
-                                                    @if($promo->jenis == 'diskon_persen')
-                                                        ({{ $promo->nilai }}%)
-                                                    @else
-                                                        (Rp {{ number_format($promo->nilai, 0, ',', '.') }})
-                                                    @endif
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                @if ($promos && $promos->count() > 0)
+                                    <div id="promoCodeSection">
+                                        <div class="relative">
+                                            <select id="promoCode"
+                                                class="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-colors text-xs"
+                                                onchange="applyPromo()">
+                                                <option value="">-- Pilih Promo --</option>
+                                                @foreach ($promos as $promo)
+                                                    <option value="{{ $promo->id }}" data-type="{{ $promo->jenis }}"
+                                                        data-value="{{ $promo->nilai }}"
+                                                        data-min="{{ $promo->min_transaksi }}"
+                                                        data-max="{{ $promo->maks_potongan }}">
+                                                        {{ $promo->kode_promo }} - {{ $promo->nama_promo }}
+                                                        @if ($promo->jenis == 'diskon_persen')
+                                                            ({{ $promo->nilai }}%)
+                                                        @else
+                                                            (Rp {{ number_format($promo->nilai, 0, ',', '.') }})
+                                                        @endif
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1" id="promoInfo"></p>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1" id="promoInfo"></p>
-                                </div>
                                 @else
-                                <div id="promoCodeSection">
-                                    <p class="text-xs text-gray-500 italic">Tidak ada promo tersedia</p>
-                                </div>
+                                    <div id="promoCodeSection">
+                                        <p class="text-xs text-gray-500 italic">Tidak ada promo tersedia</p>
+                                    </div>
                                 @endif
-                                
+
                                 <!-- Manual Discount Input -->
                                 <div id="manualDiscountSection" style="display: none;">
                                     <div class="space-y-2">
                                         <!-- Discount Type -->
                                         <div class="flex gap-2">
-                                            <button type="button" onclick="setManualDiscountType('persen')" 
+                                            <button type="button" onclick="setManualDiscountType('persen')"
                                                 id="percentBtn"
                                                 class="flex-1 px-2 py-1.5 text-xs rounded-lg transition-all bg-gradient-to-r from-blue-400 to-blue-600 text-white font-medium">
                                                 <i class="fas fa-percent mr-1"></i>Persen (%)
@@ -637,60 +652,54 @@
                                                 <i class="fas fa-money-bill mr-1"></i>Nominal (Rp)
                                             </button>
                                         </div>
-                                        
+
                                         <!-- Discount Value Input -->
                                         <div class="relative">
-                                            <input type="number" 
-                                                id="manualDiscountValue" 
+                                            <input type="number" id="manualDiscountValue"
                                                 class="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-colors text-xs"
-                                                placeholder="Masukkan nilai diskon"
-                                                min="0"
+                                                placeholder="Masukkan nilai diskon" min="0"
                                                 oninput="applyManualDiscount()">
-                                            <div class="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                                            <div
+                                                class="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
                                                 <span class="text-gray-400 text-xs" id="discountSuffix">%</span>
                                             </div>
                                         </div>
-                                        
-                                        <button type="button" 
-                                            onclick="clearManualDiscount()"
+
+                                        <button type="button" onclick="clearManualDiscount()"
                                             class="w-full px-2 py-1.5 text-xs rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-all">
                                             <i class="fas fa-times mr-1"></i>Hapus Diskon
                                         </button>
-                                        
+
                                         <p class="text-xs text-gray-500" id="manualDiscountInfo"></p>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <hr class="border-gray-200 my-2">
-                            
+
                             <!-- Points Usage Section (Inline) -->
                             <div class="space-y-2" id="pointsSection">
                                 <label class="text-xs font-semibold text-gray-700 block">
                                     <i class="fas fa-coins text-yellow-500 mr-1"></i>Gunakan Poin
                                 </label>
-                                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-2 border border-yellow-200">
+                                <div
+                                    class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-2 border border-yellow-200">
                                     <div class="flex justify-between items-center mb-2">
                                         <span class="text-xs text-gray-600">Poin Tersedia:</span>
                                         <span class="text-xs font-bold text-yellow-600" id="availablePoints">0 Poin</span>
                                     </div>
                                     <div class="relative mb-2">
-                                        <input type="number" 
-                                            id="pointsInput" 
+                                        <input type="number" id="pointsInput"
                                             class="w-full px-2 py-1.5 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-200 focus:border-yellow-400 transition-colors text-xs"
-                                            placeholder="Masukkan jumlah poin (1 poin = Rp 1)"
-                                            min="0"
-                                            value="0"
-                                            oninput="applyPoints()">
+                                            placeholder="Masukkan jumlah poin (1 poin = Rp 1)" min="0"
+                                            value="0" oninput="applyPoints()">
                                     </div>
                                     <div class="flex gap-2 mb-2">
-                                        <button type="button" 
-                                            onclick="useMaxPoints()"
+                                        <button type="button" onclick="useMaxPoints()"
                                             class="flex-1 px-2 py-1 text-xs rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition-all">
                                             <i class="fas fa-coins mr-1"></i>Gunakan Semua
                                         </button>
-                                        <button type="button" 
-                                            onclick="clearPoints()"
+                                        <button type="button" onclick="clearPoints()"
                                             class="flex-1 px-2 py-1 text-xs rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all">
                                             <i class="fas fa-times mr-1"></i>Reset
                                         </button>
@@ -704,9 +713,9 @@
                                     <p class="text-xs text-yellow-600" id="pointsInfo"></p>
                                 </div>
                             </div>
-                            
+
                             <hr class="border-gray-200 my-2">
-                            
+
                             <div class="flex justify-between">
                                 <span class="font-bold text-gray-900 text-sm">Total Bayar</span>
                                 <span class="font-bold text-lg text-green-600" id="total">Rp 0</span>
@@ -972,86 +981,92 @@
         let currentView = 'grid'; // Default view
         let currentOrderNumber = null;
         let selectedCustomer = null; // Store selected customer data
-        
+
         // Pagination variables
         let currentPage = 1;
         let itemsPerPage = 24; // Default for grid view
-        
+
         // Discount variables
         let discountMode = 'promo'; // 'promo' or 'manual'
         let manualDiscountType = 'persen'; // 'persen' or 'nominal'
         let manualDiscountValue = 0;
-        
+
         // Points usage variable
         let usedPoints = 0;
 
         // ============ DISCOUNT MANAGEMENT FUNCTIONS ============
-        
+
         // Switch between promo code and manual discount
         function switchDiscountMode(mode) {
             discountMode = mode;
-            
+
             const promoSection = document.getElementById('promoCodeSection');
             const manualSection = document.getElementById('manualDiscountSection');
             const promoModeBtn = document.getElementById('promoModeBtn');
             const manualModeBtn = document.getElementById('manualModeBtn');
-            
+
             if (mode === 'promo') {
                 // Show promo, hide manual
                 if (promoSection) promoSection.style.display = 'block';
                 if (manualSection) manualSection.style.display = 'none';
-                
+
                 // Update button styles
                 if (promoModeBtn) {
-                    promoModeBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-green-400 to-green-700 text-white font-medium';
+                    promoModeBtn.className =
+                        'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-green-400 to-green-700 text-white font-medium';
                 }
                 if (manualModeBtn) {
-                    manualModeBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
+                    manualModeBtn.className =
+                        'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
                 }
-                
+
                 // Clear manual discount
                 manualDiscountValue = 0;
                 const manualInput = document.getElementById('manualDiscountValue');
                 if (manualInput) manualInput.value = '';
-                
+
             } else {
                 // Show manual, hide promo
                 if (promoSection) promoSection.style.display = 'none';
                 if (manualSection) manualSection.style.display = 'block';
-                
+
                 // Update button styles
                 if (promoModeBtn) {
-                    promoModeBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
+                    promoModeBtn.className =
+                        'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
                 }
                 if (manualModeBtn) {
-                    manualModeBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-green-400 to-green-700 text-white font-medium';
+                    manualModeBtn.className =
+                        'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-green-400 to-green-700 text-white font-medium';
                 }
-                
+
                 // Clear promo selection
                 const promoSelect = document.getElementById('promoCode');
                 if (promoSelect) promoSelect.value = '';
                 const promoInfo = document.getElementById('promoInfo');
                 if (promoInfo) promoInfo.textContent = '';
             }
-            
+
             updateTotals();
         }
-        
+
         // Set manual discount type (persen or nominal)
         function setManualDiscountType(type) {
             manualDiscountType = type;
-            
+
             const percentBtn = document.getElementById('percentBtn');
             const nominalBtn = document.getElementById('nominalBtn');
             const discountSuffix = document.getElementById('discountSuffix');
             const manualInput = document.getElementById('manualDiscountValue');
-            
+
             if (type === 'persen') {
                 if (percentBtn) {
-                    percentBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-blue-400 to-blue-600 text-white font-medium';
+                    percentBtn.className =
+                        'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-blue-400 to-blue-600 text-white font-medium';
                 }
                 if (nominalBtn) {
-                    nominalBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
+                    nominalBtn.className =
+                        'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
                 }
                 if (discountSuffix) discountSuffix.textContent = '%';
                 if (manualInput) {
@@ -1060,10 +1075,12 @@
                 }
             } else {
                 if (percentBtn) {
-                    percentBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
+                    percentBtn.className =
+                        'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
                 }
                 if (nominalBtn) {
-                    nominalBtn.className = 'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-blue-400 to-blue-600 text-white font-medium';
+                    nominalBtn.className =
+                        'flex-1 px-3 py-2 text-xs rounded-lg transition-all bg-gradient-to-r from-blue-400 to-blue-600 text-white font-medium';
                 }
                 if (discountSuffix) discountSuffix.textContent = 'Rp';
                 if (manualInput) {
@@ -1071,30 +1088,30 @@
                     manualInput.removeAttribute('max');
                 }
             }
-            
+
             applyManualDiscount();
         }
-        
+
         // Apply manual discount
         function applyManualDiscount() {
             const manualInput = document.getElementById('manualDiscountValue');
             const manualInfo = document.getElementById('manualDiscountInfo');
-            
+
             if (!manualInput) return;
-            
+
             manualDiscountValue = parseFloat(manualInput.value) || 0;
-            
+
             // Validate
             if (manualDiscountType === 'persen' && manualDiscountValue > 100) {
                 manualDiscountValue = 100;
                 manualInput.value = 100;
             }
-            
+
             if (manualDiscountValue < 0) {
                 manualDiscountValue = 0;
                 manualInput.value = 0;
             }
-            
+
             // Update info
             if (manualInfo) {
                 if (manualDiscountValue > 0) {
@@ -1109,43 +1126,43 @@
                     manualInfo.textContent = '';
                 }
             }
-            
+
             updateTotals();
         }
-        
+
         // Clear manual discount
         function clearManualDiscount() {
             manualDiscountValue = 0;
             const manualInput = document.getElementById('manualDiscountValue');
             if (manualInput) manualInput.value = '';
-            
+
             const manualInfo = document.getElementById('manualDiscountInfo');
             if (manualInfo) manualInfo.textContent = '';
-            
+
             updateTotals();
         }
-        
+
         // ============ END DISCOUNT MANAGEMENT FUNCTIONS ============
 
         // ============ POINTS MANAGEMENT FUNCTIONS ============
-        
+
         // Apply points to reduce total
         function applyPoints() {
             const pointsInput = document.getElementById('pointsInput');
             const pointsInfo = document.getElementById('pointsInfo');
-            
+
             if (!pointsInput) return;
-            
+
             let requestedPoints = parseInt(pointsInput.value) || 0;
-            
+
             // Get available points from selected customer
             const availablePoints = selectedCustomer ? selectedCustomer.poin : 0;
-            
+
             // Get current total before points
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
             const tax = subtotal * taxRate;
-            
+
             // Calculate discount from promo/manual
             let discount = 0;
             if (discountMode === 'promo') {
@@ -1156,7 +1173,7 @@
                     const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
                     const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
                     const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
-                    
+
                     if (subtotal >= minTransaction) {
                         if (promoType === 'diskon_persen') {
                             discount = subtotal * (promoValue / 100);
@@ -1177,15 +1194,15 @@
                     }
                 }
             }
-            
+
             const totalBeforePoints = subtotal - discount + tax;
-            
+
             // Validate points
             if (requestedPoints < 0) {
                 requestedPoints = 0;
                 pointsInput.value = 0;
             }
-            
+
             if (!selectedCustomer) {
                 if (pointsInfo) pointsInfo.textContent = 'Pilih member terlebih dahulu untuk menggunakan poin';
                 pointsInput.value = 0;
@@ -1193,43 +1210,46 @@
                 updateTotals();
                 return;
             }
-            
+
             if (requestedPoints > availablePoints) {
-                if (pointsInfo) pointsInfo.textContent = `Poin tidak mencukupi. Maksimal: ${availablePoints.toLocaleString('id-ID')} poin`;
+                if (pointsInfo) pointsInfo.textContent =
+                    `Poin tidak mencukupi. Maksimal: ${availablePoints.toLocaleString('id-ID')} poin`;
                 pointsInput.value = availablePoints;
                 requestedPoints = availablePoints;
             }
-            
+
             if (requestedPoints > totalBeforePoints) {
-                if (pointsInfo) pointsInfo.textContent = `Poin melebihi total pembayaran. Maksimal: ${Math.floor(totalBeforePoints).toLocaleString('id-ID')} poin`;
+                if (pointsInfo) pointsInfo.textContent =
+                    `Poin melebihi total pembayaran. Maksimal: ${Math.floor(totalBeforePoints).toLocaleString('id-ID')} poin`;
                 pointsInput.value = Math.floor(totalBeforePoints);
                 requestedPoints = Math.floor(totalBeforePoints);
             }
-            
+
             if (requestedPoints > 0 && requestedPoints <= availablePoints && requestedPoints <= totalBeforePoints) {
-                if (pointsInfo) pointsInfo.textContent = `Menggunakan ${requestedPoints.toLocaleString('id-ID')} poin (sisa ${(availablePoints - requestedPoints).toLocaleString('id-ID')} poin)`;
+                if (pointsInfo) pointsInfo.textContent =
+                    `Menggunakan ${requestedPoints.toLocaleString('id-ID')} poin (sisa ${(availablePoints - requestedPoints).toLocaleString('id-ID')} poin)`;
             } else {
                 if (pointsInfo) pointsInfo.textContent = '';
             }
-            
+
             usedPoints = requestedPoints;
             updateTotals();
         }
-        
+
         // Use maximum available points
         function useMaxPoints() {
             if (!selectedCustomer) {
                 alert('Pilih member terlebih dahulu untuk menggunakan poin');
                 return;
             }
-            
+
             const availablePoints = selectedCustomer.poin;
-            
+
             // Get current total before points
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
             const tax = subtotal * taxRate;
-            
+
             // Calculate discount
             let discount = 0;
             if (discountMode === 'promo') {
@@ -1240,7 +1260,7 @@
                     const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
                     const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
                     const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
-                    
+
                     if (subtotal >= minTransaction) {
                         if (promoType === 'diskon_persen') {
                             discount = subtotal * (promoValue / 100);
@@ -1261,32 +1281,32 @@
                     }
                 }
             }
-            
+
             const totalBeforePoints = Math.floor(subtotal - discount + tax);
-            
+
             // Use minimum of available points or total
             const maxUsablePoints = Math.min(availablePoints, totalBeforePoints);
-            
+
             const pointsInput = document.getElementById('pointsInput');
             if (pointsInput) {
                 pointsInput.value = maxUsablePoints;
             }
-            
+
             applyPoints();
         }
-        
+
         // Clear points usage
         function clearPoints() {
             usedPoints = 0;
             const pointsInput = document.getElementById('pointsInput');
             const pointsInfo = document.getElementById('pointsInfo');
-            
+
             if (pointsInput) pointsInput.value = 0;
             if (pointsInfo) pointsInfo.textContent = '';
-            
+
             updateTotals();
         }
-        
+
         // Update available points display
         function updateAvailablePoints() {
             const availablePointsEl = document.getElementById('availablePoints');
@@ -1298,7 +1318,7 @@
                 }
             }
         }
-        
+
         // ============ END POINTS MANAGEMENT FUNCTIONS ============
 
         // ============ CUSTOMER MANAGEMENT FUNCTIONS ============
@@ -1307,28 +1327,28 @@
         function initializeCustomerSearch() {
             const searchInput = document.getElementById('customerSearchInput');
             const dropdown = document.getElementById('customerDropdown');
-            
+
             if (!searchInput || !dropdown) {
                 console.error('Customer search elements not found');
                 return;
             }
-            
+
             console.log('Customer search initialized');
-            
+
             // Show dropdown on focus
             searchInput.addEventListener('focus', function() {
                 console.log('Search input focused');
                 dropdown.classList.remove('hidden');
                 filterCustomers(''); // Show all options
             });
-            
+
             // Hide dropdown when clicking outside
             document.addEventListener('click', function(e) {
                 if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
                     dropdown.classList.add('hidden');
                 }
             });
-            
+
             // Filter customers as user types
             searchInput.addEventListener('input', function() {
                 const searchText = this.value.toLowerCase();
@@ -1341,14 +1361,14 @@
         function filterCustomers(searchText) {
             const customerOptions = document.querySelectorAll('.customer-option');
             let visibleCount = 0;
-            
+
             console.log('Filtering with text:', searchText);
             console.log('Total customer options:', customerOptions.length);
-            
+
             customerOptions.forEach(option => {
                 const searchableText = option.dataset.searchText || '';
                 console.log('Checking:', searchableText, 'against', searchText);
-                
+
                 if (searchableText.includes(searchText)) {
                     option.style.display = 'block';
                     visibleCount++;
@@ -1356,9 +1376,9 @@
                     option.style.display = 'none';
                 }
             });
-            
+
             console.log('Visible options:', visibleCount);
-            
+
             // Always show dropdown when input is focused
             const dropdown = document.getElementById('customerDropdown');
             dropdown.classList.remove('hidden');
@@ -1369,10 +1389,10 @@
             const select = document.getElementById('customerSelect');
             const searchInput = document.getElementById('customerSearchInput');
             const dropdown = document.getElementById('customerDropdown');
-            
+
             // Set the hidden select value
             if (select) select.value = customerId;
-            
+
             if (customerId === '' || customerId === 'walk-in') {
                 // Clear selection or walk-in customer
                 selectedCustomer = customerId === 'walk-in' ? {
@@ -1383,12 +1403,12 @@
                     phone: '-',
                     email: '-'
                 } : null;
-                
+
                 if (searchInput) searchInput.value = customerId === 'walk-in' ? 'Walk-in Customer' : '';
             } else {
                 // Find customer data from dropdown option div
                 const customerOption = document.querySelector(`.customer-option[data-customer-id="${customerId}"]`);
-                
+
                 if (customerOption) {
                     // Store customer data from data attributes
                     selectedCustomer = {
@@ -1399,11 +1419,11 @@
                         phone: customerOption.dataset.phone,
                         email: customerOption.dataset.email
                     };
-                    
+
                     // Update search input with selected customer
-                    const displayText = selectedCustomer.kode_member 
-                        ? `[${selectedCustomer.kode_member}] ${selectedCustomer.name}`
-                        : selectedCustomer.name;
+                    const displayText = selectedCustomer.kode_member ?
+                        `[${selectedCustomer.kode_member}] ${selectedCustomer.name}` :
+                        selectedCustomer.name;
                     if (searchInput) searchInput.value = displayText;
                 } else {
                     // Fallback to hidden select option
@@ -1417,18 +1437,18 @@
                             phone: selectedOption.dataset.phone,
                             email: selectedOption.dataset.email
                         };
-                        
-                        const displayText = selectedCustomer.kode_member 
-                            ? `[${selectedCustomer.kode_member}] ${selectedCustomer.name}`
-                            : selectedCustomer.name;
+
+                        const displayText = selectedCustomer.kode_member ?
+                            `[${selectedCustomer.kode_member}] ${selectedCustomer.name}` :
+                            selectedCustomer.name;
                         if (searchInput) searchInput.value = displayText;
                     }
                 }
             }
-            
+
             // Hide dropdown
             if (dropdown) dropdown.classList.add('hidden');
-            
+
             updateCustomerInfoDisplay();
             updateAvailablePoints(); // Update display poin tersedia
             clearPoints(); // Reset poin usage saat ganti customer
@@ -1453,17 +1473,18 @@
             if (selectedCustomer) {
                 infoDiv.classList.remove('hidden');
                 nameSpan.textContent = selectedCustomer.name;
-                
+
                 // Tampilkan kode member
                 if (selectedCustomer.kode_member) {
                     kodeSpan.innerHTML = `<i class="fas fa-id-card mr-1"></i>${selectedCustomer.kode_member}`;
                 } else {
                     kodeSpan.innerHTML = `<i class="fas fa-id-card mr-1"></i>No Member`;
                 }
-                
+
                 // Tampilkan total poin
-                poinSpan.innerHTML = `<i class="fas fa-coins mr-1"></i>${selectedCustomer.poin.toLocaleString('id-ID')} Poin`;
-                
+                poinSpan.innerHTML =
+                    `<i class="fas fa-coins mr-1"></i>${selectedCustomer.poin.toLocaleString('id-ID')} Poin`;
+
                 contactSpan.textContent = selectedCustomer.phone + (selectedCustomer.email !== '-' ? ' • ' +
                     selectedCustomer.email : '');
             } else {
@@ -1572,7 +1593,7 @@
         // Generate order number from database
         async function generateOrderNumber() {
             try {
-                const response = await fetch('{{ route('kasir.transaksi.api.next-id') }}');
+                const response = await fetch('{{ route('kasir.transaksi.create') }}?action=next-id');
                 const result = await response.json();
                 if (result.success) {
                     return result.next_id;
@@ -1671,8 +1692,10 @@
                 });
 
                 // Update button states
-                if (gridBtn) gridBtn.className = 'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
-                if (listBtn) listBtn.className = 'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
+                if (gridBtn) gridBtn.className =
+                    'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
+                if (listBtn) listBtn.className =
+                'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
             } else {
                 // Switch to list view
                 regularContainer.className =
@@ -1728,13 +1751,15 @@
                 });
 
                 // Update button states
-                if (gridBtn) gridBtn.className = 'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
-                if (listBtn) listBtn.className = 'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
+                if (gridBtn) gridBtn.className =
+                'p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all';
+                if (listBtn) listBtn.className =
+                    'p-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg transition-all';
             }
 
             // Save preference to localStorage
             localStorage.setItem('productViewPreference', viewType);
-            
+
             // Update pagination after view change
             updatePagination();
         }
@@ -1752,10 +1777,10 @@
                 console.error('regularProductsContainer not found in getVisibleProducts');
                 return [];
             }
-            
+
             const allCards = Array.from(regularContainer.querySelectorAll('.product-card'));
             console.log('getVisibleProducts - Total cards:', allCards.length, 'Current category:', currentCategory);
-            
+
             // Filter by category
             const filtered = allCards.filter(card => {
                 const productName = card.getAttribute('data-nama');
@@ -1763,7 +1788,7 @@
                 const matchesCategory = currentCategory === 'semua' || productCategory === currentCategory;
                 return matchesCategory;
             });
-            
+
             console.log('getVisibleProducts - Filtered cards:', filtered.length);
             return filtered;
         }
@@ -1771,59 +1796,59 @@
         // Render pagination
         function updatePagination() {
             console.log('updatePagination called - View:', currentView, 'Category:', currentCategory, 'Page:', currentPage);
-            
+
             updateItemsPerPage();
             console.log('Items per page:', itemsPerPage);
-            
+
             const regularContainer = document.getElementById('regularProductsContainer');
             if (!regularContainer) {
                 console.error('regularProductsContainer not found');
                 return;
             }
-            
+
             const allCards = Array.from(regularContainer.querySelectorAll('.product-card'));
             console.log('Total cards found:', allCards.length);
-            
+
             // First, hide all cards
             allCards.forEach(card => {
                 card.style.display = 'none';
             });
-            
+
             // Get visible products based on category filter
             const visibleProducts = getVisibleProducts();
             const totalProducts = visibleProducts.length;
             const totalPages = Math.ceil(totalProducts / itemsPerPage);
-            
+
             console.log('Visible products after filter:', totalProducts, 'Total pages:', totalPages);
-            
+
             // Reset to page 1 if current page exceeds total pages
             if (currentPage > totalPages && totalPages > 0) {
                 currentPage = 1;
             }
-            
+
             // Show products for current page
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
-            
+
             console.log('Showing items from index', startIndex, 'to', endIndex);
-            
+
             visibleProducts.forEach((card, index) => {
                 if (index >= startIndex && index < endIndex) {
                     card.style.display = currentView === 'list' ? 'flex' : 'block';
                 }
             });
-            
+
             // Update pagination info
             const paginationInfo = document.getElementById('paginationInfo');
             const paginationButtons = document.getElementById('paginationButtons');
             const paginationContainer = document.getElementById('paginationContainer');
-            
+
             console.log('Pagination elements found:', {
                 paginationInfo: !!paginationInfo,
                 paginationButtons: !!paginationButtons,
                 paginationContainer: !!paginationContainer
             });
-            
+
             // Update info text - always show
             const startItem = totalProducts > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
             const endItem = Math.min(currentPage * itemsPerPage, totalProducts);
@@ -1831,37 +1856,43 @@
                 paginationInfo.textContent = `Menampilkan ${startItem} - ${endItem} dari ${totalProducts} produk`;
                 console.log('Pagination info updated:', paginationInfo.textContent);
             }
-            
+
             // Generate pagination buttons
             if (paginationButtons) {
                 let buttonsHTML = '';
-                
+
                 if (totalPages > 1) {
-                
+
                     // Previous button
                     if (currentPage === 1) {
-                        buttonsHTML += '<span class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-left text-xs"></i></span>';
+                        buttonsHTML +=
+                            '<span class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-left text-xs"></i></span>';
                     } else {
-                        buttonsHTML += `<button onclick="goToPage(${currentPage - 1})" class="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>`;
+                        buttonsHTML +=
+                            `<button onclick="goToPage(${currentPage - 1})" class="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>`;
                     }
-                    
+
                     // Page numbers
                     for (let i = 1; i <= totalPages; i++) {
                         if (i === currentPage) {
-                            buttonsHTML += `<span class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg font-semibold">${i}</span>`;
+                            buttonsHTML +=
+                                `<span class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-700 text-white rounded-lg font-semibold">${i}</span>`;
                         } else {
-                            buttonsHTML += `<button onclick="goToPage(${i})" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">${i}</button>`;
+                            buttonsHTML +=
+                                `<button onclick="goToPage(${i})" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">${i}</button>`;
                         }
                     }
-                    
+
                     // Next button
                     if (currentPage === totalPages) {
-                        buttonsHTML += '<span class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-right text-xs"></i></span>';
+                        buttonsHTML +=
+                            '<span class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-right text-xs"></i></span>';
                     } else {
-                        buttonsHTML += `<button onclick="goToPage(${currentPage + 1})" class="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>`;
+                        buttonsHTML +=
+                            `<button onclick="goToPage(${currentPage + 1})" class="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>`;
                     }
                 }
-                
+
                 paginationButtons.innerHTML = buttonsHTML;
                 console.log('Pagination buttons generated:', totalPages, 'pages');
             }
@@ -1871,11 +1902,14 @@
         function goToPage(page) {
             currentPage = page;
             updatePagination();
-            
+
             // Scroll to top of product container
             const regularContainer = document.getElementById('regularProductsContainer');
             if (regularContainer) {
-                regularContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                regularContainer.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
             }
         }
         // ============ END PAGINATION FUNCTIONS ============
@@ -1928,17 +1962,17 @@
             // If searching in regular products, use pagination
             if (currentCategory !== 'bundle') {
                 currentPage = 1; // Reset to first page on search
-                
+
                 // If no search term, restore pagination
                 if (searchTerm === '') {
                     updatePagination();
                     if (noResultsMessage) noResultsMessage.classList.add('hidden');
                     return;
                 }
-                
+
                 // Hide pagination during search
                 if (paginationContainer) paginationContainer.style.display = 'none';
-                
+
                 const regularContainer = document.getElementById('regularProductsContainer');
                 const productCards = regularContainer ? regularContainer.querySelectorAll('.product-card') : [];
                 let visibleCount = 0;
@@ -2038,7 +2072,7 @@
             const noResultsMessage = document.getElementById('noResultsMessage');
             const paginationContainer = document.getElementById('paginationContainer');
             const viewToggleButtons = document.getElementById('viewToggleButtons');
-            
+
             // Hide no results message
             if (noResultsMessage) {
                 noResultsMessage.classList.add('hidden');
@@ -2050,7 +2084,7 @@
                 if (bundleContainer) bundleContainer.style.display = 'grid';
                 if (paginationContainer) paginationContainer.style.display = 'none';
                 if (viewToggleButtons) viewToggleButtons.style.display = 'none';
-                
+
                 // Update count for bundles
                 const bundleCards = bundleContainer ? bundleContainer.querySelectorAll('.bundle-card') : [];
                 updateProductCountDisplay(bundleCards.length);
@@ -2061,12 +2095,13 @@
                     if (currentView === 'list') {
                         regularContainer.className = 'col-span-full flex flex-col gap-3';
                     } else {
-                        regularContainer.className = 'col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4';
+                        regularContainer.className =
+                            'col-span-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 2xl:grid-cols-4 gap-4';
                     }
                 }
                 if (bundleContainer) bundleContainer.style.display = 'none';
                 if (viewToggleButtons) viewToggleButtons.style.display = 'flex';
-                
+
                 // Update pagination and count
                 updatePagination();
             }
@@ -2193,10 +2228,18 @@
         }
 
         // Add bundle to cart
-        function addBundleToCart(bundleId, bundleName, bundleProducts, bundleStock) {
+        function addBundleToCart(bundleId, bundleName, bundleProducts, bundleStock, hargaBundle) {
+            console.log('Adding bundle to cart:', {
+                bundleId,
+                bundleName,
+                bundleProducts,
+                bundleStock,
+                hargaBundle
+            });
+
             // Check if bundle already exists in cart
             const existingBundle = cart.find(item => item.id === 'bundle-' + bundleId && item.isBundle);
-            
+
             // Check stock availability
             if (existingBundle) {
                 // Check if adding one more would exceed stock
@@ -2205,30 +2248,34 @@
                     return;
                 }
                 existingBundle.quantity += 1;
+                console.log('Updated existing bundle quantity:', existingBundle);
             } else {
                 // Check if stock is available
                 if (bundleStock <= 0) {
                     showStockAlert(bundleName, bundleStock);
                     return;
                 }
-                
-                // Calculate total price
-                let totalPrice = 0;
-                bundleProducts.forEach(item => {
-                    totalPrice += item.produk.harga * item.quantity;
-                });
-                
-                cart.push({
+
+                // Gunakan harga bundle yang sudah ditentukan dari manajemen
+                const bundlePrice = hargaBundle || bundleProducts.reduce((total, item) => {
+                    return total + (item.produk.harga * item.quantity);
+                }, 0);
+
+                const newBundle = {
                     id: 'bundle-' + bundleId,
                     name: bundleName,
-                    price: totalPrice,
+                    price: bundlePrice,
                     image: 'bundle-' + bundleId + '.jpg',
                     stock: bundleStock,
                     quantity: 1,
                     isBundle: true,
                     bundleId: bundleId,
                     bundleProducts: bundleProducts
-                });
+                };
+
+                cart.push(newBundle);
+                console.log('Added new bundle to cart:', newBundle);
+                console.log('Current cart:', cart);
 
                 // Generate order number untuk transaksi baru
                 if (cart.length === 1) {
@@ -2250,7 +2297,7 @@
                     bundleCard.classList.remove('bg-purple-100', 'border-purple-400');
                 }, 500);
             }
-            
+
             showSuccessNotification('Bundle ditambahkan ke keranjang');
         }
 
@@ -2362,6 +2409,26 @@
             }, 4000);
         }
 
+        // Calculate points based on transaction
+        function calculatePoints() {
+            let totalPoints = 0;
+
+            // Hitung subtotal
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            // 1. Poin dari kelipatan 10k (5 poin per 10k)
+            const kelipatanDizrib = Math.floor(subtotal / 10000);
+            const poinDariTransaksi = kelipatanDizrib * 5;
+            totalPoints += poinDariTransaksi;
+
+            // 2. Poin dari bundle (10 poin per bundle)
+            const jumlahBundle = cart.filter(item => item.isBundle).length;
+            const poinDariBundle = jumlahBundle * 10;
+            totalPoints += poinDariBundle;
+
+            return totalPoints;
+        }
+
         // Update cart display
         function updateCartDisplay() {
             const cartItemsContainer = document.getElementById('cartItems');
@@ -2391,14 +2458,25 @@
                 if (cartItemsContainer) cartItemsContainer.innerHTML = emptyCartHTML;
                 if (mobileCartItemsContainer) mobileCartItemsContainer.innerHTML = emptyCartHTML;
             } else {
-                const cartHTML = cart.map((item, index) => `
-                    <div class="flex items-center space-x-2 p-2 bg-white rounded-lg mb-2 border border-gray-100 hover:border-gray-200 transition-colors">
-                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-utensils text-gray-400 text-sm"></i>
+                const cartHTML = cart.map((item, index) => {
+                    const isBundle = item.isBundle === true;
+                    const iconClass = isBundle ? 'fa-box-open text-purple-500' : 'fa-utensils text-gray-400';
+                    const borderClass = isBundle ? 'border-purple-200 bg-purple-50' : 'border-gray-100';
+                    const bundleBadge = isBundle ?
+                        '<span class="text-[10px] bg-purple-500 text-white px-1.5 py-0.5 rounded-full font-medium">Bundle</span>' :
+                        '';
+
+                    return `
+                    <div class="flex items-center space-x-2 p-2 bg-white rounded-lg mb-2 border ${borderClass} hover:border-gray-200 transition-colors">
+                        <div class="w-10 h-10 ${isBundle ? 'bg-purple-100' : 'bg-gray-100'} rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fas ${iconClass} text-sm"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-medium text-xs text-gray-900 truncate">${item.name}</h4>
-                            <p class="text-green-600 font-semibold text-xs">Rp ${item.price.toLocaleString('id-ID')}</p>
+                            <div class="flex items-center gap-1 mb-0.5">
+                                <h4 class="font-medium text-xs text-gray-900 truncate">${item.name}</h4>
+                                ${bundleBadge}
+                            </div>
+                            <p class="${isBundle ? 'text-purple-600' : 'text-green-600'} font-semibold text-xs">Rp ${item.price.toLocaleString('id-ID')}</p>
                             <p class="text-gray-400 text-xs">Stok: ${item.stock}</p>
                         </div>
                         <div class="flex items-center space-x-1">
@@ -2425,18 +2503,19 @@
                             <i class="fas fa-trash text-xs"></i>
                         </button>
                     </div>
-                `).join('');
+                `;
+                }).join('');
 
                 if (cartItemsContainer) cartItemsContainer.innerHTML = cartHTML;
                 if (mobileCartItemsContainer) mobileCartItemsContainer.innerHTML = cartHTML;
             }
 
-            // Regenerate gacha points when cart changes (only if there are items)
+            // Regenerate points when cart changes (only if there are items)
             if (cart.length > 0 && selectedCustomer && selectedCustomer.id !== 'walk-in') {
-                // Generate new gacha points for this transaction
-                window.currentGachaPoin = Math.floor(Math.random() * 100) + 1; // Random 1-100
+                // Hitung poin berdasarkan aturan baru
+                window.currentGachaPoin = calculatePoints();
             } else {
-                // Clear gacha points if cart is empty or no customer selected
+                // Clear points if cart is empty or no customer selected
                 window.currentGachaPoin = null;
             }
 
@@ -2447,14 +2526,14 @@
         // Update totals
         function updateTotals() {
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
+
             // Get tax rate from backend
             const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
             const tax = subtotal * taxRate;
-            
+
             // Calculate discount
             let discount = 0;
-            
+
             if (discountMode === 'promo') {
                 // Calculate discount from promo code
                 const promoSelect = document.getElementById('promoCode');
@@ -2464,7 +2543,7 @@
                     const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
                     const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
                     const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
-                    
+
                     // Check if subtotal meets minimum transaction
                     if (subtotal >= minTransaction) {
                         if (promoType === 'diskon_persen') {
@@ -2492,10 +2571,10 @@
                     }
                 }
             }
-            
+
             // Apply points discount (1 point = Rp 1)
             const pointsDiscount = usedPoints;
-            
+
             const total = subtotal - discount - pointsDiscount + tax;
 
             // Update UI elements with null checks
@@ -2513,7 +2592,7 @@
             if (totalToPayEl) totalToPayEl.textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
             if (nonCashTotalEl) nonCashTotalEl.textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
             if (mobileTotalEl) mobileTotalEl.textContent = `Rp ${Math.round(total).toLocaleString('id-ID')}`;
-            
+
             // Update points discount display
             const pointsDiscountEl = document.getElementById('pointsDiscount');
             if (pointsDiscountEl) pointsDiscountEl.textContent = `Rp ${pointsDiscount.toLocaleString('id-ID')}`;
@@ -2524,21 +2603,21 @@
 
             // Enable/disable pay button
             updatePayButtonState();
-            
+
             // Update poin yang didapat
             updatePoinEarned();
         }
-        
+
         // Apply promo function
         function applyPromo() {
             const promoSelect = document.getElementById('promoCode');
             const promoInfo = document.getElementById('promoInfo');
-            
+
             if (promoSelect && promoSelect.value) {
                 const selectedOption = promoSelect.options[promoSelect.selectedIndex];
                 const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
                 const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                
+
                 if (subtotal < minTransaction) {
                     promoInfo.className = 'text-xs text-red-500 mt-1';
                     promoInfo.textContent = `Minimum transaksi: Rp ${minTransaction.toLocaleString('id-ID')}`;
@@ -2549,19 +2628,19 @@
             } else {
                 promoInfo.textContent = '';
             }
-            
+
             updateTotals();
         }
-        
+
         // Update poin yang didapat berdasarkan total belanja
         function updatePoinEarned() {
             const poinEarnedInfo = document.getElementById('poinEarnedInfo');
             const poinEarnedSpan = document.getElementById('poinEarned');
-            
+
             if (selectedCustomer && selectedCustomer.id !== 'walk-in' && cart.length > 0) {
                 // Use gacha points that was already generated in updateCartDisplay
                 const poinEarned = window.currentGachaPoin || 0;
-                
+
                 if (poinEarned > 0) {
                     poinEarnedInfo.classList.remove('hidden');
                     poinEarnedSpan.textContent = `${poinEarned.toLocaleString('id-ID')} Poin`;
@@ -2603,6 +2682,34 @@
                     selectedPaymentMethod = this.getAttribute('data-method');
                     togglePaymentInput();
                 });
+            });
+
+            // Add event listener for bundle cards
+            document.addEventListener('click', function(e) {
+                const bundleCard = e.target.closest('.bundle-card');
+                if (bundleCard) {
+                    const bundleId = parseInt(bundleCard.getAttribute('data-bundle-id'));
+                    const bundleName = bundleCard.getAttribute('data-bundle-name');
+                    const bundleStock = parseInt(bundleCard.getAttribute('data-bundle-stock'));
+                    const bundlePrice = parseFloat(bundleCard.getAttribute('data-bundle-price'));
+
+                    try {
+                        const bundleProductsJson = bundleCard.getAttribute('data-bundle-products');
+                        const bundleProducts = JSON.parse(bundleProductsJson);
+
+                        console.log('Bundle card clicked:', {
+                            bundleId,
+                            bundleName,
+                            bundleProducts,
+                            bundleStock,
+                            bundlePrice
+                        });
+                        addBundleToCart(bundleId, bundleName, bundleProducts, bundleStock, bundlePrice);
+                    } catch (error) {
+                        console.error('Error parsing bundle data:', error);
+                        showErrorNotification('Gagal menambahkan bundle: Data tidak valid');
+                    }
+                }
             });
         });
 
@@ -2688,7 +2795,7 @@
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
             const tax = subtotal * taxRate;
-            
+
             // Calculate discount
             let discount = 0;
             if (discountMode === 'promo') {
@@ -2699,7 +2806,7 @@
                     const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
                     const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
                     const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
-                    
+
                     if (subtotal >= minTransaction) {
                         if (promoType === 'diskon_persen') {
                             discount = subtotal * (promoValue / 100);
@@ -2720,10 +2827,10 @@
                     }
                 }
             }
-            
+
             // Apply points discount (1 point = Rp 1)
             const pointsDiscount = usedPoints || 0;
-            
+
             // Total = Subtotal + Tax - Discount - Points
             return Math.round(subtotal + tax - discount - pointsDiscount);
         }
@@ -2861,7 +2968,21 @@
                     body: JSON.stringify(transactionData)
                 });
 
-                const result = await response.json();
+                // Check if response is OK (First payment function - processPayment)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error response:', errorText);
+                    throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                }
+
+                // Try to parse JSON response
+                let result;
+                try {
+                    result = await response.json();
+                } catch (parseError) {
+                    console.error('Failed to parse JSON response');
+                    throw new Error('Server returned invalid response');
+                }
 
                 if (result.success) {
 
@@ -2953,7 +3074,7 @@
             // Ask for confirmation if current cart is not empty
             if (cart.length > 0) {
                 if (!confirm(
-                    'Keranjang saat ini tidak kosong. Apakah Anda ingin mengganti dengan transaksi yang ditahan?')) {
+                        'Keranjang saat ini tidak kosong. Apakah Anda ingin mengganti dengan transaksi yang ditahan?')) {
                     return;
                 }
             }
@@ -3422,134 +3543,274 @@
 
         // Generate receipt text for ESC/POS printer
         function generateReceipt(transactionId = null) {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('id-ID');
-            const timeStr = now.toLocaleTimeString('id-ID');
+            try {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: '2-digit'
+                });
+                const timeStr = now.toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
 
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const tax = subtotal * 0.1;
-            const total = subtotal + tax;
+                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
+                const taxPercent = {{ $pajak ? $pajak->persen : 0 }};
+                const tax = Math.round(subtotal * taxRate);
 
-            // Helper function to format price without dot separator
-            const formatPrice = (price) => {
-                return Math.round(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-            };
+                let discount = 0;
 
-            // Helper function to pad string to right align
-            const padRight = (str, length) => {
-                const spaces = length - str.length;
-                return spaces > 0 ? ' '.repeat(spaces) + str : str;
-            };
+                if (discountMode === 'promo') {
+                    const promoSelect = document.getElementById('promoCode');
+                    if (promoSelect && promoSelect.value) {
+                        const selectedOption = promoSelect.options[promoSelect.selectedIndex];
+                        const promoType = selectedOption.getAttribute('data-type');
+                        const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
+                        const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
+                        const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
 
-            let receipt = '';
-
-            // ESC/POS Commands
-            const ESC = '\x1B';
-            const INIT = ESC + '@'; // Initialize printer
-            const CENTER = ESC + 'a1'; // Center alignment
-            const LEFT = ESC + 'a0'; // Left alignment
-            const BOLD_ON = ESC + 'E1'; // Bold on
-            const BOLD_OFF = ESC + 'E0'; // Bold off
-            const CUT = ESC + 'm'; // Cut paper
-            const FEED = '\n';
-
-            receipt += INIT;
-            receipt += CENTER + BOLD_ON;
-            receipt += 'ROTI & KUE SANJAYA\n';
-            receipt += BOLD_OFF;
-            receipt += '================================\n';
-            receipt += LEFT;
-            receipt += `Tanggal: ${dateStr}\n`;
-            receipt += `Waktu  : ${timeStr}\n`;
-            receipt += `Kasir  : Admin\n`;
-
-            // Add customer name if selected
-            if (selectedCustomer && selectedCustomer.name) {
-                receipt += `Customer: ${selectedCustomer.name}\n`;
-            }
-
-            // Use actual transaction ID from database
-            const orderNumber = transactionId ? `#${String(transactionId).padStart(3, '0')}` : '#001';
-            receipt += `Order  : ${orderNumber}\n`;
-            receipt += '================================\n';
-
-            // Items - Format: Name on first line, qty x price aligned with total on second line
-            cart.forEach(item => {
-                const itemName = item.name.length > 32 ? item.name.substring(0, 29) + '...' : item.name;
-                receipt += `${itemName}\n`;
-                
-                const qtyPrice = `${item.quantity} x Rp${formatPrice(item.price)}`;
-                const itemTotal = `Rp${formatPrice(item.price * item.quantity)}`;
-                const totalWidth = 32;
-                const spacing = totalWidth - qtyPrice.length - itemTotal.length;
-                
-                receipt += qtyPrice;
-                if (spacing > 0) {
-                    receipt += ' '.repeat(spacing);
+                        if (subtotal >= minTransaction) {
+                            if (promoType === 'diskon_persen') {
+                                discount = Math.round(subtotal * (promoValue / 100));
+                                if (maxDiscount > 0 && discount > maxDiscount) discount = maxDiscount;
+                            } else if (promoType === 'cashback') {
+                                discount = promoValue;
+                            }
+                        }
+                    }
+                } else if (discountMode === 'manual') {
+                    if (manualDiscountType === 'persen') {
+                        discount = Math.round(subtotal * (manualDiscountValue / 100));
+                    } else {
+                        discount = Math.round(manualDiscountValue);
+                    }
                 }
-                receipt += itemTotal + '\n';
-            });
 
-            receipt += '================================\n';
-            
-            // Subtotal
-            const subtotalLabel = 'Subtotal:';
-            const subtotalValue = `Rp${formatPrice(subtotal)}`;
-            receipt += subtotalLabel + padRight(subtotalValue, 32 - subtotalLabel.length) + '\n';
-            
-            // Tax
-            const taxLabel = 'Pajak (10%):';
-            const taxValue = `Rp${formatPrice(Math.round(tax))}`;
-            receipt += taxLabel + padRight(taxValue, 32 - taxLabel.length) + '\n';
-            
-            receipt += '--------------------------------\n';
-            
-            // Total
-            receipt += BOLD_ON;
-            const totalLabel = 'TOTAL:';
-            const totalValue = `Rp${formatPrice(Math.round(total))}`;
-            receipt += totalLabel + padRight(totalValue, 32 - totalLabel.length) + '\n';
-            receipt += BOLD_OFF;
-            
-            receipt += '================================\n';
-            receipt += CENTER;
-            receipt += 'Terima Kasih!\n';
-            receipt += 'Selamat Berbelanja\n\n';
-            receipt += LEFT;
-            receipt += CUT;
+                const poinUsed = usedPoints || 0;
+                const total = subtotal + tax - discount - poinUsed;
 
-            return receipt;
+                // Format helpers - width 32 chars for thermal printer
+                const fmt = (p) => {
+                    const num = Math.round(p);
+                    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                };
+                const pad = (left, right, width = 32) => {
+                    const spaces = width - left.length - right.length;
+                    return left + (spaces > 0 ? ' '.repeat(spaces) : ' ') + right;
+                };
+                const center = (text, width = 32) => {
+                    const spaces = Math.max(0, Math.floor((width - text.length) / 2));
+                    return ' '.repeat(spaces) + text;
+                };
+                const line = (char = '=', width = 32) => {
+                    return char.repeat(width);
+                };
+
+                let r = '';
+
+                // Header
+                r += center('ROTI & KUE SANJAYA') + '\n';
+                r += center('0812-3456-7890') + '\n';
+                r += line() + '\n';
+                r += dateStr + '  ' + timeStr + '\n';
+                r += 'No: ' + (transactionId || currentOrderNumber || '000233') + '\n';
+                r += 'Kasir: {{ Auth::user()->name }}' + '\n';
+                r += line() + '\n';
+
+                // Items
+                cart.forEach((item, index) => {
+                    try {
+                        if (!item || typeof item !== 'object') return;
+
+                        const name = String(item.name || 'Item');
+                        const qty = parseInt(item.quantity) || 1;
+                        const price = parseInt(item.price) || 0;
+                        const itemTotal = price * qty;
+
+                        // Item name on first line
+                        r += name + '\n';
+
+                        // Quantity and calculation on second line with right-aligned total
+                        const calcStr = qty + ' x ' + fmt(price);
+                        r += pad(calcStr, fmt(itemTotal)) + '\n';
+
+                    } catch (e) {
+                        console.error('Item format error:', e);
+                    }
+                });
+
+                // Show count if many items
+                if (cart.length > 5) {
+                    r += `... dan ${cart.length - 5} item lainnya\n`;
+                }
+
+                r += line() + '\n';
+
+                // Summary
+                r += pad('Subtotal:', fmt(subtotal)) + '\n';
+                r += pad('Pjk ' + taxPercent + '%:', fmt(tax)) + '\n';
+
+                if (discount > 0) {
+                    r += pad('Diskon:', fmt(discount)) + '\n';
+                }
+
+                if (poinUsed > 0) {
+                    r += pad('Poin:', fmt(poinUsed)) + '\n';
+                }
+
+                r += line() + '\n';
+                r += pad('TOTAL:', fmt(total)) + '\n';
+                r += line() + '\n';
+
+                // Footer
+                r += '\n';
+                r += center('Terima kasih!') + '\n';
+                r += '\n\n\n';
+
+                return r;
+
+            } catch (error) {
+                console.error('Error generating receipt:', error);
+                // Return minimal safe receipt on error
+                return 'ROTI & KUE SANJAYA\n' +
+                    'Error generating receipt\n' +
+                    'Total: ' + (cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)).toLocaleString(
+                    'id-ID') + '\n' +
+                    '\n\n\n';
+            }
         }
 
         // Print receipt
         async function printReceipt(transactionId = null) {
-            if (!printerConnected || !bluetoothCharacteristic) {
-                // Try to reconnect to saved printer
-                const reconnected = await reconnectSavedPrinter();
-                if (!reconnected) {
-                    // Printer tidak terhubung, skip printing dan lanjutkan pembayaran
-                    return false;
-                }
-            }
-
             try {
+                console.log('Starting print for transaction:', transactionId);
+
+                // Check if printer is connected
+                if (!printerConnected || !bluetoothCharacteristic) {
+                    throw new Error('Printer not connected. Please connect first.');
+                }
+
+                // Check GATT connection and try to reconnect if needed
+                if (!bluetoothCharacteristic.service || !bluetoothCharacteristic.service.device || !
+                    bluetoothCharacteristic.service.device.gatt.connected) {
+                    console.log('GATT disconnected, attempting to reconnect...');
+                    try {
+                        // Try to reconnect
+                        const device = bluetoothCharacteristic.service.device;
+                        const server = await device.gatt.connect();
+                        const service = await server.getPrimaryService(PRINTER_SERVICE_UUID);
+                        bluetoothCharacteristic = await service.getCharacteristic(PRINTER_CHARACTERISTIC_UUID);
+                        console.log('Printer reconnected successfully');
+                    } catch (reconnectError) {
+                        console.error('Failed to reconnect:', reconnectError);
+                        throw new Error('Printer connection lost. Please reconnect manually.');
+                    }
+                }
+
                 const receipt = generateReceipt(transactionId);
+
+                // Validate receipt content
+                if (!receipt || receipt.length === 0) {
+                    throw new Error('Receipt content is empty');
+                }
+
+                console.log('Receipt generated successfully, length:', receipt.length, 'chars');
+
                 const encoder = new TextEncoder();
                 const data = encoder.encode(receipt);
 
-                // Split data into chunks if too large
-                const chunkSize = 20; // Bluetooth LE characteristic limit
-                for (let i = 0; i < data.length; i += chunkSize) {
-                    const chunk = data.slice(i, i + chunkSize);
-                    await bluetoothCharacteristic.writeValue(chunk);
-                    // Small delay between chunks
-                    await new Promise(resolve => setTimeout(resolve, 50));
+                console.log('Receipt data size:', data.length, 'bytes');
+
+                // Check connection status
+                if (!bluetoothCharacteristic || !bluetoothCharacteristic.service || !bluetoothCharacteristic.service
+                    .device) {
+                    throw new Error('Printer not properly connected');
                 }
 
+                if (!bluetoothCharacteristic.service.device.gatt.connected) {
+                    throw new Error('GATT connection not active');
+                }
+
+                // OPTIMIZED STRATEGY: Smaller chunks with longer delays
+                console.log('Printing with optimized settings...');
+
+                // Initial wait for printer ready
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                const chunkSize = 10; // REDUCED from 20 to 10 for better stability
+                let sentBytes = 0;
+                let chunkCount = 0;
+                const totalChunks = Math.ceil(data.length / chunkSize);
+                let retryCount = 0;
+                const maxRetries = 3;
+
+                for (let i = 0; i < data.length; i += chunkSize) {
+                    const chunk = data.slice(i, Math.min(i + chunkSize, data.length));
+                    chunkCount++;
+
+                    // Verify connection before write
+                    if (!bluetoothCharacteristic.service.device.gatt.connected) {
+                        throw new Error('Printer disconnected at byte ' + sentBytes);
+                    }
+
+                    let chunkSent = false;
+                    retryCount = 0;
+
+                    while (!chunkSent && retryCount < maxRetries) {
+                        try {
+                            // Write chunk
+                            await bluetoothCharacteristic.writeValue(chunk);
+                            sentBytes += chunk.length;
+                            chunkSent = true;
+
+                            // Progress logging
+                            if (chunkCount % 5 === 0 || chunkCount === totalChunks) {
+                                const progress = Math.round((sentBytes / data.length) * 100);
+                                console.log(`Progress: ${sentBytes}/${data.length} bytes (${progress}%)`);
+                            }
+
+                            // INCREASED delay for printer buffer
+                            await new Promise(resolve => setTimeout(resolve, 800));
+
+                            // Extra buffer drain every 2 chunks (more frequent)
+                            if (chunkCount % 2 === 0 && i + chunkSize < data.length) {
+                                await new Promise(resolve => setTimeout(resolve, 800));
+                            }
+
+                        } catch (writeError) {
+                            retryCount++;
+                            console.error(`Write error at chunk ${chunkCount} (attempt ${retryCount}):`, writeError);
+
+                            if (retryCount >= maxRetries) {
+                                throw new Error(
+                                    `Print failed at byte ${sentBytes}/${data.length} after ${maxRetries} retries`);
+                            }
+
+                            // Wait before retry
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                    }
+                }
+
+                // Final wait for printer to complete
+                console.log('Finalizing print...');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                console.log('Print completed successfully');
                 return true;
             } catch (error) {
-                console.error('Print error:', error);
-                // Tidak perlu alert, hanya log error - pembayaran tetap berhasil
+                console.error('Print error:', error.message);
+                console.error('Error details:', error);
+
+                // Reset connection on error
+                printerConnected = false;
+                bluetoothCharacteristic = null;
+
+                // Show user-friendly error
+                showErrorNotification('Gagal mencetak struk: ' + error.message);
+
                 return false;
             }
         }
@@ -3565,7 +3826,7 @@
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const taxRate = {{ $pajak ? $pajak->persen : 0 }} / 100;
             const ppn = Math.round(subtotal * taxRate);
-            
+
             // Calculate discount
             let discount = 0;
             if (discountMode === 'promo') {
@@ -3576,7 +3837,7 @@
                     const promoValue = parseFloat(selectedOption.getAttribute('data-value'));
                     const minTransaction = parseFloat(selectedOption.getAttribute('data-min')) || 0;
                     const maxDiscount = parseFloat(selectedOption.getAttribute('data-max')) || 0;
-                    
+
                     if (subtotal >= minTransaction) {
                         if (promoType === 'diskon_persen') {
                             discount = subtotal * (promoValue / 100);
@@ -3597,10 +3858,10 @@
                     }
                 }
             }
-            
+
             // Get points used
             const pointsUsed = usedPoints || 0;
-            
+
             // Calculate final total: Subtotal + PPN - Discount - Points
             const finalTotal = Math.round(subtotal + ppn - discount - pointsUsed);
 
@@ -3634,13 +3895,14 @@
                         // bundleProducts can have either produk_id or id_produk
                         const transformedBundleProducts = item.bundleProducts.map(bp => {
                             // Try to get product ID from various possible locations
-                            const productId = bp.produk_id || bp.id_produk || (bp.produk ? bp.produk.id : null);
+                            const productId = bp.produk_id || bp.id_produk || (bp.produk ? bp.produk
+                                .id : null);
                             return {
                                 id_produk: productId,
                                 quantity: bp.quantity
                             };
                         });
-                        
+
                         return {
                             id: item.bundleId,
                             quantity: item.quantity,
@@ -3663,7 +3925,8 @@
                 diskon: Math.round(discount),
                 bayar: bayar,
                 kembalian: kembalian,
-                poin_didapat: selectedCustomer && selectedCustomer.id !== 'walk-in' ? (window.currentGachaPoin || 0) : 0,
+                poin_didapat: selectedCustomer && selectedCustomer.id !== 'walk-in' ? (window.currentGachaPoin ||
+                    0) : 0,
                 poin_digunakan: usedPoints || 0
             };
 
@@ -3690,22 +3953,38 @@
                     body: JSON.stringify(transactionData)
                 });
 
-                const result = await response.json();
+                // Check if response is OK (Second payment function - processPaymentWithPrint)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error response:', errorText);
+                    throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                }
+
+                // Try to parse JSON response
+                let result;
+                try {
+                    result = await response.json();
+                } catch (parseError) {
+                    console.error('Failed to parse JSON response');
+                    throw new Error('Server returned invalid response');
+                }
 
                 if (result.success) {
                     // Get transaction ID from response
                     const transactionId = result.data?.transaksi_id || null;
-                    
+
                     // Try to print receipt with actual transaction ID
-                    let printSuccess = false;
-                    if (isBluetoothSupported()) {
+                    try {
                         payButton.innerHTML = `
                             <div class="flex items-center justify-center space-x-2">
                                 <i class="fas fa-print"></i>
                                 <span>Mencetak...</span>
                             </div>
                         `;
-                        printSuccess = await printReceipt(transactionId);
+                        await printReceipt(transactionId);
+                    } catch (printError) {
+                        console.error('Print failed:', printError);
+                        // Continue with success even if print fails
                     }
 
                     // Success message
@@ -3714,10 +3993,10 @@
                     // Clear cart
                     cart = [];
                     updateCartDisplay();
-                    
+
                     // Reset gacha points for next transaction
                     window.currentGachaPoin = null;
-                    
+
                     // Reset points usage
                     usedPoints = 0;
                     const pointsInput = document.getElementById('pointsInput');
@@ -3761,16 +4040,16 @@
         function formatCashInput() {
             const cashInput = document.getElementById('cashAmount');
             if (!cashInput) return;
-            
+
             let isFormatting = false;
-            
+
             cashInput.addEventListener('input', function(e) {
                 if (isFormatting) return;
                 isFormatting = true;
-                
+
                 // Remove all non-digit characters
                 let value = e.target.value.replace(/\D/g, '');
-                
+
                 // Format with Indonesian locale (uses dot as thousand separator)
                 if (value) {
                     const numericValue = parseInt(value, 10);
@@ -3778,7 +4057,7 @@
                 } else {
                     e.target.value = '';
                 }
-                
+
                 calculateChange();
                 isFormatting = false;
             });
@@ -3795,7 +4074,7 @@
 
             // Initialize customer search
             initializeCustomerSearch();
-            
+
             // Initialize points display
             updateAvailablePoints();
 
@@ -3812,11 +4091,12 @@
             // Load saved view preference or default to grid
             const savedView = localStorage.getItem('productViewPreference') || 'grid';
             currentView = savedView; // Set current view first
-            
+
             // Then apply the view and pagination
             toggleView(savedView); // This will also call updatePagination()
-            
-            console.log('Initial load complete - View:', currentView, 'Page:', currentPage, 'Items per page:', itemsPerPage);
+
+            console.log('Initial load complete - View:', currentView, 'Page:', currentPage, 'Items per page:',
+                itemsPerPage);
 
             // Initialize search functionality
             const searchInput = document.getElementById('searchInput');

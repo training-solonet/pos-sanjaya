@@ -450,7 +450,7 @@
                     }
                 }
                 
-                const url = `{{ route('kasir.jurnal.api.data') }}?tanggal=${currentDate}`;
+                const url = `{{ route('kasir.jurnal.index') }}?action=api&tanggal=${currentDate}`;
                 const response = await fetch(url);
                 const result = await response.json();
                 
@@ -845,7 +845,7 @@
             const tanggal = document.getElementById('filterDate').value;
             
             // Redirect to export route with date parameter
-            window.location.href = "{{ route('kasir.jurnal.export-pdf') }}" + "?tanggal=" + tanggal;
+            window.location.href = "{{ route('kasir.jurnal.index') }}" + "?action=export-pdf&tanggal=" + tanggal;
         }
 
         // Export to Excel function
@@ -853,7 +853,7 @@
             const tanggal = document.getElementById('filterDate').value;
             
             // Redirect to export route with date parameter
-            window.location.href = "{{ route('kasir.jurnal.export-excel') }}" + "?tanggal=" + tanggal;
+            window.location.href = "{{ route('kasir.jurnal.index') }}" + "?action=export-excel&tanggal=" + tanggal;
         }
 
         // Close modal when clicking outside

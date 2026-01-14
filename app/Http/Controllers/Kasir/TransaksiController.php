@@ -27,13 +27,13 @@ class TransaksiController extends Controller
         $totalProduk = Produk::where('stok', '>', 0)->count();
         $customers = Customer::orderBy('nama', 'asc')->get();
 
-        // Ambil data bundle (promo dengan bundle products) yang memiliki stok
+        // Ambil data bundle (promo dengan bundle products) yang aktif dan memiliki stok
         $bundles = Promo::where('status', true)
+            ->where('jenis', 'bundle')
             ->where('stok', '>', 0)
-            ->whereDate('start_date', '<=', now())
-            ->whereDate('end_date', '>=', now())
             ->with(['bundleProducts.produk'])
             ->whereHas('bundleProducts')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         // Ambil pajak aktif
@@ -76,7 +76,7 @@ class TransaksiController extends Controller
                 'diskon' => 'nullable|numeric|min:0',
                 'bayar' => 'nullable|numeric|min:0',
                 'kembalian' => 'nullable|numeric|min:0',
-                'poin_didapat' => 'nullable|integer|min:0|max:100',
+                'poin_didapat' => 'nullable|integer|min:0',
                 'poin_digunakan' => 'nullable|integer|min:0',
             ]);
 
@@ -123,6 +123,12 @@ class TransaksiController extends Controller
                     // Handle bundle product
                     $bundleProducts = $item['bundleProducts'] ?? [];
 
+                    // Validasi bundleProducts
+                    if (empty($bundleProducts)) {
+                        Log::error('Bundle products empty for item: ', $item);
+                        throw new \Exception('Data bundle tidak valid. Bundle harus memiliki minimal 1 produk.');
+                    }
+
                     // Cek dan kurangi stok bundle di tabel Promo
                     $bundlePromo = Promo::findOrFail($item['id']);
                     if ($bundlePromo->stok < $item['quantity']) {
@@ -135,6 +141,12 @@ class TransaksiController extends Controller
 
                     // Kurangi stok untuk setiap produk dalam bundle
                     foreach ($bundleProducts as $bundleItem) {
+                        // Validasi struktur bundle item
+                        if (! isset($bundleItem['id_produk']) || ! isset($bundleItem['quantity'])) {
+                            Log::error('Invalid bundle item structure: ', $bundleItem);
+                            throw new \Exception('Struktur data bundle tidak valid.');
+                        }
+
                         $produk = Produk::findOrFail($bundleItem['id_produk']);
                         $qtyNeeded = $bundleItem['quantity'] * $item['quantity'];
 
@@ -231,8 +243,9 @@ class TransaksiController extends Controller
             Log::info("Entry jurnal OTOMATIS dibuat untuk transaksi ID: {$transaksi->id}, Total: {$total}");
             // =========================================================
 
-            // ============ TAMBAHKAN POIN KE CUSTOMER (GACHA SYSTEM) ============
+            // ============ TAMBAHKAN POIN KE CUSTOMER ============
             // Jika transaksi menggunakan member, kelola poin
+            // Poin dihitung: 5 poin per Rp10.000 + 10 poin per bundle
             if ($validated['id_customer']) {
                 $customer = Customer::find($validated['id_customer']);
                 if ($customer && $customer->kode_member) {
@@ -247,11 +260,11 @@ class TransaksiController extends Controller
                         }
                     }
 
-                    // Tambahkan poin gacha (random 1-100 per transaksi, tanpa minimum harga)
+                    // Tambahkan poin yang didapat dari transaksi
                     $poinDapat = $validated['poin_didapat'] ?? 0;
                     if ($poinDapat > 0) {
                         $customer->increment('total_poin', $poinDapat);
-                        Log::info("Poin gacha ditambahkan ke customer ID {$customer->id}: {$poinDapat} poin (random 1-100)");
+                        Log::info("Poin ditambahkan ke customer ID {$customer->id}: {$poinDapat} poin (5 poin/Rp10k + 10 poin/bundle)");
                     }
                 }
             }
@@ -290,6 +303,15 @@ class TransaksiController extends Controller
     }
 
     /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        // Redirect to index since we don't have a separate create page
+        return redirect()->route('kasir.transaksi.index');
+    }
+
+    /**
      * Display the specified resource.
      */
     public function show(string $id)
@@ -302,7 +324,8 @@ class TransaksiController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        // Redirect to index since we don't edit transactions
+        return redirect()->route('kasir.transaksi.index');
     }
 
     /**
@@ -319,21 +342,5 @@ class TransaksiController extends Controller
     public function destroy(string $id)
     {
         //
-    }
-
-    /**
-     * Get next transaction ID
-     */
-    public function getNextId()
-    {
-        // Generate ID Transaksi dengan format yang sama seperti saat store
-        // Format: TXXXXXXXXXX (T + timestamp 10 digit)
-        $timestamp = now()->timestamp; // Unix timestamp
-        $nextId = 'T'.substr($timestamp, -10); // Ambil 10 digit terakhir dari timestamp
-
-        return response()->json([
-            'success' => true,
-            'next_id' => $nextId,
-        ]);
     }
 }

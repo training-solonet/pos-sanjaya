@@ -180,7 +180,8 @@
                             <p class="text-sm text-gray-500">
                                 Daftar semua transaksi hari ini
                                 <span id="realTimeIndicator" class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <span id="lastUpdateTime" class="ml-2 text-xs text-gray-400"></span>
+                                    <span id="lastUpdateTime" class="ml-1 text-xs text-gray-600"></span>
+                                </span>
                             </p>
                         </div>
                         <div class="flex items-center space-x-3">
@@ -401,7 +402,7 @@
             if (currentFilters.payment) params.append('metode', currentFilters.payment);
             if (currentFilters.cashier) params.append('kasir', currentFilters.cashier);
             
-            const url = `{{ route('kasir.laporan.export-pdf') }}?${params.toString()}`;
+            const url = `{{ route('kasir.laporan.index') }}?action=export-pdf&${params.toString()}`;
             
             // Close dropdown
             document.getElementById('exportDropdownMenu').classList.add('hidden');
@@ -417,7 +418,7 @@
             if (currentFilters.payment) params.append('metode', currentFilters.payment);
             if (currentFilters.cashier) params.append('kasir', currentFilters.cashier);
             
-            const url = `{{ route('kasir.laporan.export-excel') }}?${params.toString()}`;
+            const url = `{{ route('kasir.laporan.index') }}?action=export-excel&${params.toString()}`;
             
             // Close dropdown
             document.getElementById('exportDropdownMenu').classList.add('hidden');
@@ -439,7 +440,7 @@
                 if (currentFilters.search) params.append('search', currentFilters.search);
                 
                 console.log('Fetching from API with filters:', currentFilters);
-                const url = `{{ route('kasir.laporan.api.transactions') }}?${params.toString()}`;
+                const url = `{{ route('kasir.laporan.index') }}?action=api&${params.toString()}`;
                 console.log('API URL:', url);
                 
                 const response = await fetch(url);
@@ -569,6 +570,12 @@
             const btn = document.getElementById('autoRefreshBtn');
             const icon = document.getElementById('refreshIcon');
             const text = document.getElementById('refreshText');
+            
+            // Check if elements exist before trying to modify them
+            if (!btn || !icon || !text) {
+                console.warn('Refresh button elements not found');
+                return;
+            }
             
             if (autoRefreshEnabled && refreshInterval) {
                 btn.className = 'px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 flex items-center space-x-2 transition-all';

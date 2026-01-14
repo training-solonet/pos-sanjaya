@@ -98,8 +98,8 @@
 
                  <a href="{{ route("management.shiftman.index") }}"
                     class="nav-item group flex items-center px-3 py-2.5 text-sm font-medium
-                    {{ request()->routeIs('management.shiftman.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Shiftman">
-                    <i class="sidebar-icon fas fa-clock mr-3 text-lg {{ request()->routeIs('management.laporan.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
+                    {{ request()->routeIs('management.shiftman.*') ? 'text-white bg-gradient-to-r from-green-400 to-green-700' : 'text-gray-700 hover:bg-gray-100' }} rounded-lg transition-all duration-300" title="Shift">
+                    <i class="sidebar-icon fas fa-clock {{ request()->routeIs('management.shiftman.*') ? 'text-white' : 'text-gray-400 group-hover:text-green-600' }} mr-3 transition-all duration-300"></i>
                     <span class="sidebar-text whitespace-nowrap transition-opacity duration-300">Shift</span>
                 </a>
 
