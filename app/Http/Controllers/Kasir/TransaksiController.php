@@ -33,19 +33,19 @@ class TransaksiController extends Controller
         $bundles = Promo::where('status', true)
             ->where('jenis', 'bundle')
             ->where('stok', '>', 0)
-            ->where(function($query) use ($today) {
-                $query->where(function($q) use ($today) {
+            ->where(function ($query) use ($today) {
+                $query->where(function ($q) use ($today) {
                     // Bundle dengan start_date dan end_date yang valid
                     $q->whereNotNull('start_date')
-                      ->whereNotNull('end_date')
-                      ->whereDate('start_date', '<=', $today)
-                      ->whereDate('end_date', '>=', $today);
+                        ->whereNotNull('end_date')
+                        ->whereDate('start_date', '<=', $today)
+                        ->whereDate('end_date', '>=', $today);
                 })
-                ->orWhere(function($q) {
-                    // Bundle tanpa batas tanggal (start_date dan end_date null)
-                    $q->whereNull('start_date')
-                      ->whereNull('end_date');
-                });
+                    ->orWhere(function ($q) {
+                        // Bundle tanpa batas tanggal (start_date dan end_date null)
+                        $q->whereNull('start_date')
+                            ->whereNull('end_date');
+                    });
             })
             ->with(['bundleProducts.produk'])
             ->whereHas('bundleProducts')
@@ -58,19 +58,19 @@ class TransaksiController extends Controller
         // Ambil promo diskon aktif (bukan bundle) dengan filter tanggal
         $promos = Promo::where('status', true)
             ->whereIn('jenis', ['diskon_persen', 'cashback'])
-            ->where(function($query) use ($today) {
-                $query->where(function($q) use ($today) {
+            ->where(function ($query) use ($today) {
+                $query->where(function ($q) use ($today) {
                     // Promo dengan start_date dan end_date yang valid
                     $q->whereNotNull('start_date')
-                      ->whereNotNull('end_date')
-                      ->whereDate('start_date', '<=', $today)
-                      ->whereDate('end_date', '>=', $today);
+                        ->whereNotNull('end_date')
+                        ->whereDate('start_date', '<=', $today)
+                        ->whereDate('end_date', '>=', $today);
                 })
-                ->orWhere(function($q) {
-                    // Promo tanpa batas tanggal (start_date dan end_date null)
-                    $q->whereNull('start_date')
-                      ->whereNull('end_date');
-                });
+                    ->orWhere(function ($q) {
+                        // Promo tanpa batas tanggal (start_date dan end_date null)
+                        $q->whereNull('start_date')
+                            ->whereNull('end_date');
+                    });
             })
             ->orderBy('start_date', 'asc')
             ->get();
@@ -115,10 +115,10 @@ class TransaksiController extends Controller
             $subtotal = 0;
             $totalBundleQty = 0; // Hitung total quantity bundle yang dibeli
             $subtotalProdukRegular = 0; // Subtotal hanya untuk produk reguler (bukan bundle)
-            
+
             foreach ($validated['items'] as $item) {
                 $subtotal += $item['price'] * $item['quantity'];
-                
+
                 $isBundle = $item['isBundle'] ?? false;
                 if ($isBundle) {
                     $totalBundleQty += $item['quantity'];
@@ -133,7 +133,7 @@ class TransaksiController extends Controller
 
             // Total = Subtotal + PPN - Diskon - Poin Digunakan (1 poin = Rp 1)
             $total = $subtotal + $ppn - $diskon - $poinDigunakan;
-            
+
             // Hitung poin yang didapat
             // - Produk reguler: 5 poin per Rp 10.000
             // - Bundle: 10 poin per bundle (tanpa terpaku harga)
