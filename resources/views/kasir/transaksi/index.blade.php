@@ -147,7 +147,7 @@
                         </span>
                         <span class="text-lg font-bold text-purple-700" id="poinEarned">0 Poin</span>
                     </div>
-                    <p class="text-xs text-purple-600">💰 5 poin/Rp10k + 10 poin/bundle</p>
+                    <p class="text-xs text-purple-600">💰 5 poin/Rp10k (produk) + 10 poin/bundle</p>
                 </div>
             </div>
         </div>
@@ -2413,17 +2413,21 @@
         function calculatePoints() {
             let totalPoints = 0;
 
-            // Hitung subtotal
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            // Hitung subtotal hanya untuk produk reguler (bukan bundle)
+            const subtotalProdukRegular = cart
+                .filter(item => !item.isBundle) // Hanya produk reguler
+                .reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-            // 1. Poin dari kelipatan 10k (5 poin per 10k)
-            const kelipatanDizrib = Math.floor(subtotal / 10000);
-            const poinDariTransaksi = kelipatanDizrib * 5;
-            totalPoints += poinDariTransaksi;
+            // 1. Poin dari produk reguler (5 poin per kelipatan Rp 10.000)
+            const kelipatanDizrib = Math.floor(subtotalProdukRegular / 10000);
+            const poinDariProdukRegular = kelipatanDizrib * 5;
+            totalPoints += poinDariProdukRegular;
 
-            // 2. Poin dari bundle (10 poin per bundle)
-            const jumlahBundle = cart.filter(item => item.isBundle).length;
-            const poinDariBundle = jumlahBundle * 10;
+            // 2. Poin dari bundle (10 poin per quantity bundle, bukan per jenis bundle)
+            const totalQuantityBundle = cart
+                .filter(item => item.isBundle)
+                .reduce((sum, item) => sum + item.quantity, 0);
+            const poinDariBundle = totalQuantityBundle * 10;
             totalPoints += poinDariBundle;
 
             return totalPoints;
@@ -3925,8 +3929,6 @@
                 diskon: Math.round(discount),
                 bayar: bayar,
                 kembalian: kembalian,
-                poin_didapat: selectedCustomer && selectedCustomer.id !== 'walk-in' ? (window.currentGachaPoin ||
-                    0) : 0,
                 poin_digunakan: usedPoints || 0
             };
 

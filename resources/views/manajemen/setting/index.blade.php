@@ -628,8 +628,11 @@
                         </label>
                         <input type="number" id="bundle_stok" name="stok" required min="0"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                            placeholder="Masukkan stok bundle">
+                            placeholder="Masukkan stok bundle" oninput="checkAllBundleStock()">
                         <span class="text-red-500 text-xs hidden" id="error_bundle_stok"></span>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-info-circle"></i> Stok bundle akan mempengaruhi kebutuhan stok produk
+                        </p>
                     </div>
                 </div>
 
@@ -1077,7 +1080,8 @@
             let productOptions = '<option value="">Pilih produk...</option>';
             availableProducts.forEach(product => {
                 const sku = product.sku || 'N/A';
-                productOptions += `<option value="${product.id}" data-price="${product.harga}" data-name="${product.nama}" data-sku="${sku}">${sku}</option>`;
+                const stok = product.stok || 0;
+                productOptions += `<option value="${product.id}" data-price="${product.harga}" data-name="${product.nama}" data-sku="${sku}" data-stok="${stok}">${sku}</option>`;
             });
             
             productRow.innerHTML = `
@@ -1086,11 +1090,11 @@
                         <label class="block text-xs font-medium text-gray-700 mb-1">SKU Produk</label>
                         <select name="bundle_products[${index}][produk_id]" required
                             class="bundle-product-select w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white font-mono"
-                            onchange="calculateBundlePrice(); updateProductInfo(${index})">
+                            onchange="calculateBundlePrice(); updateProductInfo(${index}); checkStockAvailability(${index})">
                             ${productOptions}
                         </select>
                     </div>
-                    <div class="md:col-span-4">
+                    <div class="md:col-span-3">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Nama Produk</label>
                         <input type="text" readonly
                             class="product-name-${index} w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-700 font-medium"
@@ -1102,11 +1106,17 @@
                             class="product-price-${index} w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600 font-semibold"
                             placeholder="Rp 0" value="Rp 0">
                     </div>
-                    <div class="md:col-span-2">
+                    <div class="md:col-span-1">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Qty</label>
                         <input type="number" name="bundle_products[${index}][quantity]" value="1" min="1" required
                             class="bundle-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
-                            placeholder="1" oninput="calculateBundlePrice(); updateProductInfo(${index})">
+                            placeholder="1" oninput="calculateBundlePrice(); updateProductInfo(${index}); checkStockAvailability(${index})">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Status Stok</label>
+                        <div class="stock-status-${index} px-3 py-2 rounded-lg text-xs font-semibold text-center bg-gray-100 text-gray-500">
+                            Pilih produk
+                        </div>
                     </div>
                     <div class="md:col-span-2 flex items-end">
                         <button type="button" onclick="removeBundleProduct(${index})"
@@ -1156,6 +1166,51 @@
             }
         }
 
+        // Check stock availability for bundle product
+        function checkStockAvailability(index) {
+            const select = document.querySelector(`#bundle-product-${index} .bundle-product-select`);
+            const statusDiv = document.querySelector(`.stock-status-${index}`);
+            const bundleStokInput = document.getElementById('bundle_stok');
+            const quantityInput = document.querySelector(`#bundle-product-${index} .bundle-quantity`);
+            
+            if (!select || !statusDiv || !bundleStokInput || !quantityInput) return;
+            
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (!selectedOption || !selectedOption.value) {
+                statusDiv.className = 'stock-status-' + index + ' px-3 py-2 rounded-lg text-xs font-semibold text-center bg-gray-100 text-gray-500';
+                statusDiv.innerHTML = 'Pilih produk';
+                return;
+            }
+            
+            const produkId = selectedOption.value;
+            const produkStok = parseInt(selectedOption.getAttribute('data-stok')) || 0;
+            const bundleStok = parseInt(bundleStokInput.value) || 0;
+            const quantity = parseInt(quantityInput.value) || 0;
+            const requiredStock = quantity * bundleStok;
+            
+            if (produkStok >= requiredStock) {
+                statusDiv.className = 'stock-status-' + index + ' px-3 py-2 rounded-lg text-xs font-semibold text-center bg-green-100 text-green-700 border border-green-300';
+                statusDiv.innerHTML = `✅ Cukup<br><span class="font-normal">${produkStok}/${requiredStock}</span>`;
+            } else {
+                const shortage = requiredStock - produkStok;
+                statusDiv.className = 'stock-status-' + index + ' px-3 py-2 rounded-lg text-xs font-semibold text-center bg-red-100 text-red-700 border border-red-300';
+                statusDiv.innerHTML = `❌ Kurang<br><span class="font-normal">${produkStok}/${requiredStock}<br>(-${shortage})</span>`;
+            }
+        }
+
+        // Check all bundle products stock when bundle stock changes
+        function checkAllBundleStock() {
+            const productSelects = document.querySelectorAll('.bundle-product-select');
+            productSelects.forEach((select, index) => {
+                const row = select.closest('[id^="bundle-product-"]');
+                if (row) {
+                    const rowIndex = row.id.replace('bundle-product-', '');
+                    checkStockAvailability(parseInt(rowIndex));
+                }
+            });
+        }
+
         // Calculate total bundle price based on selected products
         function calculateBundlePrice() {
             let totalPrice = 0;
@@ -1193,6 +1248,74 @@
         document.getElementById('bundleForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Validasi stok produk sebelum submit
+            const bundleStok = parseInt(document.getElementById('bundle_stok').value) || 0;
+            const productSelects = document.querySelectorAll('.bundle-product-select');
+            const quantityInputs = document.querySelectorAll('.bundle-quantity');
+            
+            let stockErrors = [];
+            let hasInsufficientStock = false;
+            
+            // Cek stok setiap produk yang dipilih
+            for (let i = 0; i < productSelects.length; i++) {
+                const select = productSelects[i];
+                const selectedOption = select.options[select.selectedIndex];
+                
+                if (selectedOption && selectedOption.value) {
+                    const produkId = selectedOption.value;
+                    const produkNama = selectedOption.getAttribute('data-name') || 'Produk';
+                    const quantity = parseInt(quantityInputs[i]?.value) || 0;
+                    const requiredStock = quantity * bundleStok;
+                    
+                    // Cari stok produk dari data yang tersedia
+                    const produk = availableProducts.find(p => p.id == produkId);
+                    if (produk) {
+                        const availableStock = produk.stok || 0;
+                        
+                        if (availableStock < requiredStock) {
+                            hasInsufficientStock = true;
+                            stockErrors.push({
+                                nama: produkNama,
+                                required: requiredStock,
+                                available: availableStock,
+                                shortage: requiredStock - availableStock
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // Jika ada stok yang tidak mencukupi, tampilkan notifikasi dan batalkan submit
+            if (hasInsufficientStock) {
+                let errorMessage = '<div class="text-left"><p class="font-bold text-red-600 mb-3">❌ Bundle tidak dapat disimpan! Stok produk tidak mencukupi:</p><ul class="space-y-2">';
+                
+                stockErrors.forEach(error => {
+                    errorMessage += `
+                        <li class="bg-red-50 p-3 rounded-lg border border-red-200">
+                            <div class="font-semibold text-gray-800">${error.nama}</div>
+                            <div class="text-sm text-gray-600 mt-1">
+                                <span class="text-red-600">Dibutuhkan: ${error.required}</span> | 
+                                <span class="text-orange-600">Tersedia: ${error.available}</span> | 
+                                <span class="text-red-600 font-semibold">Kurang: ${error.shortage}</span>
+                            </div>
+                        </li>
+                    `;
+                });
+                
+                errorMessage += '</ul><p class="mt-3 text-sm text-gray-600">💡 Silakan kurangi stok bundle atau quantity produk, atau pilih produk lain.</p></div>';
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Stok Tidak Mencukupi',
+                    html: errorMessage,
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#EF4444',
+                    width: '600px'
+                });
+                
+                return; // Batalkan submit
+            }
+            
             const bundleId = document.getElementById('bundleId').value;
             const url = bundleId 
                 ? `/management/setting/${bundleId}`
@@ -1215,8 +1338,16 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    closeBundleModal();
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Bundle berhasil disimpan',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        closeBundleModal();
+                        location.reload();
+                    });
                 } else {
                     // Display validation errors
                     if (data.errors) {
@@ -1227,13 +1358,26 @@
                                 errorElement.classList.remove('hidden');
                             }
                         });
-                    } else {
-                        alert(data.message || 'Terjadi kesalahan');
+                    }
+                    
+                    // Tampilkan pesan error dari server
+                    if (data.message) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Menyimpan Bundle',
+                            text: data.message,
+                            confirmButtonColor: '#EF4444'
+                        });
                     }
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat menyimpan data');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Terjadi Kesalahan',
+                    text: 'Terjadi kesalahan saat menyimpan data',
+                    confirmButtonColor: '#EF4444'
+                });
             }
         });
 
@@ -1276,6 +1420,8 @@
                                 
                                 // Update product info (nama produk dan harga)
                                 updateProductInfo(lastIndex);
+                                // Check stock availability
+                                checkStockAvailability(lastIndex);
                             }
                         });
                         
@@ -1287,11 +1433,21 @@
                     
                     document.getElementById('bundleModal').classList.remove('hidden');
                 } else {
-                    alert('Gagal mengambil data bundle');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Gagal mengambil data bundle',
+                        confirmButtonColor: '#EF4444'
+                    });
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat mengambil data');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Terjadi Kesalahan',
+                    text: 'Terjadi kesalahan saat mengambil data',
+                    confirmButtonColor: '#EF4444'
+                });
             }
         }
     </script>

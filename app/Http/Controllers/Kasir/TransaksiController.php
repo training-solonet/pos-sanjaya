@@ -28,9 +28,25 @@ class TransaksiController extends Controller
         $customers = Customer::orderBy('nama', 'asc')->get();
 
         // Ambil data bundle (promo dengan bundle products) yang aktif dan memiliki stok
+        // Filter berdasarkan tanggal start_date dan end_date
+        $today = now()->toDateString();
         $bundles = Promo::where('status', true)
             ->where('jenis', 'bundle')
             ->where('stok', '>', 0)
+            ->where(function($query) use ($today) {
+                $query->where(function($q) use ($today) {
+                    // Bundle dengan start_date dan end_date yang valid
+                    $q->whereNotNull('start_date')
+                      ->whereNotNull('end_date')
+                      ->whereDate('start_date', '<=', $today)
+                      ->whereDate('end_date', '>=', $today);
+                })
+                ->orWhere(function($q) {
+                    // Bundle tanpa batas tanggal (start_date dan end_date null)
+                    $q->whereNull('start_date')
+                      ->whereNull('end_date');
+                });
+            })
             ->with(['bundleProducts.produk'])
             ->whereHas('bundleProducts')
             ->orderBy('created_at', 'desc')
@@ -39,9 +55,23 @@ class TransaksiController extends Controller
         // Ambil pajak aktif
         $pajak = Pajak::where('status', true)->first();
 
-        // Ambil promo diskon aktif (bukan bundle) - tanpa filter tanggal
+        // Ambil promo diskon aktif (bukan bundle) dengan filter tanggal
         $promos = Promo::where('status', true)
             ->whereIn('jenis', ['diskon_persen', 'cashback'])
+            ->where(function($query) use ($today) {
+                $query->where(function($q) use ($today) {
+                    // Promo dengan start_date dan end_date yang valid
+                    $q->whereNotNull('start_date')
+                      ->whereNotNull('end_date')
+                      ->whereDate('start_date', '<=', $today)
+                      ->whereDate('end_date', '>=', $today);
+                })
+                ->orWhere(function($q) {
+                    // Promo tanpa batas tanggal (start_date dan end_date null)
+                    $q->whereNull('start_date')
+                      ->whereNull('end_date');
+                });
+            })
             ->orderBy('start_date', 'asc')
             ->get();
 
@@ -76,16 +106,25 @@ class TransaksiController extends Controller
                 'diskon' => 'nullable|numeric|min:0',
                 'bayar' => 'nullable|numeric|min:0',
                 'kembalian' => 'nullable|numeric|min:0',
-                'poin_didapat' => 'nullable|integer|min:0',
                 'poin_digunakan' => 'nullable|integer|min:0',
             ]);
 
             DB::beginTransaction();
 
-            // Hitung total
+            // Hitung total dan poin
             $subtotal = 0;
+            $totalBundleQty = 0; // Hitung total quantity bundle yang dibeli
+            $subtotalProdukRegular = 0; // Subtotal hanya untuk produk reguler (bukan bundle)
+            
             foreach ($validated['items'] as $item) {
                 $subtotal += $item['price'] * $item['quantity'];
+                
+                $isBundle = $item['isBundle'] ?? false;
+                if ($isBundle) {
+                    $totalBundleQty += $item['quantity'];
+                } else {
+                    $subtotalProdukRegular += $item['price'] * $item['quantity'];
+                }
             }
 
             $ppn = $validated['ppn'] ?? ($subtotal * 0.1);
@@ -94,6 +133,13 @@ class TransaksiController extends Controller
 
             // Total = Subtotal + PPN - Diskon - Poin Digunakan (1 poin = Rp 1)
             $total = $subtotal + $ppn - $diskon - $poinDigunakan;
+            
+            // Hitung poin yang didapat
+            // - Produk reguler: 5 poin per Rp 10.000
+            // - Bundle: 10 poin per bundle (tanpa terpaku harga)
+            $poinDariProdukRegular = floor($subtotalProdukRegular / 10000) * 5;
+            $poinDariBundle = $totalBundleQty * 10;
+            $totalPoinDidapat = $poinDariProdukRegular + $poinDariBundle;
 
             // Generate ID Transaksi Unik (11 karakter: T + 10 digit angka)
             // Format: TXXXXXXXXXX (T + timestamp 10 digit)
@@ -245,12 +291,11 @@ class TransaksiController extends Controller
 
             // ============ TAMBAHKAN POIN KE CUSTOMER ============
             // Jika transaksi menggunakan member, kelola poin
-            // Poin dihitung: 5 poin per Rp10.000 + 10 poin per bundle
+            // Poin dihitung: 5 poin per Rp10.000 (produk reguler) + 10 poin per bundle
             if ($validated['id_customer']) {
                 $customer = Customer::find($validated['id_customer']);
                 if ($customer && $customer->kode_member) {
                     // Kurangi poin yang digunakan terlebih dahulu
-                    $poinDigunakan = $validated['poin_digunakan'] ?? 0;
                     if ($poinDigunakan > 0) {
                         if ($customer->total_poin >= $poinDigunakan) {
                             $customer->decrement('total_poin', $poinDigunakan);
@@ -260,11 +305,10 @@ class TransaksiController extends Controller
                         }
                     }
 
-                    // Tambahkan poin yang didapat dari transaksi
-                    $poinDapat = $validated['poin_didapat'] ?? 0;
-                    if ($poinDapat > 0) {
-                        $customer->increment('total_poin', $poinDapat);
-                        Log::info("Poin ditambahkan ke customer ID {$customer->id}: {$poinDapat} poin (5 poin/Rp10k + 10 poin/bundle)");
+                    // Tambahkan poin yang didapat dari transaksi (dihitung di backend)
+                    if ($totalPoinDidapat > 0) {
+                        $customer->increment('total_poin', $totalPoinDidapat);
+                        Log::info("Poin ditambahkan ke customer ID {$customer->id}: {$totalPoinDidapat} poin (Produk: {$poinDariProdukRegular}, Bundle: {$poinDariBundle})");
                     }
                 }
             }
@@ -281,6 +325,7 @@ class TransaksiController extends Controller
                     'transaksi_id' => $transaksi->id,
                     'total' => $total,
                     'kembalian' => $validated['kembalian'] ?? 0,
+                    'poin_didapat' => $totalPoinDidapat ?? 0,
                 ],
             ]);
 

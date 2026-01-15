@@ -162,7 +162,8 @@ class DashboardController extends Controller
             });
 
         // 8. RECENT TRANSACTIONS (Today)
-        $recentTransactions = Transaksi::whereDate('tgl', $today)
+        $recentTransactions = Transaksi::with('customer')
+            ->whereDate('tgl', $today)
             ->orderBy('created_at', 'DESC')
             ->limit(10)
             ->get();

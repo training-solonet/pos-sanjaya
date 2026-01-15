@@ -376,16 +376,15 @@
                                     @forelse($recentTransactions as $transaction)
                                     <tr class="hover:bg-gray-50">
                                         <td class="py-3 px-2 whitespace-nowrap">
-                                            <span class="text-sm font-medium text-gray-900">#{{ $transaction->kode_transaksi ?? $transaction->id }}</span>
+                                            <span class="text-sm font-medium text-gray-900">#{{ $transaction->id }}</span>
                                         </td>
-                                        <td class="py-3 px-2 whitespace-nowrap">
+                                        <td class="py-3 px-2">
                                             @if($transaction->customer)
-                                            <div>
                                                 <span class="text-sm text-gray-900">{{ $transaction->customer->nama }}</span>
-                                                <span class="text-xs text-gray-500 block">ID: {{ $transaction->id_customer }}</span>
-                                            </div>
+                                            @elseif($transaction->id_customer)
+                                                <span class="text-sm text-gray-500">Customer #{{ $transaction->id_customer }}</span>
                                             @else
-                                            <span class="text-sm text-gray-400">-</span>
+                                                <span class="text-sm text-gray-400">-</span>
                                             @endif
                                         </td>
                                         <td class="py-3 px-2 whitespace-nowrap">
