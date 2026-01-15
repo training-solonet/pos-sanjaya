@@ -2100,6 +2100,7 @@
                     }
                 }
                 if (bundleContainer) bundleContainer.style.display = 'none';
+                if (paginationContainer) paginationContainer.style.display = 'flex'; // Tampilkan kembali pagination
                 if (viewToggleButtons) viewToggleButtons.style.display = 'flex';
 
                 // Update pagination and count
