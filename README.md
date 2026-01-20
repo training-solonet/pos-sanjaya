@@ -141,33 +141,4 @@ npm run dev
 ```bash
 # Fix PHP code style
 ./vendor/bin/pint
-```
-
-### Testing
-```bash
-# Run tests
-php artisan test
-
-# atau dengan Pest
-./vendor/bin/pest
-```
-
-## Struktur Database
-
-Platform ini menggunakan beberapa model utama:
-
-- **Transaksi & DetailTransaksi**: Pencatatan penjualan
-- **Produk**: Master data produk
-- **BahanBaku**: Master data bahan baku
-- **Resep & RincianResep**: Komposisi produk
-- **Jurnal**: Pencatatan keuangan
-- **Opname**: Stock opname
-- **Customer**: Data pelanggan
-- **Promo**: Data promosi
-- **Shift**: Data shift kasir
-- **BundleProduct**: Paket produk
-- **ProdukGagal & DetailProdukGagal**: Tracking produk gagal
-- **Konversi**: Konversi satuan
-- **UpdateStokProduk**: History perubahan stok
-
 
